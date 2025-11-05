@@ -80,7 +80,18 @@ class Cursor():
         self._offset += len(data)
         return data
         
-        
+
+# Data Considerations:
+# - DiskData exists in its entirety on disk (even if truncated).
+# - TapeData is constantly incoming and recorded (yes to Random Access).
+#   - Need to re-mmap when data is appended.
+# - StreamData is constantly incoming and only seen once (no to Random Access).
+
+# StreamData may require entire stream to exist in memory, depending on parser
+# references. A StreamData buffer can only deallocate data when all parsers
+# have indicated they have no more need for the data range.
+
+
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class Data():
 
