@@ -4,3 +4,5 @@ proto/
 ml-venv/
 clutter/
 **.egg-info
+**/__pycache__/
+output.txt

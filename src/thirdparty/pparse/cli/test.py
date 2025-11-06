@@ -2,18 +2,29 @@
 
 from pprint import pprint
 from thirdparty.pparse.lib import Data, Artifact, PARSERS
-from thirdparty.pparse.parsers.json import JsonParser
+from thirdparty.pparse.parser.json import JsonParser
 
 PARSERS['json'] = JsonParser
 
 # Data is independent of Artifact/Parser tree.
 data = Data(path='test.json')
 
-# Top Artifact has not parent parser.
-root = Artifact(data.open()).set_fname('test.json').process_data()
+try:
+    # Top Artifact has not parent parser.
+    cursor = data.open()
+    artifact = Artifact(cursor)
+    artifact.set_fname('test.json')
+    artifact.scan_data()
+except Exception as e:
+    print(e)
+    import traceback
+    traceback.print_exc()
+
 
 # Dump output for examination.
 print("Dumping root to output.txt")
 with open("output.txt", "w") as fobj:
-    pprint(root, stream=fobj, indent=2)
+    pprint(artifact, stream=fobj, indent=2)
 print("Dump complete.")
+
+#breakpoint()

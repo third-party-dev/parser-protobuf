@@ -3,6 +3,7 @@
 import os
 from pprint import pprint
 
+from typing import Optional
 from thirdparty.pparse.utils import has_mmap, mmap, hexdump
 
 PARSERS = {}
@@ -24,7 +25,7 @@ class Node():
         # TODO: Implement
         raise NotImplementedError("Node class not implemented.")
 
-    def parents(self) -> [Node]:
+    def parents(self): #-> [Node]:
         pass
 
     def children(self): # -> [weakref(Node)] -> Return array of childen (weak refs).
@@ -35,7 +36,7 @@ class Node():
         # - Triggers parse/load
         pass
 
-    def child(self, index=-1) -> Node: # - Return strong ref child.
+    def child(self, index=-1): # -> Node: # - Return strong ref child.
         # - Triggers parse/load
         pass
 
@@ -48,7 +49,6 @@ class Node():
 
     def range(self): # - A range of data this node covers.
         pass
-
 
 
 # Cursor manages offset. Data does not manage offset.
@@ -107,14 +107,18 @@ class Data():
     MODE_READ = 1
     MODE_MMAP = 2
 
-    def __init__(self, path=None, mode=Data.MODE_READ):
+    def __init__(self, path=None, mode=None):
+        if mode is None:
+            self._mode = Data.MODE_READ
+        else:
+            self._mode = mode
+        
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
 
         # TODO: Only allow setting MODE_MMAP if has_mmap()
 
         self._path = path
-        self._mode = mode
 
         # One descriptor to rule them all.
         self._fobj = open(path, "rb")
@@ -123,7 +127,11 @@ class Data():
         if has_mmap():
             self._mmap = mmap.mmap(self._fobj.fileno(), 0, access=mmap.ACCESS_READ)
             self._mem = memoryview(self._mmap)
-            
+
+    
+    def mode(self):
+        return self._mode
+
 
     # Create a cursor, like a logical file descriptor.
     def open(self, offset=0):
@@ -131,20 +139,26 @@ class Data():
 
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
-        if mode == Data.MODE_READ:
-            self._fobj.seek(os.SEEK_SET, cursor.tell())
+    def peek(self, cursor, length, mode=None):
+        # TODO: Only allow setting MODE_MMAP if has_mmap()
+        # Allow each read to optionally override mode.
+        active_mode = self.mode()
+        if mode:
+            active_mode = mode
+        
+        if active_mode == Data.MODE_READ:
+            self._fobj.seek(cursor.tell(), os.SEEK_SET)
             return self._fobj.read(length)
 
-        if mode == Data.MODE_MMAP and has_mmap():
+        if active_mode == Data.MODE_MMAP and has_mmap():
             off = cursor.tell()
             return self._mem[off:off+length]
 
 
     # Progress cursor without reading (no copy).
     def seek(self, cursor) -> None:
-        if mode == JitData.MODE_READ:
-            self._fobj.seek(os.SEEK_SET, cursor.tell())
+        if self.mode() == Data.MODE_READ:
+            self._fobj.seek(cursor.tell(), os.SEEK_SET)
 
         # Noop for mmap.
 
@@ -153,81 +167,80 @@ class Data():
     def read(self, cursor, length, mode=None):
         # TODO: Only allow setting MODE_MMAP if has_mmap()
         # Allow each read to optionally override mode.
-        active_mode = self.mode
+        active_mode = self.mode()
         if mode:
             active_mode = mode
     
-        if active_mode == JitData.MODE_READ:
+        if active_mode == Data.MODE_READ:
             self.seek(cursor)
             return self._fobj.read(length)
 
-        if active_mode == JitData.MODE_MMAP and has_mmap():
+        if active_mode == Data.MODE_MMAP and has_mmap():
             off = cursor.tell()
             return self._mem[off:off+length]
 
 
 '''
-Parser Considerations:
+    Parser Considerations:
 
-It is the parser's responsibility to be lazy. The framework will allow a parser to
-attempt to scan over the data within its scope. The parser can choose to do all of
-the parsing in this phase, or ramain willfully ignorant of the data until the user
-references the data.
+    It is the parser's responsibility to be lazy. The framework will allow a parser to
+    attempt to scan over the data within its scope. The parser can choose to do all of
+    the parsing in this phase, or ramain willfully ignorant of the data until the user
+    references the data.
 
-It is difficult to anticipate the types of references that all interfaces would
-require. Therefore its also the parser's responsibility to implement the lookup
-API for the data within its scope. Parsers must use the framework's children member
-to advertise data that it is not willing or able to parse (e.g. another file within
-a zip container).
+    It is difficult to anticipate the types of references that all interfaces would
+    require. Therefore its also the parser's responsibility to implement the lookup
+    API for the data within its scope. Parsers must use the framework's children member
+    to advertise data that it is not willing or able to parse (e.g. another file within
+    a zip container).
 
-It may be possible to implement an 80% solution API for referencing data in a generic
-way. The idea is that all data should be representable in a graph and you'd string
-together references to create a generic path to access any given information in the
-graph. In the generic data graph we'd have nodes that have children nodes and attributes.
-An API might resemble:
+    It may be possible to implement an 80% solution API for referencing data in a generic
+    way. The idea is that all data should be representable in a graph and you'd string
+    together references to create a generic path to access any given information in the
+    graph. In the generic data graph we'd have nodes that have children nodes and attributes.
+    An API might resemble:
 
-- Node.parents() -> [Node] -> Return array of parents (strong refs).
-- Node.children() -> [weakref(Node)] -> Return array of childen (weak refs).
-  - Triggers parse/load
-- Node.attributes() -> {} - Return dictionary of attributes.
-  - Triggers parse/load
-- Node.child(index=-1) -> Node - Return strong ref child.
-  - Triggers parse/load
-- Node.as_{bytes,i64,u64,str}() - Cast raw data as type.
-  - Triggers parse/load
-- Node.loaded() - Is the data loaded and parsed?
-- Node.range() - A range of data this node covers.
-  - Note: There could be situations where a conceptual "Node" is a non-continguous
-          set of ranges in the data. Joining non-continguous sections of data into
-          a cohesive object is not the responsibility of the parser or framework.
-          That responsibility should fall to a higher level framework or code base.
-  - Note: There should be nothing preventing nodes from overlapping. Its is the parsers
-          responsibility to manage that situation and be aware that readahead
-          optimizations will break when moving backward in memory.
+    - Node.parents() -> [Node] -> Return array of parents (strong refs).
+    - Node.children() -> [weakref(Node)] -> Return array of childen (weak refs).
+    - Triggers parse/load
+    - Node.attributes() -> {} - Return dictionary of attributes.
+    - Triggers parse/load
+    - Node.child(index=-1) -> Node - Return strong ref child.
+    - Triggers parse/load
+    - Node.as_{bytes,i64,u64,str}() - Cast raw data as type.
+    - Triggers parse/load
+    - Node.loaded() - Is the data loaded and parsed?
+    - Node.range() - A range of data this node covers.
+    - Note: There could be situations where a conceptual "Node" is a non-continguous
+            set of ranges in the data. Joining non-continguous sections of data into
+            a cohesive object is not the responsibility of the parser or framework.
+            That responsibility should fall to a higher level framework or code base.
+    - Note: There should be nothing preventing nodes from overlapping. Its is the parsers
+            responsibility to manage that situation and be aware that readahead
+            optimizations will break when moving backward in memory.
 
-If all the child references were weakref. As long as there is a strong reference to
-the child, its path will remain. 
+    If all the child references were weakref. As long as there is a strong reference to
+    the child, its path will remain. 
 
-All nodes should be either in a loaded state or unloaded state. In the loaded state
-they are fully cached and dereference-able. In the unloaded state, the node is only
-a cursor into the data to be parsed.
+    All nodes should be either in a loaded state or unloaded state. In the loaded state
+    they are fully cached and dereference-able. In the unloaded state, the node is only
+    a cursor into the data to be parsed.
 
-Note: When processing a large JSON object or array, all of the data needs to be
-read and parsed to know where the end of the object is and all of its immediate
-children.
+    Note: When processing a large JSON object or array, all of the data needs to be
+    read and parsed to know where the end of the object is and all of its immediate
+    children.
 
-When scanning a file or Artifact, parse entire file to tracking size of:
-- What are the sizes of strings and serialized arrays of primatives?
-- What is the memory footprint of the data structure up to leaf nodes?
-
+    When scanning a file or Artifact, parse entire file to tracking size of:
+    - What are the sizes of strings and serialized arrays of primatives?
+    - What is the memory footprint of the data structure up to leaf nodes?
 '''
 
 # Base Parser for Artifact parsers.
 class Parser(dict):
 
     def __init__(self, artifact, id: str):
-        if not isinstance(parent, 'Artifact'):
-            raise TypeError("Parent must be an Artifact")
+        if not isinstance(artifact, Artifact):
+            raise TypeError("artifact must be an Artifact")
         
         # parser id
         self._id: str = id
@@ -307,12 +320,12 @@ class Artifact(dict):
 
     
     def dup_cursor(self):
-        self._cursor.dup()
+        return self._cursor.dup()
 
 
     # This processes all data at once.
     # TODO: What is the interface that only parses what we need to?    
-    def process_data(self):
+    def scan_data(self):
         global PARSERS
 
         for (pname, parser) in PARSERS.items():
@@ -325,7 +338,7 @@ class Artifact(dict):
                     continue
             
         for (cname, candidate) in self.candidates.items():
-            candidate.process_data()
+            candidate.scan_data()
 
         return self
 

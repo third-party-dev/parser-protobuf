@@ -37,7 +37,7 @@ class JsonParsingNumber(JsonParsingState):
             if not data[offset:offset + 1] in NUM_BYTES:
                 done = True
                 break
-            parser.num_Bytes.append(data[offset:offset+1])
+            parser.num_bytes.append(data[offset:offset+1])
             offset += 1
         parser.read(offset)
 
@@ -49,7 +49,8 @@ class JsonParsingNumber(JsonParsingState):
             finally:
                 parser.num_bytes = []
             
-        parser._next_state(JsonParserMeta)
+        parser._next_state(JsonParsingMeta)
+
 
 class JsonParsingString(JsonParsingState):
     def parse_data(self, parser: 'JsonParser'):
@@ -67,9 +68,9 @@ class JsonParsingString(JsonParsingState):
                 except Exception as e:
                     raise UnsupportedFormatException(f"Invalid string format in {parser.str_bytes}: {e}")
                 finally:
-                    parser.str_bytes = ['"']
+                    parser.str_bytes = [b'"']
                 
-                parser._next_state(JsonParserMeta)
+                parser._next_state(JsonParsingMeta)
                 return
         
             elif data[offset:offset+1] == b'\x5c':
@@ -89,6 +90,7 @@ class JsonParsingString(JsonParsingState):
         
         parser.str_bytes.append(parser.read(offset))
 
+
 class JsonParsingWhitespace(JsonParsingState):
     def parse_data(self, parser: 'JsonParser'):
         data = parser.peek(0x400)
@@ -103,6 +105,7 @@ class JsonParsingWhitespace(JsonParsingState):
         parser.skip(offset)
 
         parser._next_state(JsonParsingMeta)
+
 
 class JsonParsingConstant(JsonParsingState):
     def parse_data(self, parser: 'JsonParser'):
@@ -137,12 +140,13 @@ class JsonParsingConstant(JsonParsingState):
         
         raise UnsupportedFormatException("Not a valid JSON constant.")
 
+
 class JsonParsingMeta(JsonParsingState):
     def parse_data(self, parser: 'JsonParser'):
         data = parser.peek(1)
         if len(data) < 1:
-            raise EndOfDataException("Not enough data to parse JSON meta.")
-        
+            raise EndOfDataException(f"Not enough data to parse JSON meta. Offset: {parser.tell()}")
+
         if data[:1] in b'\x09\x0a\x0d\x20':
             parser._next_state(JsonParsingWhitespace)
             return
@@ -156,10 +160,11 @@ class JsonParsingMeta(JsonParsingState):
             return
 
         if data[:1] == b'\x22':
+            parser.str_bytes = [parser.read(1)]
             parser._next_state(JsonParsingString)
             return
 
-        if data[:1] == b'\x3a':
+        if data[:1] in b'\x3a\x2c':
             parser.skip(1)
             return
         
@@ -178,7 +183,9 @@ class JsonParsingMeta(JsonParsingState):
             parser.skip(1)
             return
 
+        breakpoint()
         raise UnsupportedFormatException(f"Not a valid JSON meta character: {data[:1]}")
+
 
 class JsonParsingStart(JsonParsingState):
 
@@ -192,6 +199,7 @@ class JsonParsingStart(JsonParsingState):
             raise UnsupportedFormatException("Not a valid UTF-8 Encoded JSON")
         
         parser._next_state(JsonParsingMeta)
+
 
 class JsonParser(pparse.Parser):
 
@@ -216,7 +224,7 @@ class JsonParser(pparse.Parser):
         self.state: Optional[JsonParsingState] = JsonParsingStart()
 
         self.num_bytes = []
-        self.str_bytes = ['"']
+        self.str_bytes = [b'"']
 
         self.json_ref = None
         self.current = None
@@ -236,7 +244,7 @@ class JsonParser(pparse.Parser):
             self.key_reg = value
         else:
             self.current = value
-            self.meta['root'] = self.current
+            self._meta['root'] = self.current
     
     def _start_map(self):
         self.stack.append(self.current)
@@ -249,7 +257,7 @@ class JsonParser(pparse.Parser):
             self.current = self.current[-1]
         else:
             self.current = {}
-            self.meta['root'] = self.current
+            self._meta['root'] = self.current
 
     def _start_array(self):
         self.stack.append(self.current)
@@ -262,17 +270,19 @@ class JsonParser(pparse.Parser):
             self.current = self.current[-1]
         else:
             self.current = []
-            self.meta['root'] = self.current
+            self._meta['root'] = self.current
 
     def _end_container(self):
         if len(self.stack) > 1:
             self.current = self.stack.pop()
-            self.meta['root'] = self.current
+            self._meta['root'] = self.current
     
     def eagerly_parse(self):
 
         exc_store = None
         try:
+            #breakpoint()
+            #print(f"{self.state}.parse_data()")
             while True:
                 self.state.parse_data(self)
         except EndOfDataException as e:
@@ -295,4 +305,4 @@ class JsonParser(pparse.Parser):
 
 
     def scan_data(self):
-        return eagerly_parse(self)
+        return self.eagerly_parse()
