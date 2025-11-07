@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from pprint import pprint
-from thirdparty.pparse.lib import Data, Artifact, PARSERS
+from thirdparty.pparse.lib import Data, Artifact, PARSERS, EndOfDataException
 from thirdparty.pparse.parser.protobuf import ProtobufParser
 
 PARSERS['protobuf'] = ProtobufParser
@@ -15,6 +15,8 @@ try:
     artifact = Artifact(cursor)
     artifact.set_fname('decoder_model.onnx')
     artifact.scan_data()
+except EndOfDataException:
+    pass
 except Exception as e:
     print(e)
     import traceback

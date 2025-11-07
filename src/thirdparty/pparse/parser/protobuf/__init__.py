@@ -7,9 +7,13 @@ import io
 
 from typing import Optional
 
-from thirdparty.pparse.lib import EndOfDataException, UnsupportedFormatException
+from thirdparty.pparse.lib import EndOfDataException, UnsupportedFormatException, Range
 import thirdparty.pparse.lib as pparse
 #from thirdparty.pparse.lib import Range, Node, Cursor, Data, Parser, Artifact
+
+from thirdparty.pparse.cli.parse_pb import OnnxPb, Field
+proto = OnnxPb()
+
 
 def unzigzag(v):
     return (v >> 1) ^ -(v & 1)
@@ -72,28 +76,75 @@ class ProtobufParsingKey(ProtobufParsingState):
 
     def parse_data(self, parser: 'ProtobufParser'):
 
+        # Get the key data.
         wire_type, field_num = parser.parse_varint_key()
-        print(f'{field_num}:{Protobuf.wire_type_str[wire_type]} ')
-        # TODO: Is this the point we look up the key in proto to continue?
-        
-        if wire_type == Protobuf.LEN:
-            parser._next_state(ProtobufParsingLen)
-            return
 
         if wire_type == Protobuf.VARINT:
+            # Output everything to prove we can scan.
+            print(self.dbg_geninfo_str(parser, field_num, wire_type))
+            print(self.dbg_proto_str(parser, field_num, wire_type))
             value = parser.parse_varint()
             print(f'  VALUE {value}')
             parser._next_state(ProtobufParsingKey)
             return
 
-        # if wire_type == Protobuf.I64:
-        #     parser._next_state(ProtobufParsingVarint)
-        #     raise NotImplementedError()
+        if wire_type == Protobuf.I64:
+            # Output everything to prove we can scan.
+            print(self.dbg_geninfo_str(parser, field_num, wire_type))
+            print(self.dbg_proto_str(parser, field_num, wire_type))
+            value = parser.parse_i64()
+            print(f'  VALUE {value}')
+            parser._next_state(ProtobufParsingKey)
 
-        # if wire_type == Protobuf.LEN:
-        #     parser._next_state(ProtobufParsingVarint)
-        #     raise NotImplementedError()
+        if wire_type == Protobuf.I32:
+            # Output everything to prove we can scan.
+            print(self.dbg_geninfo_str(parser, field_num, wire_type))
+            print(self.dbg_proto_str(parser, field_num, wire_type))
+            value = parser.parse_i32()
+            print(f'  VALUE {value}')
+            parser._next_state(ProtobufParsingKey)
         
+        if wire_type == Protobuf.LEN:
+            # As a LEN, this can be a SubMessage, String, Bytes, Repeated, or Packed
+
+            # Output everything to prove we can scan.
+            print(self.dbg_geninfo_str(parser, field_num, wire_type))
+            print(self.dbg_proto_str(parser, field_num, wire_type))
+
+            length = parser.parse_varint()
+            print(f'  LENGTH: {length}')
+
+            field = proto.by_type_name(parser.current_type().type_name).by_id(field_num)
+
+            if field.type == 11: # TYPE_MESSAGE
+                parser.push_type(field.type_name, length)
+                print(f"--- {field.type_name} ---")
+            
+            elif field.type == 9: # TYPE_STRING
+                data = parser.read(length)
+                if not data or len(data) < length:
+                    msg = "Not enough data to parse Protobuf LEN data. " \
+                        f"Offset: {parser.tell()} Read: {len(data)} of {length}"
+                    raise EndOfDataException(msg)
+
+                if len(data) < 100:
+                    try:
+                        print(f'  DATA: "{data.decode('utf-8')}"')
+                    except UnicodeDecodeError:
+                        print(f'  rDATA: {data}')
+    
+            else:
+                print("-- skipping non-submessage LEN entry for now --")
+
+                skipped = parser.skip(length)
+                if skipped < length:
+                    msg = "Not enough data to parse Protobuf LEN data. " \
+                        f"Offset: {parser.tell()} Read: {len(data)} of {length}"
+                    raise EndOfDataException(msg)
+
+            parser._next_state(ProtobufParsingKey)
+            return
+
         # if wire_type == Protobuf.SGROUP:
         #     parser._next_state(ProtobufParsingVarint)
         #     raise NotImplementedError()
@@ -102,11 +153,34 @@ class ProtobufParsingKey(ProtobufParsingState):
         #     parser._next_state(ProtobufParsingVarint)
         #     raise NotImplementedError()
 
-        # if wire_type == Protobuf.I32:
-        #     parser._next_state(ProtobufParsingVarint)
-        #     raise NotImplementedError()
 
         raise UnsupportedFormatException(f"Not a valid Protobuf wire type. Type: {wire_type} ({Protobuf.wire_type_str[wire_type]})")
+
+
+    def dbg_geninfo_str(self, parser, field_num, wire_type):
+        return f'{field_num} (FIELD)\n  TYPE: {Protobuf.wire_type_str[wire_type]}'
+
+
+    def dbg_proto_str(self, parser, field_num, wire_type):
+        type_entry = parser.current_type()
+        field = proto.by_type_name(type_entry.type_name).by_id(field_num)
+        out = [
+            f'  CONTAINER: {type_entry.type_name}',
+            f'  FIELD_NAME: {field.name}',
+            f'  FIELD_TYPE: {field.type_str()}',
+        ]
+        if field.type == 11:
+            out.append(f'  FIELD_MSG_TYPE: {field.type_name}')
+        return '\n'.join(out)
+
+
+class TypeStackEntry():
+    def __init__(self, parser, type_name, length):
+        self.type_name = type_name
+        if length == -1:
+            self.range = parser.cursor().dup()
+        else:
+            self.range = Range(parser.cursor(), length)
 
 
 class ProtobufParser(pparse.Parser):
@@ -131,6 +205,8 @@ class ProtobufParser(pparse.Parser):
 
         self.state: Optional[ProtobufParsingState] = ProtobufParsingKey()
 
+        self._type_stack = [TypeStackEntry(self, '.onnx.ModelProto', -1)]
+
         # self.num_bytes = []
         # self.str_bytes = [b'"']
         # self.json_ref = None
@@ -140,6 +216,34 @@ class ProtobufParser(pparse.Parser):
 
     def _next_state(self, state: ProtobufParsingState):
         self.state = state()
+
+
+    def current_type(self):
+        return self._type_stack[-1]
+
+
+    def push_type(self, type_name, length):
+        self._type_stack.append(TypeStackEntry(self, type_name, length))
+        return self.current_type()
+
+    
+    def pop_type(self):
+        return self._type_stack.pop()
+
+
+    # Convienence Aliases
+    def tell(self):
+        return self.current_type().range._cursor.tell()
+    def seek(self, offset):
+        return self.current_type().range.seek(offset)
+    def skip(self, length):
+        return self.current_type().range.skip(length)
+    def peek(self, length):
+        return self.current_type().range.peek(length)
+    def read(self, length, mode=None):
+        return self.current_type().range.read(length, mode=mode)
+
+
 
 
     def parse_varint(self):
@@ -181,13 +285,6 @@ class ProtobufParser(pparse.Parser):
         if not data or len(data) < length:
             raise EndOfDataException(f"Not enough data to parse Protobuf I64 data. Offset: {self.tell()}")
         return struct.unpack("<Q", data)[0]
-
-    
-
-
-
-
-
 
 
     # def _apply_value(self, value):
@@ -253,7 +350,7 @@ class ProtobufParser(pparse.Parser):
             except EndOfDataException as e:
                 if not exc_store:
                     exc_store = e
-        
+
         if exc_store:
             raise exc_store
 

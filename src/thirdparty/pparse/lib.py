@@ -13,12 +13,79 @@ class UnsupportedFormatException(Exception): pass
 class BufferFullException(Exception): pass
 
 
-# Cursor with a limited range.
+# Range manages length.
+# Cursor does not manage length.
+# Data does not manage offset.
 class Range():
-    def __init__(self):
-        # TODO: Implement
-        raise NotImplementedError("Range class not implemented.")
+    # Given Cursor object is the start offset
+    def __init__(self, cursor, length:int):
+        self._start_cursor = cursor.dup()
+        self._start = self._start_cursor.tell()
+        self._cursor = cursor.dup()
+        if length < 0:
+            raise ValueError("length < 0")
+        # Consider: Check for length beyond data?
+        self._length = length
+        self._end = self._start + length
 
+
+    def length(self):
+        return self._length
+
+    def left(self):
+        return self._end - self.tell()
+
+    def valid_offset(self, offset):
+        return offset >= self._start and offset < self._end
+
+
+    def dup(self):
+        return Range(self._start_cursor, self._length)
+
+
+    def tell(self):
+        return self._cursor.tell()
+
+
+    # Set cursor to specific location.
+    def seek(self, offset):
+        if not self.valid_offset(offset):
+            raise ValueError(f"Offset ({offset}) out of bounds.")
+        self._cursor.seek(offset)
+
+
+    def _check_adjust_length(self, length, throw:bool=False):
+        if length < 0:
+            if throw:
+                raise ValueError("length < 0")
+            return self.tell()
+        
+        offset = self.tell() + length
+        if not self.valid_offset(offset):
+            if throw:
+                raise ValueError(f"Offset ({offset}) out of bounds.")
+            length = self._end - self.tell()
+        
+        return length
+
+
+    def skip(self, length, throw:bool=False):
+        length = self._check_adjust_length(length, throw)
+        return self._cursor.skip(length)
+
+
+    # Read data ahead without progressing cursor.
+    def peek(self, length, throw:bool=False):
+        length = self._check_adjust_length(length, throw)
+        return self._cursor.peek(length)
+
+
+    # Copy and progress data.
+    def read(self, length, throw:bool=False, mode=None):
+        length = self._check_adjust_length(length, throw)
+        return self._cursor.read(length, mode=mode)
+
+    
 
 class Node():
     def __init__(self):
@@ -70,12 +137,12 @@ class Cursor():
     # Set cursor to specific location.
     def seek(self, offset):
         self._offset = offset
-        self._data.seek(self)
-
+        return self._data.seek(self)
+        
 
     def skip(self, length):
         self._offset += length
-        self._data.seek(self)
+        return self._data.seek(self)
 
 
     # Read data ahead without progressing cursor.
@@ -123,6 +190,13 @@ class Data():
         # One descriptor to rule them all.
         self._fobj = open(path, "rb")
 
+        # # TODO: This size is only relevant if the size doesn't change.
+        # fd = self._fobj.fileno()
+        # st = os.fstat(fd)
+        # self.length = -1
+        # if stat.S_ISREG(st.st_mode):
+        #     self.length = st.st_size
+
         # Mmap, if available.
         if has_mmap():
             self._mmap = mmap.mmap(self._fobj.fileno(), 0, access=mmap.ACCESS_READ)
@@ -159,9 +233,9 @@ class Data():
     def seek(self, cursor) -> None:
         if self.mode() == Data.MODE_READ:
             self._fobj.seek(cursor.tell(), os.SEEK_SET)
-
         # Noop for mmap.
-
+        return cursor.tell()
+        
 
     # Read the data.
     def read(self, cursor, length, mode=None):
@@ -260,20 +334,25 @@ class Parser(dict):
 
 
     def cursor(self):
-        return _cursor
+        return self._cursor
 
+    def range(self, length):
+        return Range(self._cursor, length)
 
     # Convienence Aliases
     def tell(self):
         return self._cursor.tell()
     def seek(self, offset):
-        self._cursor.seek(offset)
+        return self._cursor.seek(offset)
     def skip(self, length):
-        self._cursor.skip(length)
+        return self._cursor.skip(length)
     def peek(self, length):
         return self._cursor.peek(length)
     def read(self, length, mode=None):
         return self._cursor.read(length, mode=mode)
+
+    # TODO: left() - How many bytes before we run out?
+    # TODO: size() - How many bytes is the artifact?
 
 
     # This processes all data at once.
