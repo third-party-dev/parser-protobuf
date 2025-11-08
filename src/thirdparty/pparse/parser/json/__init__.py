@@ -23,6 +23,9 @@ class JsonParsingState(object):
 
 
 class JsonParsingNumber(JsonParsingState):
+    def __init__(self):
+        self.num_bytes = []
+
     def parse_data(self, parser: 'JsonParser'):
         data = parser.peek(0x400)
         if len(data) < 1:
@@ -37,38 +40,41 @@ class JsonParsingNumber(JsonParsingState):
             if not data[offset:offset + 1] in NUM_BYTES:
                 done = True
                 break
-            parser.num_bytes.append(data[offset:offset+1])
+            self.num_bytes.append(data[offset:offset+1])
             offset += 1
         parser.read(offset)
 
         if done:
             try:
-                parser._apply_value(json.loads(b''.join(parser.num_bytes)))
+                parser._apply_value(json.loads(b''.join(self.num_bytes)))
             except Exception as e:
-                raise UnsupportedFormatException(f"Invalid number format in {parser.num_bytes}: {e}")
+                raise UnsupportedFormatException(f"Invalid number format in {self.num_bytes}: {e}")
             finally:
-                parser.num_bytes = []
+                self.num_bytes = []
             
         parser._next_state(JsonParsingMeta)
 
 
 class JsonParsingString(JsonParsingState):
+    def __init__(self):
+        self.str_bytes = [b'\x22']
+
     def parse_data(self, parser: 'JsonParser'):
         data = parser.peek(0x400)
         if len(data) < 2:
             raise EndOfDataException("Not enough data to parse JSON string.")
-        
+
         offset = 0
         while offset < len(data) and len(data) - offset > 1:
             if data[offset:offset+1] == b'\x22':
                 # We're done
                 try:
-                    parser.str_bytes.append(parser.read(offset+1))
-                    parser._apply_value(json.loads(b''.join(parser.str_bytes)))
+                    self.str_bytes.append(parser.read(offset+1))
+                    parser._apply_value(json.loads(b''.join(self.str_bytes)))
                 except Exception as e:
-                    raise UnsupportedFormatException(f"Invalid string format in {parser.str_bytes}: {e}")
+                    raise UnsupportedFormatException(f"Invalid string format in {self.str_bytes}: {e}")
                 finally:
-                    parser.str_bytes = [b'"']
+                    self.str_bytes = [b'"']
                 
                 parser._next_state(JsonParsingMeta)
                 return
@@ -77,18 +83,18 @@ class JsonParsingString(JsonParsingState):
                 if data[offset+1:offset+2] == b'\x75':
                     if len(data) < 6:
                         raise EndOfDataException("Not enough bytes to parse JSON enicode char in string.")
-                    parser.str_bytes.append(data[offset:offset+6])
+                    self.str_bytes.append(data[offset:offset+6])
                     offset += 6
                     continue
                 if data[offset+1] in b'\x22\x5c\x2f\x62\x66\x6e\x72\x74':
-                    parser.str_bytes.append(data[offset:offset+2])
+                    self.str_bytes.append(data[offset:offset+2])
                     offset += 2
                     continue
 
             else:
                 offset += 1
         
-        parser.str_bytes.append(parser.read(offset))
+        self.str_bytes.append(parser.read(offset))
 
 
 class JsonParsingWhitespace(JsonParsingState):
@@ -142,48 +148,57 @@ class JsonParsingConstant(JsonParsingState):
 
 
 class JsonParsingMeta(JsonParsingState):
+    WHITESPACE_BYTES = b'\x09\x0a\x0d\x20'
+    CONSTANT_BYTES = b'\x66\x6e\x74'
+    NUMBER_BYTES = b'\x2d\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39'
+    COLON_COMMA = b'\x3a\x2c'
+    DOUBLE_QUOTE = b'\x22'
+    LEFT_BRACKET = b'\x5b'
+    LEFT_CURLY = b'\x7b'
+    RIGHT_BRACKET_CURLY = b'\x5d\x7d'
+
     def parse_data(self, parser: 'JsonParser'):
         data = parser.peek(1)
         if len(data) < 1:
             raise EndOfDataException(f"Not enough data to parse JSON meta. Offset: {parser.tell()}")
 
-        if data[:1] in b'\x09\x0a\x0d\x20':
+        if data[:1] in JsonParsingMeta.WHITESPACE_BYTES:
             parser._next_state(JsonParsingWhitespace)
             return
 
-        if data[:1] in b'\x66\x6e\x74':
+        if data[:1] in JsonParsingMeta.CONSTANT_BYTES:
             parser._next_state(JsonParsingConstant)
             return
 
-        if data[:1] in b'\x2d\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39':
+        if data[:1] in JsonParsingMeta.NUMBER_BYTES:
             parser._next_state(JsonParsingNumber)
             return
 
-        if data[:1] == b'\x22':
-            parser.str_bytes = [parser.read(1)]
+        if data[:1] == JsonParsingMeta.DOUBLE_QUOTE:
+            #parser.str_bytes = [parser.read(1)]
+            parser.skip(1)
             parser._next_state(JsonParsingString)
             return
 
-        if data[:1] in b'\x3a\x2c':
+        if data[:1] in JsonParsingMeta.COLON_COMMA:
             parser.skip(1)
             return
         
-        if data[:1] == b'\x5b':
+        if data[:1] == JsonParsingMeta.LEFT_BRACKET:
             parser._start_array()
             parser.skip(1)
             return
         
-        if data[:1] == b'\x7b':
+        if data[:1] == JsonParsingMeta.LEFT_CURLY:
             parser._start_map()
             parser.skip(1)
             return
 
-        if data[:1] in b'\x5d\x7d':
+        if data[:1] in JsonParsingMeta.RIGHT_BRACKET_CURLY:
             parser._end_container()
             parser.skip(1)
             return
 
-        breakpoint()
         raise UnsupportedFormatException(f"Not a valid JSON meta character: {data[:1]}")
 
 
@@ -222,11 +237,7 @@ class JsonParser(pparse.Parser):
         super().__init__(artifact, id)
 
         self.state: Optional[JsonParsingState] = JsonParsingStart()
-
-        self.num_bytes = []
-        self.str_bytes = [b'"']
-
-        self.json_ref = None
+        
         self.current = None
         self.stack = []
         self.key_reg = None
