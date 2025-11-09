@@ -94,7 +94,7 @@ class JsonParsingString(JsonParsingState):
             else:
                 offset += 1
         
-        self.str_bytes.append(parser.read(offset))
+        self.str_bytes.append(node.read(offset))
 
 
 class JsonParsingWhitespace(JsonParsingState):

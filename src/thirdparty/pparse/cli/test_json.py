@@ -7,13 +7,13 @@ from thirdparty.pparse.parser.lazyjson import LazyJsonParser
 PARSERS['json'] = LazyJsonParser
 
 # Data is independent of Artifact/Parser tree.
-data = Data(path='test.json')
+data = Data(path='test2.json')
 
 try:
     # Top Artifact has not parent parser.
     cursor = data.open()
     artifact = Artifact(cursor)
-    artifact.set_fname('test.json')
+    artifact.set_fname('test2.json')
     artifact.scan_data()
 except EndOfDataException:
     pass
