@@ -29,24 +29,24 @@ class Reader():
         raise NotImplementedError()
 
 
-class Node():
-    def parents(self): #-> [Node]:
-        raise NotImplementedError()
-    def children(self): # -> [weakref(Node)] -> Return array of childen (weak refs).
-        # - Triggers parse/load
-        raise NotImplementedError()
-    def attributes(self) -> dict:  # - Return dictionary of attributes.
-        # - Triggers parse/load
-        raise NotImplementedError()
-    def child(self, index=-1): # -> Node: # - Return strong ref child.
-        # - Triggers parse/load
-        raise NotImplementedError()
-    #def as_{bytes,i64,u64,str}() - Cast raw data as type.
-    #- Triggers parse/load
-    def loaded(self): # - Is the data loaded and parsed?
-        raise NotImplementedError()
-    # def range(self): # - A range of data this node covers.
-    #     raise NotImplementedError()
+# class Node():
+#     def parents(self): #-> [Node]:
+#         raise NotImplementedError()
+#     def children(self): # -> [weakref(Node)] -> Return array of childen (weak refs).
+#         # - Triggers parse/load
+#         raise NotImplementedError()
+#     def attributes(self) -> dict:  # - Return dictionary of attributes.
+#         # - Triggers parse/load
+#         raise NotImplementedError()
+#     def child(self, index=-1): # -> Node: # - Return strong ref child.
+#         # - Triggers parse/load
+#         raise NotImplementedError()
+#     #def as_{bytes,i64,u64,str}() - Cast raw data as type.
+#     #- Triggers parse/load
+#     def loaded(self): # - Is the data loaded and parsed?
+#         raise NotImplementedError()
+#     # def range(self): # - A range of data this node covers.
+#     #     raise NotImplementedError()
 
 
 
@@ -271,54 +271,77 @@ class Data():
             return self._mem[off:off+length]
 
 
+
 # Generic artifact that ties parsers to cursor-ed data.
-class Artifact(dict):
-    def __init__(self, reader, parser: Optional['Parser'] = None):
-        self._parser: Optional['Parser'] = parser
+class Extraction(dict):
+    def __init__(self, source: Optional['Extraction'] = None, reader: Reader = None):
+
+        if (source is None and reader is None) or (source and reader):
+            raise ValueError("Only one of source or data can be non-None.")
+
+        if not source:
+            # This instance is the root Extraction.
+            self._reader = data
+        if not reader:
+            self._reader = source.open()
+
+        # The extraction we came from. Detect parser via source.
+        self._source: Optional['Extraction'] = source
+
+        self._name: Optional[str] = None
+        self._parser = {} # parsers by id
+        self._result = {} # results by id
+        self._extractions = {}
+
         # This cursor is only used for dup() and tell()
         self._reader = reader
-
-        self._meta = {
-            'fname': None,
-            'candidates': {},
-        }
-
-        # Candidate parsers.
-        self.candidates: dict = self._meta['candidates']
-        # Setup as dict for easy repr
-        dict.__init__(self, meta=self._meta)
     
 
-    def get_fname(self):
-        return self._meta['fname']
+    def open(self):
+        return self._reader.dup()
+
+    
+    def tell(self):
+        return self._reader.tell()
 
 
-    def set_fname(self, name):
-        self._meta['fname'] = name
+    def name(self):
+        return self._name
+
+
+    def set_name(self, name):
+        self._name = name
+        return self
+
+
+    def add_parser(self, id, parser: Optional['Parser']):
+        self._parser[id] = parser
+
+
+    def has_parser(self, parser_id):
+        return parser_id in self._parser
+
+
+    def discover_parsers(self, parser_registry, data):
+
+        for (pname, parser) in parser_registry.items():
+            if not self.has_parser(pname):
+                if parser.match_extension(self.name()):
+                    self.add_parser(pname, parser(self, pname))
+                    continue
+                if parser.match_magic(self.open()):
+                    self.add_parser(pname, parser(self, pname))
+                    continue
+
         return self
 
     
-    def dup_reader(self):
-        return self._reader.dup()
-
-
-    # This processes all data at once.
+    # Process all data at once.
+    # TODO: Parse data lazily.
     # TODO: What is the interface that only parses what we need to?    
     def scan_data(self):
-        global PARSERS
-
-        for (pname, parser) in PARSERS.items():
-            if pname not in self.candidates:
-                if parser.match_extension(self.get_fname()):
-                    self.candidates[pname] = parser(self, pname)
-                    continue
-                if parser.match_magic(self.dup_reader()):
-                    self.candidates[pname] = parser(self, pname)
-                    continue
-            
-        for (cname, candidate) in self.candidates.items():
-            candidate.scan_data()
-
+        for parser in self._parser.values():
+            parser.scan_data()
         return self
 
 
@@ -381,45 +404,20 @@ class Artifact(dict):
 # Base Parser for Artifact parsers.
 class Parser(dict, Reader):
 
-    def __init__(self, artifact, id: str):
+    def __init__(self, source: Extraction, id: str):
         if not isinstance(artifact, Artifact):
             raise TypeError("artifact must be an Artifact")
         
         # parser id
+        # TODO: Shouldn't this be self known?
         self._id: str = id
 
         # parent artifact
-        self._artifact = artifact
+        self._source = source
 
-        # cursor to read data
-        self._reader = artifact.dup_reader()
-
-        # child artifacts
-        self._meta: dict = { 'children': [] }
-        self.children: list = self._meta['children']
-
-        # Setup as dict for easy repr
-        dict.__init__(self, meta=self._meta)
-
-
-    def reader(self):
-        return self._reader
-
-
-    # Convienence Aliases
-    def tell(self):
-        return self._reader.tell()
-    def seek(self, offset):
-        return self._reader.seek(offset)
-    def skip(self, length):
-        return self._reader.skip(length)
-    def peek(self, length):
-        return self._reader.peek(length)
-    def read(self, length, mode=None):
-        return self._reader.read(length, mode=mode)
-
-    # TODO: left() - How many bytes before we run out?
-    # TODO: size() - How many bytes is the artifact?
+        # TODO: Store root node.
+        # Current "Default" Node
+        self.current = None
 
 
     # This processes all data at once.
@@ -436,9 +434,5 @@ class Parser(dict, Reader):
     @staticmethod
     def match_magic(cursor):
         return False
-
-
-
-
 
 

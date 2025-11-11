@@ -283,15 +283,22 @@ Ideally, the nodes will minimize the state that they keep about themselves:
 Nodes have states: scanning -> shelf -> parsing -> loaded -> shelf -> ...
 '''
 
-class NodeScratchObject():
-    def __init__(self, parent, reader, init_state)
-        self.reader = reader.dup()
-        self.state: Optional[JsonParsingState] = init_state
-        self.parent = parent # Parent Node (None for root)
 
-        self._scratch.start = self.tell()
-        self._scratch.end = None
-        self._scratch.key_reg = None
+class LazyJsonParserNode():
+ 
+    def __init__(self, parent, reader: pparse.Reader):
+        self._state: Optional[JsonParsingState] = JsonParsingStart()
+        self._parent = parent # Parent Node (None for root)
+        self._reader = reader.dup()
+        self._start = self.tell()
+        self._end = None
+        
+        # If we're in a map, indicates if a key & what the key is.
+        self.key_reg = None
+
+        self.value = None
+
+        self.child = None
 
 
     def state(self):
@@ -300,30 +307,6 @@ class NodeScratchObject():
 
     def _next_state(self, state: JsonParsingState):
         self._state = state()
-
-class LazyJsonParserValueNode():
- 
-    def __init__(self, parent, reader: pparse.Reader):
-        # None while incomplete.
-        self._range : Reader = None
-
-        self._scratch = NodeScratchObject()
-        self._scratch.reader = reader.dup()
-        self._scratch.state: Optional[JsonParsingState] = JsonParsingStart()
-        self._scratch.parent = parent # Parent Node (None for root)
-        self._scratch.start = self.tell()
-        self._scratch.end = None
-        self._scratch.key_reg = None
-
-        self.value = None
-
-        self.children = None
-
-
-    
-
-
-    
 
 
     def reader(self):
@@ -347,67 +330,6 @@ class LazyJsonParserValueNode():
         return self._reader.read(length, mode=mode)
 
 
-
-    
-
-# artifact.candidates['json']['meta']['root'].child.map
-
-class LazyJsonParserMapNode(LazyJsonParserNode):
-    def __init__(self, parent, reader: pparse.Reader):
-        super().__init__(parent, reader)
-        self.map = {}
-    
-    def __repr__(self):
-        return f"MAP({self.map})"
-
-
-
-
-class LazyJsonParserArrayNode(LazyJsonParserNode):
-    def __init__(self, parent, reader: pparse.Reader):
-        super().__init__(parent, reader)
-        self.arr = []
-    
-    def __repr__(self):
-        return f"ARRAY({self.arr})"
-
-
-
-
-
-
-
-
-
-
-
-class LazyJsonParser(pparse.Parser):
-
-    @staticmethod
-    def match_extension(fname: str):
-        if not fname:
-            return False
-        for ext in ['.json']:
-            if fname.endswith(ext):
-                return True
-        return False
-
-
-    @staticmethod
-    def match_magic(cursor: pparse.Cursor):
-        return False
-
-    
-    def __init__(self, artifact: pparse.Artifact, id: str):
-        super().__init__(artifact, id)
-        
-        # Current reference of thing being parsed.
-        self._meta['root'] = LazyJsonParserNode(None, self.reader())
-        # Current path of pending things.
-        self.current = self._meta['root']
-
-    
-    
 
     def _apply_node_value(self, parser, value):
         if self.key_reg:
@@ -477,18 +399,89 @@ class LazyJsonParser(pparse.Parser):
             self._parent.seek(self._end)
             parser.current = self._parent
 
-    
-    def scan_data(self):
+# artifact.candidates['json']['meta']['root'].child.map
 
-        # While not end of data, keep parsing via states.
+class LazyJsonParserMapNode(LazyJsonParserNode):
+    def __init__(self, parent, reader: pparse.Reader):
+        super().__init__(parent, reader)
+        self.map = {}
+    
+    def __repr__(self):
+        return f"MAP({self.map})"
+
+
+
+
+class LazyJsonParserArrayNode(LazyJsonParserNode):
+    def __init__(self, parent, reader: pparse.Reader):
+        super().__init__(parent, reader)
+        self.arr = []
+    
+    def __repr__(self):
+        return f"ARRAY({self.arr})"
+
+
+
+
+
+
+
+
+
+
+
+class LazyJsonParser(pparse.Parser):
+
+    @staticmethod
+    def match_extension(fname: str):
+        if not fname:
+            return False
+        for ext in ['.json']:
+            if fname.endswith(ext):
+                return True
+        return False
+
+
+    @staticmethod
+    def match_magic(cursor: pparse.Cursor):
+        return False
+
+    
+    def __init__(self, artifact: pparse.Artifact, id: str):
+        super().__init__(artifact, id)
+        
+        # Current reference of thing being parsed.
+        self._meta['root'] = LazyJsonParserNode(None, self.reader())
+        # Current path of pending things.
+        self.current = self._meta['root']
+
+    
+    def eagerly_parse(self):
+
+        exc_store = None
         try:
+            #breakpoint()
+            #print(f"{self.state}.parse_data()")
             while True:
                 self.current.state().parse_data(self, self.current)
         except EndOfDataException as e:
-            pass
+            if not exc_store:
+                exc_store = e
         except UnsupportedFormatException:
             raise
 
-        # TODO: Do all the children.
+        for child in self.children:
+            try:
+                child.scan_data()
+            except EndOfDataException as e:
+                if not exc_store:
+                    exc_store = e
         
+        if exc_store:
+            raise exc_store
+
         return self
+
+
+    def scan_data(self):
+        return self.eagerly_parse()
