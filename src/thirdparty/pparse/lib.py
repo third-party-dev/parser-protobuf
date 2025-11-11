@@ -274,7 +274,7 @@ class Data():
 
 
 # Generic artifact that ties parsers to cursor-ed data.
-class Extraction(dict):
+class Extraction():
     def __init__(self, source: Optional['Extraction'] = None, reader: Reader = None, name: str = None):
 
         if (source is None and reader is None) or (source and reader):
@@ -403,7 +403,7 @@ class Extraction(dict):
 '''
 
 # Base Parser for Extraction parsers.
-class Parser(dict, Reader):
+class Parser(Reader):
 
     def __init__(self, source: Extraction, id: str):
         if not isinstance(source, Extraction):
