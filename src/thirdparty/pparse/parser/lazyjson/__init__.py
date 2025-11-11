@@ -12,7 +12,11 @@ import pdb
 
 from typing import Optional
 
-from thirdparty.pparse.lib import EndOfDataException, UnsupportedFormatException
+from thirdparty.pparse.lib import (
+    EndOfDataException,
+    UnsupportedFormatException,
+    EndOfNodeException
+)
 import thirdparty.pparse.lib as pparse
 #from thirdparty.pparse.lib import Range, Node, Cursor, Data, Parser, Artifact
 
@@ -57,12 +61,12 @@ Different Format Approaches To Consider:
 
 
 class JsonParsingState(object):
-    def parse_data(self, parser: 'JsonParser', node):
+    def parse_data(self, parser: 'JsonParser', ctx: 'LazyJsonNode_Context'):
         raise NotImplementedError()
 
 
 class LazyJsonNode_Context():
-    def __init__(self, node: LazyJsonNode, parent: LazyJsonNode, state: JsonParsingState, reader: pparse.Reader):
+    def __init__(self, node: 'LazyJsonNode', parent: 'LazyJsonNode', state: JsonParsingState, reader: pparse.Reader):
         self._node = node
         self._reader = reader.dup()
         self._state: Optional[JsonParsingState] = state
@@ -115,8 +119,8 @@ class JsonParsingNumber(JsonParsingState):
     def __init__(self):
         self.num_bytes = []
 
-    def parse_data(self, parser: 'JsonParser', node):
-        data = node.peek(0x400)
+    def parse_data(self, parser: 'JsonParser', ctx: LazyJsonNode_Context):
+        data = ctx.peek(0x400)
         if len(data) < 1:
             raise EndOfDataException("Not enough data to parse JSON whitespace")
         
@@ -131,25 +135,25 @@ class JsonParsingNumber(JsonParsingState):
                 break
             self.num_bytes.append(data[offset:offset+1])
             offset += 1
-        node.read(offset)
+        ctx.read(offset)
 
         if done:
             try:
-                node._apply_node_value(parser, json.loads(b''.join(self.num_bytes)))
+                parser._apply_node_value(ctx, json.loads(b''.join(self.num_bytes)))
             except Exception as e:
                 raise UnsupportedFormatException(f"Invalid number format in {self.num_bytes}: {e}")
             finally:
                 self.num_bytes = []
             
-        node._next_state(JsonParsingMeta)
+        ctx._next_state(JsonParsingMeta)
 
 
 class JsonParsingString(JsonParsingState):
     def __init__(self):
         self.str_bytes = [b'\x22']
 
-    def parse_data(self, parser: 'JsonParser', node):
-        data = node.peek(0x400)
+    def parse_data(self, parser: 'JsonParser', ctx: LazyJsonNode_Context):
+        data = ctx.peek(0x400)
         if len(data) < 2:
             raise EndOfDataException("Not enough data to parse JSON string.")
 
@@ -158,14 +162,14 @@ class JsonParsingString(JsonParsingState):
             if data[offset:offset+1] == b'\x22':
                 # We're done
                 try:
-                    self.str_bytes.append(node.read(offset+1))
-                    node._apply_node_value(parser, json.loads(b''.join(self.str_bytes)))
+                    self.str_bytes.append(ctx.read(offset+1))
+                    parser._apply_node_value(ctx, json.loads(b''.join(self.str_bytes)))
                 except Exception as e:
                     raise UnsupportedFormatException(f"Invalid string format in {self.str_bytes}: {e}")
                 finally:
                     self.str_bytes = [b'"']
                 
-                node._next_state(JsonParsingMeta)
+                ctx._next_state(JsonParsingMeta)
                 return
         
             elif data[offset:offset+1] == b'\x5c':
@@ -183,12 +187,12 @@ class JsonParsingString(JsonParsingState):
             else:
                 offset += 1
         
-        self.str_bytes.append(node.read(offset))
+        self.str_bytes.append(ctx.read(offset))
 
 
 class JsonParsingWhitespace(JsonParsingState):
-    def parse_data(self, parser: 'JsonParser', node):
-        data = node.peek(0x400)
+    def parse_data(self, parser: 'JsonParser', ctx: LazyJsonNode_Context):
+        data = ctx.peek(0x400)
         if len(data) < 1:
             raise EndOfDataException("Not enough data to parse JSON whitespace.")
         
@@ -197,14 +201,14 @@ class JsonParsingWhitespace(JsonParsingState):
             if not data[offset:offset+1] in b'\x09\x0a\x0d\x20':
                 break
             offset += 1
-        node.skip(offset)
+        ctx.skip(offset)
 
-        node._next_state(JsonParsingMeta)
+        ctx._next_state(JsonParsingMeta)
 
 
 class JsonParsingConstant(JsonParsingState):
-    def parse_data(self, parser: 'JsonParser', node):
-        data = node.peek(5)
+    def parse_data(self, parser: 'JsonParser', ctx: LazyJsonNode_Context):
+        data = ctx.peek(5)
         if len(data) < 4:
             raise EndOfDataException("Not enough data to parse JSON encoding.")
         
@@ -212,25 +216,25 @@ class JsonParsingConstant(JsonParsingState):
             if len(data) < 5:
                 raise EndOfDataException("Not enough data to parse JSON false.")
             if data[1:5] == b'\x61\x6c\x73\x65':
-                node._apply_node_value(parser, False)
-                node.skip(5)
-                node._next_state(JsonParsingMeta)
+                parser._apply_node_value(ctx, False)
+                ctx.skip(5)
+                ctx._next_state(JsonParsingMeta)
                 return
         elif data[:1] == b'\x6e':
             if len(data) < 4:
                 raise EndOfDataException("Not enough data to parse JSON null.")
             if data[1:4] == b'\x75\x6c\x6c':
-                node._apply_node_value(parser, None)
-                node.skip(4)
-                node._next_state(JsonParsingMeta)
+                parser._apply_node_value(ctx, None)
+                ctx.skip(4)
+                ctx._next_state(JsonParsingMeta)
                 return
         elif data[:1] == b'\x74':
             if len(data) < 4:
                 raise EndOfDataException("Not enough data to parse JSON true.")
             if data[1:4] == b'\x72\x75\x65':
-                node._apply_node_value(parser, True)
-                node.skip(4)
-                node._next_state(JsonParsingMeta)
+                parser._apply_node_value(ctx, True)
+                ctx.skip(4)
+                ctx._next_state(JsonParsingMeta)
                 return
         
         raise UnsupportedFormatException("Not a valid JSON constant.")
@@ -343,9 +347,20 @@ Nodes have states: scanning -> shelf -> parsing -> loaded -> shelf -> ...
 '''
 
 class LazyJsonNode():
-    def __init__(self, parent: LazyJsonNode, reader: pparse.Reader):
+    def __init__(self, parent: 'LazyJsonNode', reader: pparse.Reader):
         self._reader : Reader = reader.dup()
+
+
+        '''
+            Nodes only represent containers.
+            If its not a node, its a value.
+            It its a map node, its a map[kay] and value or node.
+            If its a array node, its a arr[]
+        '''
+
+
         self.children = []
+        
         self.value = None
 
         self._ctx = LazyJsonNode_Context(self, parent, JsonParsingStart(), reader.dup())
@@ -396,25 +411,25 @@ class LazyJsonParser(pparse.Parser):
         self.current = LazyJsonNode_Init(None, source.open())
 
 
-    def _apply_node_value(self, parser, value):
-        if self.key_reg:
+    def _apply_node_value(self, ctx: LazyJsonNode_Context, value):
+        if ctx.key():
             if isinstance(value, str) and len(value) > 40:
                 print(f"apply_val: Inside map, unset keyreg, skipping set value")
                 pass
             else:
                 print(f"apply_val: Inside map, unset keyreg, set value ({value})")
-                parser.current.map[self.key_reg] = value
-            self.key_reg = None
-        elif isinstance(parser.current, LazyJsonParserArrayNode):
+                self.current.value[ctx.key()] = value
+            ctx.set_key(None)
+        elif isinstance(self.current, LazyJsonNode_Array):
             print(f"apply_val: Inside arr, append value ({value})")
-            parser.current.arr.append(value)
-        elif isinstance(parser.current, LazyJsonParserMapNode) and self.key_reg == None:
+            self.current.value.append(value)
+        elif isinstance(self.current, LazyJsonNode_Map) and ctx.key() is None:
             print(f"apply_val: Inside map, setting key reg ({value})")
-            self.key_reg = value
+            ctx.set_key(value)
         else:
             print(f"apply_val: Top level, set value ({value})")
             # Note: When top level is scalar.
-            parser.current.value = value
+            self.current.value = value
 
     
     def _start_map_node(self, ctx):
@@ -440,7 +455,7 @@ class LazyJsonParser(pparse.Parser):
         
         newarr = LazyJsonNode_Array(self.current, ctx.reader())
 
-        if self.key_reg:
+        if ctx.key():
             print("start_arr: Found key, assuming in Map. Add new arr to current map.")
             self.current.value[ctx.key()] = newarr
             self.current = self.current.value[ctx.key()]
@@ -451,15 +466,15 @@ class LazyJsonParser(pparse.Parser):
             self.current = newarr
         else:
             print("start_arr: Create arr as top level object.")
-            parser.current = newarr
+            self.current = newarr
 
 
     def _end_container_node(self, ctx):
         if ctx._parent:
             print("end_container: Backtracking to parent.")
-            parser.current.mark_end()
-            #ctx._parent.seek(self._end)
-            parser.current = ctx._parent
+            #self.current.mark_end()
+            ctx._parent.ctx().seek(ctx._end)
+            self.current = ctx._parent
 
     
     def scan_data(self):

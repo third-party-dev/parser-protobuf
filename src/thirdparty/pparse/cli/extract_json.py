@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
 from pprint import pprint
-from thirdparty.pparse.lib import pparse, Data, Extraction, PARSERS, EndOfDataException
+from thirdparty.pparse.lib import Data, Extraction, EndOfDataException
 from thirdparty.pparse.parser.lazyjson import LazyJsonParser
 
-PARSERS['json'] = LazyJsonParser
-
 try:
+    parser_reg = {'json': LazyJsonParser}
     cursor = Data(path='test.json').open()
-    root = Extraction(reader=cursor).discover_parsers(PARSERS).scan_data()
+    root = Extraction(reader=cursor, name='test.json')
+    root = root.discover_parsers(parser_reg).scan_data()
 except EndOfDataException:
     pass
 except Exception as e:

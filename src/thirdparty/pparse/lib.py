@@ -9,6 +9,7 @@ from thirdparty.pparse.utils import has_mmap, mmap, hexdump
 PARSERS = {}
 
 class EndOfDataException(Exception): pass
+class EndOfNodeException(Exception): pass
 class UnsupportedFormatException(Exception): pass
 class BufferFullException(Exception): pass
 
@@ -274,21 +275,21 @@ class Data():
 
 # Generic artifact that ties parsers to cursor-ed data.
 class Extraction(dict):
-    def __init__(self, source: Optional['Extraction'] = None, reader: Reader = None):
+    def __init__(self, source: Optional['Extraction'] = None, reader: Reader = None, name: str = None):
 
         if (source is None and reader is None) or (source and reader):
             raise ValueError("Only one of source or data can be non-None.")
 
         if not source:
             # This instance is the root Extraction.
-            self._reader = data
+            self._reader = reader
         if not reader:
             self._reader = source.open()
 
         # The extraction we came from. Detect parser via source.
         self._source: Optional['Extraction'] = source
 
-        self._name: Optional[str] = None
+        self._name: Optional[str] = name
         self._parser = {} # parsers by id
         self._result = {} # results by id
         self._extractions = {}
@@ -322,7 +323,7 @@ class Extraction(dict):
         return parser_id in self._parser
 
 
-    def discover_parsers(self, parser_registry, data):
+    def discover_parsers(self, parser_registry):
 
         for (pname, parser) in parser_registry.items():
             if not self.has_parser(pname):
@@ -401,18 +402,18 @@ class Extraction(dict):
     - What is the memory footprint of the data structure up to leaf nodes?
 '''
 
-# Base Parser for Artifact parsers.
+# Base Parser for Extraction parsers.
 class Parser(dict, Reader):
 
     def __init__(self, source: Extraction, id: str):
-        if not isinstance(artifact, Artifact):
-            raise TypeError("artifact must be an Artifact")
+        if not isinstance(source, Extraction):
+            raise TypeError("source must be an Extraction")
         
         # parser id
         # TODO: Shouldn't this be self known?
         self._id: str = id
 
-        # parent artifact
+        # parent source
         self._source = source
 
         # TODO: Store root node.
