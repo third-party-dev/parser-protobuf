@@ -80,7 +80,7 @@ Nodes have states: scanning -> shelf -> parsing -> loaded -> shelf -> ...
 '''
 
 def trace(*args, **kwargs):
-    print(*args, **kwargs)
+    #print(*args, **kwargs)
     pass
 
 

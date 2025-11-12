@@ -36,7 +36,16 @@ except Exception as e:
 # # Dump with loaded things.
 # print(root._result['json'].dumps())
 
+tensor_db = root._result['safetensors'].parser.source()._extractions[0]._result['json'].value.value
+for k,v in tensor_db.items():
+    print(f"{k}: {v}")
+
+# TODO: Consider converting each (non-"__metadata__") NodeMap into a NodeTensor. Each Tensor can
+# then be "load()"ed on demand.
+
 print("ALL DONE")
 breakpoint()
 
+'''
 
+'''

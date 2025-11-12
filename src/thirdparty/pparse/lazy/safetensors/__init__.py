@@ -110,6 +110,7 @@ class Parser(pparse.Parser):
 
     def _scan_children(self):
         try:
+            # TODO: Determine a better way to manage the parser registry.
             parser_reg = {
                 'json': LazyJsonParser,
                 'safetensors': Parser,
@@ -142,5 +143,9 @@ class Parser(pparse.Parser):
         self._scan_children()
 
         print("DONE SCANNING CHILDREN")
+
+        # TODO: Consider traversing all tensors in safetensors and creating
+        # nodes that point to tensor data in the original Data
+
 
         return self
