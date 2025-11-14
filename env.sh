@@ -10,5 +10,6 @@ fi
 source ./ml-venv/bin/activate
 
 pip show protobuf &>/dev/null || pip install protobuf
+pip show numpy &>/dev/null || pip install numpy
 
 exec bash -i

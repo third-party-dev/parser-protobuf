@@ -130,7 +130,7 @@ class Msg():
 
 class OnnxPb():
     def __init__(self):
-        with open("onnx.pb", "rb") as f:
+        with open("proto/onnx.pb", "rb") as f:
             pbset = descriptor_pb2.FileDescriptorSet()
             pbset.ParseFromString(f.read())
 
