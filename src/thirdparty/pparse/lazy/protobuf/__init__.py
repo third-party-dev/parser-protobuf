@@ -66,61 +66,118 @@ class ProtobufParsingLen(ProtobufParsingState):
         return
 
 
-# class ProtobufParsingMessage(ProtobufParsingState):
-
-#     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
-
-#         # Get the key data.
-#         wire_type, field_num = parser.parse_varint_key()
-#         field = parser.current_type_field(field_num)
-
-#         # Length follows VARINT and LEN wire types.
-#         length = parser.parse_varint()
-
-#         # Are we a new type?
-#         if not parser.current_type_matches(field):
-            
 
 
+class ProtobufParsingRepeatedMsg(ProtobufParsingState):
 
-#         # Register new message as current type in parser.
-#         parser.push_type(field, length)
+    def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
 
+        # Get the key data.
+        wire_type, field_num, key_length = parser.peek_varint_key(ctx)
+        field = ctx.node().field_by_id(field_num)
+
+        trace(f"REPEAT-PROCESSING FIELD (off: {ctx.tell()}): {field.name}   {field.type_name}")
         
+        # Note: This happens in parent and array
+        #ctx.set_key(field)
+        #ctx.skip(key_length)
 
 
-#         #
+'''
+    ProtobufParsingMeta
+    - Handle container ending
+    - Handle creating repeated
+    - Handle key parse
+    - Handle node creation
+
+    ProtobufParsingValue
+
+
+
+
+
+NodeMap(ModelProto)
+  [ir_version] = 7
+  [producer_name] = pytorch
+  [producer_version] = 2.0.1
+  [graph] = NodeMap(GraphProto) -> LENGTH: 653665814
+    [node] = NodeArray(NodeProto)
+      [0] = NodeMap(NodeProto)
+        [input] = NodeArray(STRING)
+          [0] = input_ids
+          ? how to end ?
+        [output] = NodeArray(STRING)
+          [0] = /transformer/Shape_output_0
+          ? how to end ?
+        [name] = /transformer/Shape
+        [op_type] = Shape
+        ? how to end ?
+      [1] = NodeMap(NodeProto)
+        ...
+    
+      
+      
+
+
+
+'''
 
 
 class ProtobufParsingKey(ProtobufParsingState):
 
     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
 
-        breakpoint()
-        if ctx.tell() == ctx._end:
+        # ! Feels fragile.
+        goal = None
+        if ctx._parent:
+            goal = ctx._parent.ctx()._end
+        
+        #trace(f"Offset: {ctx.tell()} Goal: {goal}")
+        if ctx.tell() == goal:
             parser._end_container_node(ctx)
             ctx._next_state(ProtobufParsingKey)
             return
 
         # Get the key data.
         wire_type, field_num, key_length = parser.peek_varint_key(ctx)
-        field = ctx.node().field_by_id(field_num)
+
+        field = None
+        if isinstance(ctx.node(), NodeMap):
+            field = ctx.node().field_by_id(field_num)
+        elif isinstance(ctx.node(), NodeArray):
+            field = ctx._parent.field_by_id(field_num)
+        else: #UNLIKELY
+            breakpoint()
+
+        trace(f"PROCESSING FIELD (off: {ctx.tell()}): {field.name}   {field.type_name}")
+        breakpoint()
+
+        # The following things are in an array, set that up first.
+        # Note: We're assuming that you can not do NodeArray.value[NodeArray]
+        if field.label == Field.LABEL_REPEATED and \
+            not isinstance(parser.current, NodeArray):
+            #proto.by_type_name(field.type_name) != parser.current.msgtype():
+
+            ctx.mark_field_start()
+
+            parent = parser.current
+
+            newarr = NodeArray(parent, ctx.reader(), field)
+
+            # Assuming array parent is always a map.
+            parser.current.value[field.name] = newarr
+            parser.current = parser.current.value[field.name]
+
+
+            ctx._next_state(ProtobufParsingKey)
+            return
+
+
+        # Progress past the key.
         ctx.set_key(field)
         ctx.skip(key_length)
 
-        trace(f"PROCESSING FIELD: {field.name}")
-
-        # Now that we have a value, lets process values and/or messages.
         if field.type == Field.TYPE_MESSAGE:
-
-            # ! Handle repeated: field.label == Field.LABEL_REPEATED
-            # ! Repeated should _start_array_node then _start_map_node for each element
-
-            #print(self.dbg_geninfo_str(parser, field_num, wire_type))
-            #print(self.dbg_proto_str(parser, field_num, wire_type))
-            print(f"--- ProtobufParsingMessage: {field.type_name} ---")
-
-            # TODO: Think this through ... how do we get to _end_container?
 
             # Get the length of the sub-message.
             length = -1
@@ -128,6 +185,8 @@ class ProtobufParsingKey(ProtobufParsingState):
                 length = parser.parse_varint(ctx)
             else:
                 breakpoint()
+
+            trace(f"  LENGTH: {length}")
 
             # Create the new node and make it active.
             parser._start_map_node(ctx, field)
@@ -143,7 +202,8 @@ class ProtobufParsingKey(ProtobufParsingState):
             #ctx._next_state(ProtobufParsingScalar)
             # TODO: Should this handle 2's compliment?
             value = parser.parse_varint(ctx)
-            ctx.node().value[field.name] = value
+            parser._apply_value(ctx, field, value)
+            #ctx.node().value[field.name] = value
             ctx.set_key(None)
             ctx._next_state(ProtobufParsingKey)
             return
@@ -152,11 +212,20 @@ class ProtobufParsingKey(ProtobufParsingState):
             if wire_type == Protobuf.LEN:
                 length = parser.parse_varint(ctx)
                 data = ctx.read(length)
+                print(data)
                 if not data or len(data) < length:
                     msg = "Not enough data to parse Protobuf LEN data. " \
                         f"Offset: {ctx.tell()} Read: {len(data)} of {length}"
                     raise EndOfDataException(msg)
-                ctx.node().value[field.name] = data.decode('utf-8')
+
+                parser._apply_value(ctx, field, data.decode('utf-8'))
+                #if isinstance(ctx.node().value, dict):
+                #    ctx.node().value[field.name] = data.decode('utf-8')
+                #elif isinstance(ctx.node().value, list):
+                #    ctx.node().value.append(data.decode('utf-8'))
+                #else: # UNLIKELY
+                #    breakpoint()
+
                 ctx._next_state(ProtobufParsingKey)
                 return
             breakpoint()
@@ -419,44 +488,66 @@ class Parser(pparse.Parser):
         return struct.unpack("<Q", data)[0]
 
 
+    def _apply_value(self, ctx, field, value):
+        if isinstance(self.current, NodeArray):
+            trace(f"apply_value (off:{ctx.tell()}): Inside Array. Append value.")
+            self.current.value.append(value)
+            return
+
+        elif isinstance(self.current, NodeMap):
+            trace(f"apply_value (off:{ctx.tell()}): Inside Map. Set value to key {field.name}.")
+            self.current.value[field.name] = value
+            return
+
+        trace(f"UNLIKELY!! apply_value (off:{ctx.tell()}): Create arr as top level object.")
+        breakpoint()
+
+
     def _start_map_node(self, ctx, field):
         
         ctx.mark_field_start()
         parent = self.current
         newmap = NodeMap(parent, ctx.reader(), proto.by_type_name(field.type_name))
-        
-        if ctx.key():
-            trace(f"start_map (off:{ctx.tell()}): Found key, assuming in Map. Add new map to current map.")
-            parent.value[field.name] = newmap
-            self.current = parent.value[field.name]
-        elif isinstance(self.current, NodeArray):
+
+        if isinstance(self.current, NodeArray):
             trace(f"start_map (off:{ctx.tell()}): Inside Array. Append new map to current array.")
             self.current.value.append(newmap)
             self.current = newmap
+        elif isinstance(self.current, NodeMap):
+            trace(f"start_map (off:{ctx.tell()}): Inside Map. Add new map to current map as {field.name}.")
+            parent.value[field.name] = newmap
+            self.current = parent.value[field.name]
         else:
             trace(f"start_map (off:{ctx.tell()}): Create map as top level object.")
             parent.value = newmap
             self.current = newmap
 
-    # def _start_array_node(self, ctx):
+    def _start_array_node(self, ctx, field):
         
-    #     newarr = NodeArray(self.current, ctx.reader())
+        ctx.mark_field_start()
+        parent = self.current
+        newarr = NodeArray(parent, ctx.reader(), proto.by_type_name(field.type_name))
 
-    #     if ctx.field():
-    #         trace(f"start_arr (off:{ctx.tell()}): Found key, assuming in Map. Add new arr to current map.")
-    #         self.current.value[ctx.key()] = newarr
-    #         self.current = self.current.value[ctx.key()]
-    #         ctx.set_key(None)
-    #     elif isinstance(self.current, NodeArray):
-    #         trace(f"start_arr (off:{ctx.tell()}): Inside Array. Append new arr to current array.")
-    #         self.current.value.append(newarr)
-    #         self.current = newarr
-    #     else:
-    #         trace(f"start_arr (off:{ctx.tell()}): Create arr as top level object.")
-    #         self.current = newarr
+        if isinstance(self.current, NodeMap):
+            trace(f"start_arr (off:{ctx.tell()}): Inside Map. Add new arr to current map as {field.name}.")
+            self.current.value[field.name] = newarr
+            self.current = self.current.value[field.name]
+
+        elif isinstance(self.current, NodeArray):
+            trace(f"UNLIKELY!! start_arr (off:{ctx.tell()}): Inside Array. Append new arr to current array.")
+            breakpoint()
+            
+            self.current.value.append(newarr)
+            self.current = newarr
+        else:
+            trace(f"UNLIKELY!! start_arr (off:{ctx.tell()}): Create arr as top level object.")
+            breakpoint()
+
+            self.current = newarr
 
 
     def _end_container_node(self, ctx):
+        breakpoint()
         parent = ctx._parent
         if parent:
             trace(f"end_container (off:{ctx.tell()}): Backtracking to parent.")

@@ -80,6 +80,10 @@ class Node():
         return self._reader.length()
 
 
+    def msgtype(self):
+        return self._type
+
+
     # Assumed that this method is not run until after the Extraction parsing is complete.
     def load(self, parser):
         from thirdparty.pparse.lazy.protobuf import ProtobufParsingKey
@@ -120,6 +124,17 @@ class Node():
         return '\n'.join(result)
 
 
+    def __repr__(self):
+        # Designed for usage in breakpoint()s and REPLs
+        py_type = "Node"
+        msg_type = "UNKNOWN"
+        if self._type:
+            msg_type = self._type.name
+        val_type = type(self.value).__name__
+        return f"{py_type}(_type={msg_type}, value={val_type})"
+
+
+
 # class NodeInit(Node):
 #     def __init__(self, parent: Node, reader: pparse.Reader, parser: pparse.Parser = None):
 #         super().__init__(parent, reader)
@@ -148,7 +163,8 @@ class NodeMap(Node):
 
     def dumps(self, depth=0, step=2):
         spacer = ' ' * depth
-        result = [f'{spacer}<ProtobufMapNode length="{self.length()}" offset="{self.tell()}">' "{"]
+        proto_type = protobuf_type.name
+        result = [f'{spacer}<ProtobufMapNode type="{proto_type}" length="{self.length()}" offset="{self.tell()}">' "{"]
         for k,v in self.value.items():
             if isinstance(v, Node):
                 result.append(f"{spacer}{' '*step}{k}:")
@@ -157,6 +173,15 @@ class NodeMap(Node):
                 result.append(f"{spacer}{' '*step}{k}: {v}")
         result.append(f"{spacer}" "}</ProtobufMapNode>")
         return '\n'.join(result)
+
+    def __repr__(self):
+        # Designed for usage in breakpoint()s and REPLs
+        py_type = "NodeMap"
+        msg_type = "UNKNOWN"
+        if self._type:
+            msg_type = self._type.name
+        val_type = type(self.value).__name__
+        return f"{py_type}(_type={msg_type}, value={val_type})"
 
 
 class NodeArray(Node):
@@ -167,7 +192,8 @@ class NodeArray(Node):
 
     def dumps(self, depth=0, step=2):
         spacer = ' ' * depth
-        result = [f'{spacer}<ProtobufArrayNode length="{self.length()}" offset="{self.tell()}">[']
+        proto_type = protobuf_type.name
+        result = [f'{spacer}<ProtobufArrayNode type="{proto_type}" length="{self.length()}" offset="{self.tell()}">[']
         for e in self.value:
             if isinstance(e, Node):
                 result.append(f"{spacer}{e.dumps(depth+step)}")
@@ -175,4 +201,13 @@ class NodeArray(Node):
                 result.append(f"{spacer}{' '*step}{e}")
         result.append(f"{spacer}]</ProtobufArrayNode>")
         return '\n'.join(result)
+
+    def __repr__(self):
+        # Designed for usage in breakpoint()s and REPLs
+        py_type = "NodeArray"
+        msg_type = "UNKNOWN"
+        if self._type:
+            msg_type = self._type.name
+        val_type = type(self.value).__name__
+        return f"{py_type}(_type={msg_type}, value={val_type})"
 
