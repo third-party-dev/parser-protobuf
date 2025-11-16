@@ -98,13 +98,17 @@ class Field():
 
 
 class Msg(): 
-    def __init__(self, pbmsg, pbfile):
-        self.pbfile = pbfile
+    def __init__(self, pbmsg, prefix): #pbfile=None):
+        #self.pbfile = pbfile
         self.pbmsg = pbmsg
         self.name = pbmsg.name
-        self.type_name = f".{pbfile.package}.{pbmsg.name}"
+        self._type_name = f"{prefix}.{pbmsg.name}"
         self._by_id = {}
         self._by_name = {}
+
+    
+    def type_name(self):
+        return self._type_name
 
 
     def add_field(self, pbfield):
@@ -122,7 +126,7 @@ class Msg():
 
 
     def __repr__(self):
-        out = [f"MsgType: {self.type_name}"]
+        out = [f"MsgType: {self._type_name}"]
         for field in self._by_name.values():
             out.append(f"{field}")
         return '\n'.join(out)
@@ -130,26 +134,42 @@ class Msg():
 
 class OnnxPb():
     def __init__(self):
+        self.process_pb2()
+
+
+    def process_descriptor_proto(self, pbmsgtypes, prefix):
+        for pbmsg in pbmsgtypes:
+            msg = Msg(pbmsg, prefix)
+            #if msg.type_name == '.onnx.TypeProto':
+            #    breakpoint()
+            self.db[msg.type_name()] = msg
+            for field in pbmsg.field:
+                msg.add_field(field)
+            self.process_descriptor_proto(pbmsg.nested_type, msg.type_name())
+
+
+    def process_pb2(self):
         with open("proto/onnx.pb", "rb") as f:
             pbset = descriptor_pb2.FileDescriptorSet()
             pbset.ParseFromString(f.read())
 
         # Re-index to something that makes sense to me.
-        # TODO: Need to recurse into nested types: msg.pbmsg.nested_type[x]
-        db = {}
-        for pbmsg in pbset.file[0].message_type:
-            msg = Msg(pbmsg, pbset.file[0])
-            if msg.type_name == '.onnx.TypeProto':
-                breakpoint()
-            db[msg.type_name] = msg
-            for field in pbmsg.field:
-                msg.add_field(field)        
+        self.db = {}
+        prefix = f'.{pbset.file[0].package}'
+        pbmsgtypes = pbset.file[0].message_type
+        self.process_descriptor_proto(pbmsgtypes, prefix)
 
-        self.db = db
+        # for pbmsg in pbset.file[0].message_type:
+        #     msg = Msg(pbmsg, pbset.file[0])
+        #     if msg.type_name == '.onnx.TypeProto':
+        #         breakpoint()
+        #     db[msg.type_name] = msg
+        #     for field in pbmsg.field:
+        #         msg.add_field(field)        
 
-        #for k in sorted(db.keys()):
+        #for k in sorted(self.db.keys()):
         #    print(k)
-        #    breakpoint()
+        #breakpoint()
 
 
     def by_type_name(self, type_name):

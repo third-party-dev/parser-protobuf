@@ -176,6 +176,10 @@ class NodeContext():
         self._state = state()
 
 
+    def set_remaining(self, length):
+        self._end = self.tell() + length
+
+
     def mark_end(self):
         self._end = self.tell()
         self._node.final_length(self._end - self._start)

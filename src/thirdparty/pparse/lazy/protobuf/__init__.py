@@ -116,8 +116,50 @@ NodeMap(ModelProto)
         ...
     
       
-      
+    > src/thirdparty/pparse/lazy/protobuf/__init__.py(150)parse_data()
+    -> breakpoint()
+    (Pdb) n
+    > src/thirdparty/pparse/lazy/protobuf/__init__.py(151)parse_data()
+    -> field = ctx._parent.field_by_id(field_num)
+    (Pdb) field_num
+    11
+    (Pdb) ctx.node()
+    NodeArray(_type=dim, value=list)
+    (Pdb) ctx.node().ctx()._parent
+    NodeMap(_type=TensorShapeProto, value=dict)
+    (Pdb) ctx._parent
+    NodeMap(_type=TensorShapeProto, value=dict)
+    (Pdb) ctx._parent.ctx()._parent
+    NodeMap(_type=Tensor, value=dict)
+    (Pdb) ctx._parent.ctx()._parent.ctx()._parent
+    NodeMap(_type=TypeProto, value=dict)
+    (Pdb) ctx._parent.ctx()._parent.ctx()._parent.ctx()._parent
+    NodeMap(_type=ValueInfoProto, value=dict)
+    (Pdb) ctx._parent.ctx()._parent.ctx()._parent.ctx()._parent.ctx()._parent
+    NodeArray(_type=input, value=list)
+    (Pdb) ctx._parent.ctx()._parent.ctx()._parent.ctx()._parent.ctx()._parent.ctx()._parent
+    NodeMap(_type=GraphProto, value=dict)
 
+
+    message GraphProto {
+    repeated NodeProto node = 1;
+    string name = 2;
+    repeated TensorProto initializer = 5;
+    repeated SparseTensorProto sparse_initializer = 15;
+    string doc_string = 10;
+    repeated ValueInfoProto input = 11;
+    repeated ValueInfoProto output = 12;
+    repeated ValueInfoProto value_info = 13;
+    repeated TensorAnnotation quantization_annotation = 14;
+    repeated StringStringEntryProto metadata_props = 16;
+    reserved 3, 4, 6 to 9;
+    reserved "ir_version", "producer_version", "producer_tag", "domain";
+    }
+
+    Given the above debug session and GraphProto ... I *think* that ValueInfoProto
+    is repeating, but repeating abruptly within a very deep parse. We currently don't
+    have a nice way to unwind the stack. We assume that whatever the next field_num
+    is, we can access it. This is very bad.
 
 
 '''
@@ -141,10 +183,16 @@ class ProtobufParsingKey(ProtobufParsingState):
         # Get the key data.
         wire_type, field_num, key_length = parser.peek_varint_key(ctx)
 
+        # ! BUG: Do not assume the next field is within parent node
+        # ! Fix: Use LEN earlier.
+
         field = None
         if isinstance(ctx.node(), NodeMap):
             field = ctx.node().field_by_id(field_num)
         elif isinstance(ctx.node(), NodeArray):
+            if ctx.tell() == 653663894:
+                            #65366 5832
+                breakpoint()
             field = ctx._parent.field_by_id(field_num)
         else: #UNLIKELY
             breakpoint()
@@ -195,6 +243,7 @@ class ProtobufParsingKey(ProtobufParsingState):
                 breakpoint()
 
             trace(f"  LENGTH: {length}")
+            # ! ctx.set_remaining(length)
 
             # Create the new node and make it active.
             parser._start_map_node(ctx, field)
