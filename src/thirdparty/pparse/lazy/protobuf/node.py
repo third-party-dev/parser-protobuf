@@ -4,12 +4,6 @@
 from thirdparty.pparse.lib import NodeContext as BaseNodeContext
 import thirdparty.pparse.lib as pparse
 
-from thirdparty.pparse.lib import (
-    EndOfDataException,
-    UnsupportedFormatException,
-    EndOfNodeException
-)
-
 
 class UnloadedValue():
     def __repr__(self): return "<UNLOADED_VALUE />"
@@ -24,28 +18,13 @@ class NodeContext(BaseNodeContext):
         self._key = None
         self.just_set_node = False
         self.just_set_field = None
-        # self._key_wire_type = None
-        # self._key_field_num = None
-        # self._key_length = None
-        # self._key_field = None
 
 
     def key(self):
         return self._key
 
 
-    def set_key(self, field): #wire_type, field_num, key_length, field):
-        #     'start': 
-        #     'wire_type': None,
-        #     'field_num': None,
-        #     'length': None,
-        #     'field': None,
-        # }
-        # self._key_start = self.tell()
-        # self._key_wire_type = wire_type
-        # self._key_field_num = field_num
-        # self._key_length = key_length
-        # self._key_field = field
+    def set_key(self, field):
         self._key = field
 
 
@@ -62,13 +41,12 @@ class Node():
             raise Exception("protobuf Node reader must be a pparse.Range")
         self._reader : pparse.Range = reader.dup()
 
-        from thirdparty.pparse.lazy.protobuf import ProtobufParsingKey
+        from thirdparty.pparse.lazy.protobuf.state import ProtobufParsingKey
         self._ctx = NodeContext(self, parent, ProtobufParsingKey(), reader.dup())
         
         self._type = protobuf_type
         self.value = UNLOADED_VALUE
         
-
 
     def field_by_id(self, field_num):
         return self._type.by_id(field_num)
@@ -101,6 +79,7 @@ class Node():
 
 
     # Assumed that this method is not run until after the Extraction parsing is complete.
+    # TODO: Test this.
     def load(self, parser):
         from thirdparty.pparse.lazy.protobuf import ProtobufParsingKey
         # Create a headless node to parse the data.
@@ -114,14 +93,12 @@ class Node():
             while True:
                 ctx = parser.current.ctx()
                 state = ctx.state()
-                # if isinstance(state, ProtobufParsingString):
-                #     breakpoint()
                 state.parse_data(parser, ctx)
-        except EndOfNodeException as e:
+        except pparse.EndOfNodeException as e:
             pass
-        except EndOfDataException as e:
+        except pparse.EndOfDataException as e:
             pass
-        except UnsupportedFormatException:
+        except pparse.UnsupportedFormatException:
             raise
 
     
@@ -148,27 +125,6 @@ class Node():
             msg_type = self._type.name
         val_type = type(self.value).__name__
         return f"{py_type}(_type={msg_type}, value={val_type})"
-
-
-
-# class NodeInit(Node):
-#     def __init__(self, parent: Node, reader: pparse.Reader, parser: pparse.Parser = None):
-#         super().__init__(parent, reader)
-
-#         # Since there is only 1 NodeInit, we can keep more stuff here.
-#         self.parser = parser
-
-    
-#     def dumps(self, depth=0, step=2):
-#         spacer = ' ' * depth
-#         #result = [f"{spacer}" f'<NodeInit length="{self.length()}">']
-#         result = [f"{spacer}" f'<ProtobufNodeInit>']
-#         if isinstance(self.value, Node):
-#             result.append(f"{spacer}{self.value.dumps(depth+step)}")
-#         else:
-#             result.append(f"{spacer}{self.value}")
-#         result.append(f"{spacer}</ProtobufNodeInit>")
-#         return '\n'.join(result)
 
 
 class NodeMap(Node):

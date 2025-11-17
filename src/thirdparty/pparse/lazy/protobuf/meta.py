@@ -140,8 +140,6 @@ class OnnxPb():
     def process_descriptor_proto(self, pbmsgtypes, prefix):
         for pbmsg in pbmsgtypes:
             msg = Msg(pbmsg, prefix)
-            #if msg.type_name == '.onnx.TypeProto':
-            #    breakpoint()
             self.db[msg.type_name()] = msg
             for field in pbmsg.field:
                 msg.add_field(field)
@@ -159,25 +157,7 @@ class OnnxPb():
         pbmsgtypes = pbset.file[0].message_type
         self.process_descriptor_proto(pbmsgtypes, prefix)
 
-        # for pbmsg in pbset.file[0].message_type:
-        #     msg = Msg(pbmsg, pbset.file[0])
-        #     if msg.type_name == '.onnx.TypeProto':
-        #         breakpoint()
-        #     db[msg.type_name] = msg
-        #     for field in pbmsg.field:
-        #         msg.add_field(field)        
-
-        #for k in sorted(self.db.keys()):
-        #    print(k)
-        #breakpoint()
-
 
     def by_type_name(self, type_name):
         return self.db[type_name]
 
-
-#print(db['.onnx.ModelProto'])
-
-'''
-stack up message types with current tracked as len(types)
-'''
