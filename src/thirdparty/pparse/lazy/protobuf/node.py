@@ -20,6 +20,8 @@ class NodeContext(BaseNodeContext):
     def __init__(self, node: 'Node', parent: 'Node', state: 'ProtobufParsingState', reader: pparse.Reader):
         super().__init__(node, parent, state, reader)
         self._key = None
+        self.just_set_node = False
+        self.just_set_field = None
         # self._key_wire_type = None
         # self._key_field_num = None
         # self._key_length = None
