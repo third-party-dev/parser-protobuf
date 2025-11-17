@@ -45,6 +45,8 @@ class Parser(pparse.Parser):
         self.current = NodeMap(None, source.open(), protobuf_type)
         source._result[id] = self.current
 
+        self.nodes = {}
+
 
     def _parse_varint(self, ctx, peek=False):
         value = 0

@@ -108,6 +108,12 @@ class ProtobufParsingKey(ProtobufParsingState):
         if ctx.left() == 0:
             if ctx._parent is None:
                 raise pparse.EndOfDataException("Nothing more to process.")
+
+            # XXX: Testing ways to grab flat list of nodes or tensors.
+            if ctx.node().msgtype().name == 'NodeProto':
+                #breakpoint()
+                parser.nodes[ctx.node().value['name']] = ctx.node()
+            
             parser._end_container_node(ctx)
             ctx._next_state(ProtobufParsingKey)
             return
@@ -156,7 +162,7 @@ class ProtobufParsingKey(ProtobufParsingState):
 
         if field.type == Field.TYPE_MESSAGE and value_length:
             trace(f"  LENGTH: {value_length} (meta_length: {meta_length}) range: {ctx.tell()} - {ctx.tell()+value_length}")
-            
+
             # Create the new node and make it active.
             parser._start_map_node(ctx, field)
 
