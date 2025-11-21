@@ -41,22 +41,28 @@ class NodeVmState(Node):
 class NodeList(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):
         super().__init__(parent, reader)
+        self.value = []
+
 
 class NodeObject(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):
         super().__init__(parent, reader)
 
+
 class NodeImport(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):
         super().__init__(parent, reader)
+        
 
 class NodeTuple(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):
         super().__init__(parent, reader)
 
+
 class NodeExternal(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):
         super().__init__(parent, reader)
+
 
 class NodeCall(Node):
     def __init__(self, parent: Node, reader: pparse.Reader):

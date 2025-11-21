@@ -20,6 +20,8 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
+# pprint(root._result['pkl'].value[0].value)
+
 #print("DUMPING")
 #rnode = root._result['protobuf']
 #with open("output.txt", "w") as f:

@@ -35,6 +35,7 @@ class Parser(pparse.Parser):
     
     def __init__(self, source: pparse.Extraction, id: str):
         super().__init__(source, id)
+
         self.current = NodePickleArray(None, source.open())
         self.current.ctx()._next_state(PickleParsingPickleStream)
         source._result[id] = self.current
@@ -60,6 +61,7 @@ class Parser(pparse.Parser):
     
     def scan_data(self):
 
+        # Do the opcodes first.
         try:
             while True:
                 # While not end of data, keep parsing via states.
@@ -70,6 +72,7 @@ class Parser(pparse.Parser):
             pass
         except pparse.UnsupportedFormatException:
             raise
+
 
         # TODO: Do all the children.
         

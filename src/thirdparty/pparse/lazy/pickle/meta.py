@@ -60,7 +60,7 @@ class PklOp():
     EXT4 = 132
     TUPLE1 = 133
     TUPLE2 = 134
-    TUPLE4 = 135
+    TUPLE3 = 135
     NEWTRUE = 136
     NEWFALSE = 137
     LONG1 = 138
@@ -238,8 +238,8 @@ class PklOp():
         self.param2 = None # for GLOBAL
 
     def __repr__(self) -> str:
-        if self.param and self.param2:
+        if self.param is not None and self.param2 is not None:
             return f"{self.alias}({self.param, self.param2})"
-        elif self.param:
+        elif self.param is not None:
             return f"{self.alias}({self.param})"
         return f"{self.alias}()"
