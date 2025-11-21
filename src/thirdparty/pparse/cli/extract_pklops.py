@@ -20,7 +20,13 @@ except Exception as e:
     import traceback
     traceback.print_exc()
 
-# pprint(root._result['pkl'].value[0].value)
+# pprint(root._result['pkl'].value[0].value[0])
+
+#l9key = 'model.encoder.layers.9.self_attn_layer_norm.weight'
+#l9 = root._result['pkl'].value[0].value[0][l9key]
+
+obj = root._result['pkl'].value[0].value[0]
+# pprint(obj[b'model.encoder.layers.9.self_attn_layer_norm.weight'])
 
 #print("DUMPING")
 #rnode = root._result['protobuf']

@@ -5,7 +5,7 @@ from pprint import pprint
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pickle.meta import PklOp
-from thirdparty.pparse.lazy.pickle.opnodes import NodePickleArray, NodePickle
+from thirdparty.pparse.lazy.pickle.node import NodePickleArray, NodePickle
 
 
 def trace(*args, **kwargs):
@@ -95,7 +95,7 @@ class PersistentCall():
         self.opcode = opcode
     
     def __repr__(self):
-        return '**PERSID CALL**'
+        return f'PERSID_CALL(arg={self.arg})'
 
 class ReduceCall():
     def __init__(self, module_call, arg, opcode):
@@ -104,7 +104,7 @@ class ReduceCall():
         self.opcode = opcode
 
     def __repr__(self):
-        return '**REDUCE CALL**'
+        return f'REDUCE_CALL(mod={self.module_call[0]}, func={self.module_call[1]}, arg={self.arg})'
 
 
 class PickleInterpreter(PickleParsingState):
@@ -117,10 +117,6 @@ class PickleInterpreter(PickleParsingState):
 
         # Setup for next opcode before we handle current op.
         ctx._next_state(PickleParsingOpCode)
-        #print('------------------------------------------')
-        #pprint(ctx.stack)
-        #print(op)
-        #breakpoint()
 
         if op.opcode == PklOp.PROTO:
             if ctx.node().proto is not None:
@@ -260,27 +256,9 @@ class PickleInterpreter(PickleParsingState):
             # TODO: Record instructions that involve tuple.
             return
 
+        trace(f"Unhandled Opcode: {op}")
         breakpoint()
         
-
-
-        
-            
-            
-
-        
-
-
-        
-        
-
-
-
-
-        
-                
-
-
 class PickleParsingOpCode(PickleParsingState):
     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
         data = ctx.read(1)

@@ -6,8 +6,8 @@ import io
 from typing import Optional
 
 import thirdparty.pparse.lib as pparse
-from thirdparty.pparse.lazy.pickle.opnodes import NodePickleArray
-from thirdparty.pparse.lazy.pickle.opstates import PickleParsingPickleStream
+from thirdparty.pparse.lazy.pickle.node import NodePickleArray
+from thirdparty.pparse.lazy.pickle.state import PickleParsingPickleStream
 
 
 def trace(*args, **kwargs):
