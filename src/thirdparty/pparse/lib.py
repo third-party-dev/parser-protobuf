@@ -15,6 +15,11 @@ class UnsupportedFormatException(Exception): pass
 class BufferFullException(Exception): pass
 
 
+class UnloadedValue():
+    def __repr__(self): return "<UNLOADED_VALUE />"
+UNLOADED_VALUE = UnloadedValue()
+
+
 # Api for Reader-like objects (Cursor, Range)
 class Reader():
     def dup(self):
@@ -170,11 +175,11 @@ class Cursor(Reader):
         
 
 class NodeContext():
-    def __init__(self, node: 'Node', parent: 'Node', state, reader: Reader):
+    def __init__(self, node: 'Node', parent: 'Node', reader: Reader):
         self._node = node
         self._reader = reader.dup()
         self._reader.seek(reader.tell())
-        self._state = state
+        self._state = None
         self._parent = parent # Parent Node (None for root)
         self._start = self.tell()
         self._end = None
@@ -182,6 +187,16 @@ class NodeContext():
 
     def node(self):
         return self._node
+
+
+    def parent(self):
+        return self._parent
+
+
+    def parent_ctx(self):
+        if self._parent:
+            return self._parent.ctx()
+        return None
 
 
     def reader(self):
