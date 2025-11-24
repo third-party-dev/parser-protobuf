@@ -1,6 +1,4 @@
 onnx/
-models/
-proto/
 ml-venv/
 clutter/
 **.egg-info
