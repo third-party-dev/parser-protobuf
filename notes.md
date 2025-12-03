@@ -64,3 +64,16 @@ Because we work in a file system, we need to consider that we may access data as
   - Uses path or scope.
   - Keeps list of things in path or scope.
   - May have number of filter types or lazy schemes.
+
+
+
+## Resources
+
+- https://www.geeksforgeeks.org/deep-learning/sparse-autoencoders-in-deep-learning/
+- https://archive.org/details/youtube-OFS90-FX6pg
+- https://www.youtube.com/@ArtOfTheProblem
+- https://www.youtube.com/@vcubingx
+- https://www.youtube.com/watch?v=kCc8FmEb1nY
+- https://transformer-circuits.pub/2021/framework/index.html
+- http://neuralnetworksanddeeplearning.com/
+- https://michaelnotebook.com/ongoing/llm_uses.html
