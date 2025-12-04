@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-from pprint import pprint
+from pprintpp import pprint
 import thirdparty.pparse.lib as pparse 
 from thirdparty.pparse.lazy.pickle import Parser as LazyPickleParser
 
@@ -9,7 +9,7 @@ try:
     parser_reg = {'pkl': LazyPickleParser}
     data_source = pparse.Data(path='models/data.pkl')
     data_range = pparse.Range(data_source.open(), data_source.length)
-    root = pparse.Extraction(reader=data_range, name='models/data.pkl')
+    root = pparse.BytesExtraction(name='models/data.pkl', reader=data_range)
     root.discover_parsers(parser_reg).scan_data()
 
 except pparse.EndOfDataException as e:
