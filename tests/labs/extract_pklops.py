@@ -26,8 +26,21 @@ except Exception as e:
 pkl = root._result['pkl']
 obj = pkl.value[0].value[0]
 history = root._result['pkl'].value[0].history
+
+tensor_list = obj['model_state_dict'].keys()
+
+# ! Note: Lots of data missing in output. This is likely because
+# ! there is dictionary data embedded in the ReduceCall/NewCall
+# ! objects. One clean work around would be to embed all of the
+# ! pure dictionary data into a child object.
+# - call
+# - arg
+# - update_state
+# - item_data
+obj['model_state_dict']['transformer.h.0.ln_1.weight']
+
 with open('dump.yaml', 'w') as repr_fobj:
-    repr_fobj.write(pparse_repr(obj))
+    repr_fobj.write(pparse_repr(obj['model_state_dict']))
     #print(pparse_repr(obj))
 breakpoint()
 

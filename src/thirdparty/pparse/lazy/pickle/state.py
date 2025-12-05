@@ -108,12 +108,12 @@ class PersistentCall():
 
     def pparse_repr(self, depth = 0, step = 2):
         from thirdparty.pparse.utils import pparse_repr
-        res = [f'{self.module}.{self.function}(  # PERSID_CALL\n']
+        res = [f'PERSID_CALL(  # PERSID_CALL\n']
         spacer = depth * step
 
         res.append(f'{spacer}id: {self.id}')
         res.append(f'{spacer}arg: ')
-        res.append(pparse_repr(self.state, depth+1, step))
+        res.append(pparse_repr(self.arg, depth+1, step))
 
         return ''.join(res)
 
@@ -155,6 +155,10 @@ class ReduceCall(dict):
         res.append(f'\n{spacer}{step}# STATE\n')
         res.append(f'{spacer}{step}')
         res.append(pparse_repr(self.state, depth+1, step))
+
+        res.append(f'\n{spacer}{step}# ITEMS\n')
+        res.append(f'{spacer}{step}')
+        res.append(pparse_repr(dict(self), depth+1, step))
 
         res.append(f'{spacer})')
 
@@ -199,6 +203,10 @@ class NewCall(dict):
         res.append(f'\n{spacer}{step}# STATE\n')
         res.append(f'{spacer}{step}')
         res.append(pparse_repr(self.state, depth+1, step))
+
+        res.append(f'\n{spacer}{step}# ITEMS\n')
+        res.append(f'{spacer}{step}')
+        res.append(pparse_repr(dict(self), depth+1, step))
 
         res.append(f'{spacer})')
 
