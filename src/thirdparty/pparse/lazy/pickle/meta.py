@@ -3,7 +3,7 @@
 import logging
 log = logging.getLogger(__name__)
 
-def ins_def(alias, lbytes=0, pbytes=0, fmt=''):
+def ins_def(alias, lbytes=0, pbytes=0, fmt='', cast=None):
     return {
         'alias': alias,
         'lbytes': lbytes,
@@ -230,7 +230,7 @@ class PklOp():
     def has_length(val):
         return val in PklOp._length_params
 
-    def __init__(self, opcode, param = None, byte_len = 0):
+    def __init__(self, opcode, param = None, byte_len = 0, byte_offset = None):
         self.opcode = opcode
         self.alias = PklOp.alias(opcode)
         self.pbytes = PklOp.pbytes(opcode)
@@ -239,6 +239,8 @@ class PklOp():
         self.byte_len = 0
         self.param = param
         self.param2 = None # for GLOBAL
+
+        self.byte_offset = byte_offset
 
     def __repr__(self) -> str:
         if self.param is not None and self.param2 is not None:

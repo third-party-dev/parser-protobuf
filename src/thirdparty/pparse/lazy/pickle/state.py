@@ -58,10 +58,17 @@ class PickleParsingLengthParam(PickleParsingState):
     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
         op = ctx.current_op
         data = ctx.peek(op.byte_len)
-        if not data or len(data) < op.byte_len:
+        if op.byte_len > 0 and (not data or len(data) < op.byte_len):
             raise pparse.EndOfDataException("Not enough data to parse simple pickle opcode")
 
-        op.param = data[0:op.byte_len]
+        # Cast to correct primitive type.
+        if op.opcode in [PklOp.LONG1, PklOp.LONG4]:
+            op.param = int.from_bytes(data[0:op.byte_len], 'little', signed=True)
+        elif op.opcode in [PklOp.BINSTRING, PklOp.BINUNICODE, PklOp.SHORT_BINUNICODE, PklOp.BINUNICODE8]:
+            op.param = data[0:op.byte_len].decode('utf-8')
+        else:
+            op.param = data[0:op.byte_len]
+
         ctx.skip(op.byte_len)
         ctx._next_state(PickleInterpreter)
 
@@ -85,28 +92,122 @@ class StackMark():
     def __repr__(self):
         return '**MARK**'
 
+
 class PersistentCall():
     def __init__(self, id, arg, opcode):
         self.id = id
         self.arg = arg
         self.opcode = opcode
     
-    def __repr__(self):
-        return f'PERSID_CALL(arg={self.arg})'
 
-class ReduceCall():
+    def __repr__(self):
+        return f'PERSID_CALL(\n'\
+            f'  arg={self.arg}\n'\
+            ')'
+
+
+    def pparse_repr(self, depth = 0, step = 2):
+        from thirdparty.pparse.utils import pparse_repr
+        res = [f'{self.module}.{self.function}(  # PERSID_CALL\n']
+        spacer = depth * step
+
+        res.append(f'{spacer}id: {self.id}')
+        res.append(f'{spacer}arg: ')
+        res.append(pparse_repr(self.state, depth+1, step))
+
+        return ''.join(res)
+
+
+class ReduceCall(dict):
     def __init__(self, module_call, arg, opcode):
+        super().__init__()
+
         self.module_call = module_call
+        self.module = self.module_call[0].decode('utf-8').strip()
+        self.function = self.module_call[1].decode('utf-8').strip()
         self.arg = arg
         self.opcode = opcode
+        self.state = None
+
 
     def __repr__(self):
-        return f'REDUCE_CALL(mod={self.module_call[0]}, func={self.module_call[1]}, arg={self.arg})'
+        return f'REDUCE_CALL(\n'\
+            f'  mod={self.module_call[0]},\n'\
+            f'  func={self.module_call[1]},\n'\
+            f'  arg={self.arg}\n'\
+            f'  state={self.state}\n'\
+            ')'
+
+
+    def pparse_repr(self, depth = 0, step = ' '):
+        from thirdparty.pparse.utils import pparse_repr
+        spacer = depth * step
+        res = [
+            #f'{spacer}# REDUCE_CALL\n',
+            f'{self.module}.{self.function}(\n',
+        ]
+
+        res.append(f'{spacer}{step}*(  # ARG\n')
+        res.append(f'{spacer}{step}{step}')
+        res.append(pparse_repr(self.state, depth+1, step))
+        res.append(f'{spacer}{step})  # End of ARG\n')
+        
+        res.append(f'\n{spacer}{step}# STATE\n')
+        res.append(f'{spacer}{step}')
+        res.append(pparse_repr(self.state, depth+1, step))
+
+        res.append(f'{spacer})')
+
+        return ''.join(res)
+
+
+class NewCall(dict):
+    def __init__(self, module_call, arg, opcode):
+        super().__init__()
+
+        self.module_call = module_call
+        self.module = self.module_call[0].decode('utf-8').strip()
+        self.function = self.module_call[1].decode('utf-8').strip()
+        self.arg = arg
+        self.opcode = opcode
+        self.state = None
+
+
+    def __repr__(self):
+        return f'NEW_CALL(\n'\
+            f'  mod={self.module_call[0]},\n'\
+            f'  func={self.module_call[1]},\n'\
+            f'  arg={self.arg}\n'\
+            f'  state={self.state}\n'\
+            ')'
+
+
+    def pparse_repr(self, depth = 0, step = ' '):
+        from thirdparty.pparse.utils import pparse_repr
+        
+        spacer = depth * step
+        res = [
+            #f'{spacer}# NEW_CALL\n',
+            f'{self.module}.{self.function}(\n',
+        ]
+        
+        res.append(f'{spacer}{step}*(  # ARG\n')
+        res.append(f'{spacer}{step}{step}')
+        res.append(pparse_repr(self.state, depth+2, step))
+        res.append(f'{spacer}{step})  # End of ARG\n')
+        
+        res.append(f'\n{spacer}{step}# STATE\n')
+        res.append(f'{spacer}{step}')
+        res.append(pparse_repr(self.state, depth+1, step))
+
+        res.append(f'{spacer})')
+
+        return ''.join(res)
 
 
 class PickleInterpreter(PickleParsingState):
     scalar_append_ops = [
-        PklOp.BINUNICODE, PklOp.BININT, PklOp.BININT1, PklOp.BININT2,
+        PklOp.BINUNICODE, PklOp.BININT, PklOp.BININT1, PklOp.BININT2, PklOp.BINFLOAT, PklOp.LONG1, PklOp.LONG4,
     ]
         
     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
@@ -215,17 +316,77 @@ class PickleInterpreter(PickleParsingState):
             ctx.history.append(op)
             return
 
+        if op.opcode == PklOp.NEWTRUE:
+            ctx.stack.append(True)
+            ctx.history.append(op)
+            return
+
+        if op.opcode == PklOp.NONE:
+            ctx.stack.append(None)
+            ctx.history.append(op)
+            return
+
         if op.opcode == PklOp.REDUCE:
             arg = ctx.stack.pop()
             module_call = ctx.stack.pop()
-            ctx.stack.append(ReduceCall(module_call, arg, op))
-            ctx.history.append(op)
+            newop = ReduceCall(module_call, arg, op)
+            ctx.stack.append(newop)
+            ctx.history.append(newop)
             return
         
         if op.opcode in [PklOp.BINGET, PklOp.LONG_BINGET]:
             ctx.stack.append(ctx.memo[op.param])
             ctx.history.append(op)
             return
+
+        if op.opcode == PklOp.SETITEM:
+            value = ctx.stack.pop()
+            key = ctx.stack.pop()
+            dict_obj = ctx.stack[-1]
+            dict_obj[key] = value
+            ctx.history.append(op)
+            return
+
+        if op.opcode == PklOp.APPEND:
+            value = ctx.stack.pop()
+            arr_obj = ctx.stack[-1]
+            arr_obj.append(value)
+            ctx.history.append(op)
+            return
+
+        if op.opcode == PklOp.NEWOBJ:
+            class_args = ctx.stack.pop()
+            class_name = ctx.stack.pop()
+            newop = NewCall(class_name, class_args, op)
+            ctx.stack.append(newop)
+            ctx.history.append(newop)
+            return
+
+        if op.opcode == PklOp.BUILD:
+            '''
+                BUILD reloads an object's state. If stack[-2] has __setstate__() we'd
+                use that to set object state from stack[-1]. Otherwise we use 
+                __dict__.update() to load the state of stack[-2] with stack[-1].
+
+                In both cases, we do nothing in our safe interpreter, simply save state
+                in a member variable to possibly load later.
+            '''
+
+            # Consume state
+            state = ctx.stack.pop()
+            
+            # Note: Top of stack should be an object (or dict).
+            # Assuming always ReduceCall for now.
+            if not isinstance(ctx.stack[-1], ReduceCall) and not isinstance(ctx.stack[-1], NewCall):
+                print("Unexpected BUILD stack state. (e.g. [..., object, state])")
+                breakpoint()
+        
+            # Reference object and store reference to state
+            obj = ctx.stack[-1]
+            obj.state = state
+
+            ctx.history.append(op)
+            return 
 
         if op.opcode == PklOp.SETITEMS:
 
@@ -240,10 +401,25 @@ class PickleInterpreter(PickleParsingState):
 
             dict_obj = ctx.stack[mark_index - 1]
 
+            # ! Note: dict_obj can be a REDUCE_CALL here.
+            '''
+                Presumably, REDUCE_CALL can be associated with any SET* type.
+                Therefore, we need to consider a way to adjust the kind of
+                type REDUCE_CALL represents relative to the SET* subtype.
+                ... for now I'm only doing `dict`.
+            '''
+            if not isinstance(dict_obj, dict):
+                print("Likely a non-opaque and non-dict REDUCE_CALL being made.")
+                breakpoint()
+
+            # Roll up stack into dictionary up to MARK
             while len(ctx.stack) > mark_index + 1:
                 value = ctx.stack.pop()
                 key = ctx.stack.pop()
                 dict_obj[key] = value
+
+            # if isinstance(dict_obj, ReduceCall):
+            #     breakpoint()
 
             # Consume the MARK
             ctx.stack.pop()
@@ -253,6 +429,43 @@ class PickleInterpreter(PickleParsingState):
             # TODO: Record instructions that involve tuple.
             return
 
+
+        if op.opcode == PklOp.APPENDS:
+
+            # Expect dict before mark.
+            mark_index = None
+            for i in range(len(ctx.stack) - 1, -1, -1):
+                if isinstance(ctx.stack[i], StackMark):
+                    mark_index = i
+                    break
+            if mark_index is None:
+                raise Exception("Mark not found for APPENDS")
+
+            arr_obj = ctx.stack[mark_index - 1]
+
+            # ! Note: arr_obj can be a REDUCE_CALL/NEW_CALL here.
+            '''
+                Presumably, REDUCE_CALL can be associated with any SET* type.
+                Therefore, we need to consider a way to adjust the kind of
+                type REDUCE_CALL represents relative to the SET* subtype.
+                ... for now I'm only doing `dict`.
+            '''
+            if not isinstance(arr_obj, list):
+                print("Likely a non-opaque and non-dict REDUCE_CALL being made.")
+                breakpoint()
+
+            # Move after MARK to end of array slice into array
+            arr_obj.extend(ctx.stack[mark_index+1:])
+
+            # Truncate from MARK to end of stack inclusive
+            ctx.stack = ctx.stack[:mark_index]
+
+            ctx.history.append(op)
+
+            # TODO: Record instructions that involve tuple.
+            return
+
+
         log.debug(f"Unhandled Opcode: {op}")
         breakpoint()
         
@@ -260,9 +473,12 @@ class PickleParsingOpCode(PickleParsingState):
     def parse_data(self, parser: 'Parser', ctx: 'NodeContext'):
         data = ctx.read(1)
         if not data or len(data) < 1:
+            breakpoint()
             raise pparse.EndOfDataException("Not enough data to parse pickle opcode")
 
-        op = PklOp(data[0])
+        op = PklOp(data[0], byte_offset=(ctx.tell()-1))
+        #if ctx.tell() > 16674:
+        #    breakpoint()
         ctx.current_op = op
 
         # Get the next opcode.
@@ -272,6 +488,7 @@ class PickleParsingOpCode(PickleParsingState):
                 ctx.node().value = ctx.stack
                 parser._end_container_node(ctx)
                 parser.current.ctx()._next_state(PickleParsingPickleStream)
+                ctx.history.append(op)
                 return
             # Do interpreter with new code.
             ctx._next_state(PickleInterpreter)

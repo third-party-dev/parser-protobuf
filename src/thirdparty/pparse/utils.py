@@ -41,3 +41,42 @@ def find_project_root(start: pathlib.Path = None) -> pathlib.Path:
         if (parent / "pyproject.toml").is_file():
             return parent
     raise FileNotFoundError("pyproject.toml not found.")
+
+
+def pparse_repr(obj, depth = 0, step = '  '):
+    res = []
+
+    if hasattr(obj, "pparse_repr"):
+        res.append(obj.pparse_repr(depth, step))
+
+    elif isinstance(obj, dict):
+        dict_spacer = depth * step
+        res.append('{\n')
+
+        # Assuming key is always string or scalar
+        key_spacer = (depth + 1) * step
+        for k, v in obj.items():
+            if hasattr(v, "pparse_repr"):
+                res.append(f'{key_spacer}{k}: {v.pparse_repr(depth+1, step)}\n')
+            else:
+                res.append(f'{key_spacer}{k}: {pparse_repr(v, depth+1, step)}')
+
+        res.append(dict_spacer + '}\n')
+
+    elif isinstance(obj, (list, tuple, set)):
+        itr_spacer = depth * step
+        res.append('[\n')
+
+        elem_spacer = (depth + 1) * step
+        for elem in obj:
+            if hasattr(elem, "pparse_repr"):
+                res.append(f'{elem_spacer}{elem.pparse_repr(depth+1, step)}\n')
+            else:
+                res.append(f'{elem_spacer}{pparse_repr(elem, depth+1, step)}')
+
+        res.append(itr_spacer + ']\n')
+    
+    else:
+        res.append(f'{obj}\n')
+
+    return ''.join(res)

@@ -20,10 +20,13 @@ class NodeVmContext(pparse.NodeContext):
             raise Exception("protobuf NodeContext reader must be a pparse.Range")
         super().__init__(node, parent, reader)
 
+        self.current_op = None
         self.stack = []
         self.memo = {}
-        self.history = []
-        self.current_op = None
+
+        # Note: Save the history to the node, forever allocating that memory.
+        node.history = []
+        self.history = node.history
 
     def vmstate(self):
         return self._vmstate
