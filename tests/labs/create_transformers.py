@@ -108,6 +108,11 @@ class TransformersModelFactory():
             cfg = transformers.AutoConfig.for_model(model_type=model_type)
             model = automodel_class.from_config(cfg)
             model.eval() # We don't train here.
+
+            # Throw in some random values.
+            for param in model.parameters():
+                param.data = torch.randn_like(param.data)
+            
             tmodel = TransformersModel(model, automodel_class_name, model_type)
             
         except Exception as e:
@@ -123,9 +128,10 @@ factory = TransformersModelFactory()
 gpt2 = factory.auto_model_combos['AutoModelForCausalLM']['gpt2']
 
 tmodel = factory.reconstruct_model('AutoModelForCausalLM', 'gpt2')
+
 #tmodel.save_torch_safetensors('./output/gpt2-safetensors')
 #tmodel.save_torch_weights('./output/gpt2-weights')
 #BROKEN tmodel.save_traced('./output/gpt2-traced')
-tmodel.save_torch_onnx('./output/gpt2onnx')
+#tmodel.save_torch_onnx('./output/gpt2onnx')
 
 breakpoint()

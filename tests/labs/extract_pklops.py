@@ -8,9 +8,9 @@ from thirdparty.pparse.utils import pparse_repr
 try:
 
     parser_reg = {'pkl': LazyPickleParser}
-    data_source = pparse.Data(path='output/gpt2-weights/data.pkl')
+    data_source = pparse.Data(path='output/gpt2-pytorch/data.pkl')
     data_range = pparse.Range(data_source.open(), data_source.length)
-    root = pparse.BytesExtraction(name='output/gpt2-weights/data.pkl', reader=data_range)
+    root = pparse.BytesExtraction(name='output/gpt2-pytorch/data.pkl', reader=data_range)
     root.discover_parsers(parser_reg).scan_data()
 
 except pparse.EndOfDataException as e:
@@ -25,34 +25,31 @@ except Exception as e:
 #pprint(root._result['pkl'].value[0].ctx().history)
 pkl = root._result['pkl']
 obj = pkl.value[0].value[0]
+state_dict = obj['model_state_dict']
+model_arch = obj['model_architecture']
 history = root._result['pkl'].value[0].history
 
 tensor_list = obj['model_state_dict'].keys()
 
-# ! Note: Lots of data missing in output. This is likely because
-# ! there is dictionary data embedded in the ReduceCall/NewCall
-# ! objects. One clean work around would be to embed all of the
-# ! pure dictionary data into a child object.
-# - call
-# - arg
-# - update_state
-# - item_data
-obj['model_state_dict']['transformer.h.0.ln_1.weight']
+print(pparse_repr(state_dict['transformer.h.0.ln_1.weight']))
 
-with open('dump.yaml', 'w') as repr_fobj:
-    repr_fobj.write(pparse_repr(obj['model_state_dict']))
-    #print(pparse_repr(obj))
-breakpoint()
+with open('dump_model_state_dict.yaml', 'w') as repr_fobj:
+    repr_fobj.write(pparse_repr(state_dict))
+
+with open('dump_model_architecture.yaml', 'w') as repr_fobj:
+    repr_fobj.write(pparse_repr(model_arch))
+
+#breakpoint()
 
 
 
 
 import numpy
 
-class TensorProcessor():
-    def __init__(self, obj, tensor_name):
+class StateDictTensorProcessor():
+    def __init__(self, state_dict, tensor_name):
         self.tensor_name = tensor_name
-        self.pickle_obj = obj[self.tensor_name]
+        self.pickle_obj = state_dict[self.tensor_name]
         self.modcall = self.pickle_obj.module_call
 
         # Load the metadata.
@@ -74,7 +71,13 @@ class TensorProcessor():
                     print(f'Unknown numpy data type. mod_type_name: {self.mod_type_name}')
                     breakpoint()
 
-                self.storage_key = persid_arg[2].decode('utf-8') # data file
+                '''
+                   Can the persid_arg be in bytes and require .decode('utf-8')?
+                   Can the persid_arg be omitted an require a index lookup?
+                     `idx = list(state_dict.keys()).index(self.tensor_name)`
+                '''
+                
+                self.storage_key = persid_arg[2]  # data file name
                 self.device = persid_arg[3] # unused by pparse
                 self.data_size = persid_arg[4] # data byte size
 
@@ -93,7 +96,7 @@ class TensorProcessor():
 
     # Load the tensor data.
     def load(self):
-        with open(f'output/gpt2-weights/data/{self.storage_key}', "rb") as tensor_fobj:
+        with open(f'output/gpt2-pytorch/data/{self.storage_key}', "rb") as tensor_fobj:
             self.tensor_data = tensor_fobj.read()
             self.tensor_arr = numpy.frombuffer(self.tensor_data, dtype=self.d_type)
             # TODO: This is not very space efficient. Consider memoryview.
@@ -105,8 +108,30 @@ class TensorProcessor():
             )
 
         return self
-            
-tensor = TensorProcessor(obj, b'model.encoder.conv1.weight').load()
+
+
+'''
+Starting in 2.6, torch.load defaults to weights_only=True, which prevents arbitrary code 
+execution by only allowing plain tensors and basic containers to be unpickled.
+'''
+
+tensor = StateDictTensorProcessor(state_dict, 'transformer.ln_f.bias').load()
+
+print("Loading tranditional pytorch checkpoint")
+import torch
+checkpoint = torch.load("output/gpt2-pytorch/gpt2-weights.pth.zip", weights_only=False)
+# model.load_state_dict(checkpoint['model_state_dict'])
+print(checkpoint['model_state_dict']['transformer.ln_f.bias'].numpy()[-16:])
+
+print('--- Safetensors ---')
+from thirdparty.pparse.view import SafeTensors
+safeobj = SafeTensors().open_fpath('output/gpt2-safetensors/model.safetensors')
+safetensor = safeobj.tensor('transformer.ln_f.bias')
+safenparr = safetensor.as_numpy()
+print(safenparr[-16:])
+
+print('--- PyTorch ---')
+print(tensor.tensor_arr[-16:])
 
 #print("DUMPING")
 #rnode = root._result['protobuf']
@@ -117,3 +142,6 @@ print("ALL DONE")
 breakpoint()
 
 
+'''
+
+'''
