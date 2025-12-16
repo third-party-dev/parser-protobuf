@@ -1,3 +1,6 @@
+bundles/
+models/
+output/
 onnx/
 ml-venv/
 clutter/
@@ -11,3 +14,4 @@ output.txt
 **.tflite
 **.onnx
 **.msgpack
+*.yaml

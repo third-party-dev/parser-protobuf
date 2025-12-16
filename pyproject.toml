@@ -15,3 +15,5 @@ namespaces = true
 #[project.scripts]
 #mycli = "mypackage.cli:main"
 
+[project.entry-points."yannt.commands"]
+pparse = "thirdparty.pparse.yannt.plugin:register"

@@ -31,7 +31,7 @@ history = root._result['pkl'].value[0].history
 
 tensor_list = obj['model_state_dict'].keys()
 
-print(pparse_repr(state_dict['transformer.h.0.ln_1.weight']))
+print(pparse_repr(state_dict['transformer.ln_f.bias']))
 
 with open('dump_model_state_dict.yaml', 'w') as repr_fobj:
     repr_fobj.write(pparse_repr(state_dict))
