@@ -1,3 +1,67 @@
+#!/usr/bin/env python3
+
+import os
+import struct
+import numpy
+import logging
+log = logging.getLogger(__name__)
+
+from pprint import pprint
+import thirdparty.pparse.lib as pparse
+from thirdparty.pparse.lazy.zip import Parser as LazyZipParser
+
+
+class PyTorch():
+    
+
+
+    def __init__(self, extraction=None):
+        self._extraction = extraction
+
+
+    def open_fpath(self, fpath):
+        try:
+            # --- Scan the zip ---
+            ZIP_PARSER_REGISTRY = { 'zip': LazyZipParser, }
+            data_source = pparse.Data(path=fpath)
+            data_range = pparse.Range(data_source.open(), data_source.length)
+            self._zip_extraction = pparse.BytesExtraction(name=fpath, reader=data_range)
+            self._zip_extraction.discover_parsers(PyTorch.PARSER_REGISTRY)
+            self._zip_extraction.scan_data()
+
+            # TODO: Zip Parser should skip data, so we want to query data.pkl data here.
+
+            # --- Scan the data.pkl member ---
+            self.data_pkl_meta = self._zip_extraction._result['zip'].value[0].value
+            # TODO: Verify value[0] _is_ "data.pkl"
+            data_pkl_buf = self.data_pkl_meta['decomp_data'].value.getbuffer()
+            # ! TODO: Make pparse.Data accept ByteIO or buffer?
+            # self.data_pkl_range = pparse.Range(data_pkl_buf, len(data_pkl_buf))
+            # data_source = pparse.Data(path='output/gpt2-pytorch/data.pkl')
+            # data_range = pparse.Range(data_source.open(), data_source.length)
+
+            PKL_PARSER_REGISTRY = { 'pkl': LazyPickleParser, }
+            self._pkl_extraction = pparse.BytesExtraction(name='data.pkl', reader=self.data_pkl_range)
+            self._pkl_extraction.discover_parsers(PKL_PARSER_REGISTRY).scan_data()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 '''
 PERSID_CALL(
     arg=(b'storage',     storage-type persistent ID
