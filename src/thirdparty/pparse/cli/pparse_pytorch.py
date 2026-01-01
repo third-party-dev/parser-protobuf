@@ -53,44 +53,8 @@ def pytorch_view(args):
 
     try:
         obj = PyTorch().open_fpath(args.path)
-        '''
-            pkl = obj._extraction._extractions[0]._result['pkl']
-            tensor_dict = pkl.value[0].value[0]
-            tensor_list = tensor_dict.keys()
-            history = pkl.value[0].history
-            print(pparse_repr(tensor_dict['transformer.ln_f.bias']))
+        #obj.tensor('lm_head.weight').get_data_bytes()
 
-            reduce_call = tensor_dict['transformer.ln_f.bias']
-            persid_call = reduce_call.arg[0]
-            type_tag = persid_call.arg[0]
-            type_name = persid_call.arg[1]
-            # torch.FloatStorage => dtype=float32
-            data_key = persid_call.arg[2]
-            data_dest = persid_call.arg[3]
-            elem_cnt = persid_call.arg[4]
-
-            #import numpy as np
-            #raw = read_bytes_for_id("147")
-            #arr = np.frombuffer(raw, dtype=np.float32, count=768)
-
-            # FloatStorage         | torch.float32    | np.float32
-            # DoubleStorage        | torch.float64    | np.float64
-            # HalfStorage          | torch.float16    | np.float16
-            # BFloat16Storage      | torch.bfloat16   | np.dtype("bfloat16")
-            # CharStorage          | torch.int8       | np.int18
-            # ShortStorage         | torch.int16      | np.int16
-            # IntStorage           | torch.int32      | np.int32
-            # LongStorage          | torch.int64      | np.int64
-            # ByteStorage          | torch.uint8      | np.uint8
-            # BoolStorage          | torch.bool       | np.bool_
-            # ComplexFloatStorage  | torch.complex64  | np.complex64
-            # ComplexDoubleStorage | torch.complex128 | np.complex128
-            # QInt8Storage         | torch.qint8      | np.int8
-            # QUInt8Storage        | torch.quint8     | np.uint8
-            # QInt32Storage        | torch.qint32     | np.int32
-
-            # No UInt16Storage, UInt32Storage, UInt64Storage
-        '''
     except Exception as e:
         print(e)
         import traceback
