@@ -15,6 +15,9 @@ from thirdparty.pparse.lib import (
 
 from thirdparty.pparse.utils import decode_utf8_partial
 
+
+# ---- Generic ----
+
 class XmlParsingState(object):
     def parse_data(self, node: pparse.Node):
         raise NotImplementedError()
@@ -26,12 +29,38 @@ class XmlParsingComplete(XmlParsingState):
         return pparse.ASCEND
 
 
-class XmlParsingEpilog(XmlParsingState):
+# ---- Common ----
+
+
+class XmlParsingMetaWhitespace(XmlParsingState):
+    CHUNK_SIZE = 0x100
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
+
     def parse_data(self, node: pparse.Node):
-        breakpoint()
-        print("In epilog")
-        parser._end_container_node(node)
-        return pparse.ASCEND
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, XmlParsingMetaWhitespace.CHUNK_SIZE)
+        #breakpoint()
+        if len(data) == 0:
+            # If we're looking at whitespace and we're in root node
+            # and we have document, return NEXT
+            # TODO: Determine if we're root node and if we have 'document'.
+            return pparse.NEXT
+        if len(data) < 1:
+            raise EndOfDataException("Not enough data to parse XML meta whitespace.")
+
+        log.debug(f"XmlParsingWhitespace({id(node):x}) off {ctx.tell()} data {data[:10]}")
+
+        offset = 0
+        while offset < len(data):
+            if not data[offset : offset + 1] in XmlParsingMetaWhitespace.WHITESPACE:
+                break
+            offset += 1
+        parser.encoded_skip(ctx, data[:offset])
+
+        # Chained state.
+        return pparse.NEXT
 
 
 class XmlParsingElementAttrValue(XmlParsingState):
@@ -184,51 +213,6 @@ class XmlParsingTextNode(XmlParsingState):
             return pparse.ASCEND
 
 
-class XmlParsingContent(XmlParsingState):
-    CHUNK_SIZE = 0x100
-
-    def parse_data(self, node: pparse.Node):
-        ctx = node.ctx()
-        parser = ctx.parser()
-
-        data, bytes_len = parser.decoded_peek(ctx, XmlParsingContent.CHUNK_SIZE)
-        if len(data) < 2:
-            raise EndOfDataException("Not enough data to parse XML element content.")
-
-        if data[:2] == '<!':
-            if len(data) >= 4 and data[:4] == '<!--':
-                raise Exception("Comment parsing not yet supported in content.")
-            if len(data) >= 9 and data[:4] == '<![CDATA[':
-                raise Exception("CDATA parsing not yet supported in content.")
-            raise EndOfDataException("Not enough data to parse XML markup declaration.")
-
-        if data[:2] == '<?':
-            breakpoint()
-            raise Exception("Processor Instructions not supported in content yet.")
-            # parser.encoded_skip(ctx, data[:2])
-            # ctx._next_state(XmlParsingElementClosingTag)
-            # return pparse.AGAIN
-
-        if data[:2] == '</':
-            parser.encoded_skip(ctx, data[:2])
-            ctx._next_state(XmlParsingElementClosingTag)
-            return pparse.AGAIN
-        
-        if data[:1] == '<':
-            child_node = parser.new_map_node(node)
-            child_node.ctx()._init_state(XmlParsingElementStart)
-            node._value['content']._value.append(child_node)
-            ctx._descendants.append(child_node)
-            return pparse.AGAIN
-        
-        # Everything else is a text node child.
-        text_node = parser.new_data_node(node)
-        text_node.ctx()._init_state(XmlParsingTextNode)
-        node._value['content']._value.append(text_node)
-        ctx._descendants.append(text_node)
-        return pparse.AGAIN
-
-
 class XmlParsingElementMeta(XmlParsingState):
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -301,6 +285,88 @@ class XmlParsingElementStart(XmlParsingState):
         return pparse.AGAIN
 
 
+class XmlParsingCDataStart(XmlParsingState):
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, 9)
+        if len(data) < 9:
+            raise EndOfDataException("Not enough data to parse XML element comment start.")
+
+        if data[:9] == '<![CDATA[':
+            ctx.skip(bytes_len)
+
+            # Create node for comment parsing.
+            cdata_node = parser.new_data_node(node)
+            cdata_node.ctx()._init_state(XmlParsingCData)
+
+            # Add to content tree and schedule for processing
+            node._value.append(cdata_node)
+            ctx._descendants.append(cdata_node)
+
+            # When we ascend, return to content parsing.
+            ctx._next_state(XmlParsingContent)
+            return pparse.AGAIN
+
+        raise Exception(f"Expected <![CDATA[, got {data[:4]}")
+
+
+class XmlParsingCData(XmlParsingState):
+    CHUNK_SIZE = 0x100
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, XmlParsingCData.CHUNK_SIZE)
+        if len(data) < 3:
+            raise EndOfDataException("Not enough data to parse XML comment.")
+
+        if node._value == pparse.UNLOADED_VALUE:
+            node._value = ''
+
+        cdata_end = data.find(']]>')
+        if cdata_end < 0:
+            # Skip last 2 in case they are part of the '-->'
+            node._value += data[:-2]
+            parser.encoded_skip(data[:-2])
+            return pparse.AGAIN
+
+        node._value += data[:cdata_end]
+        parser.encoded_skip(ctx, data[:cdata_end+3])
+        parser._end_container_node(node)
+        return pparse.ASCEND
+
+
+class XmlParsingCommentStart(XmlParsingState):
+    CHUNK_SIZE = 0x100
+
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, 4)
+        if len(data) < 4:
+            raise EndOfDataException("Not enough data to parse XML element comment start.")
+
+        if data[:4] == '<!--':
+            ctx.skip(bytes_len)
+
+            # Create node for comment parsing.
+            comment_node = parser.new_data_node(node)
+            comment_node.ctx()._init_state(XmlParsingComment)
+
+            # Add to content tree and schedule for processing
+            node._value.append(comment_node)
+            ctx._descendants.append(comment_node)
+
+            # When we ascend, return to content parsing.
+            ctx._next_state(XmlParsingContent)
+            return pparse.AGAIN
+
+        raise Exception(f"Expected <!--, got {data[:4]}")
+
+
 class XmlParsingComment(XmlParsingState):
     CHUNK_SIZE = 0x100
     def parse_data(self, node: pparse.Node):
@@ -328,13 +394,42 @@ class XmlParsingComment(XmlParsingState):
         return pparse.ASCEND
 
 
+class XmlParsingProcessorInstructionStart(XmlParsingState):
+    CHUNK_SIZE = 0x100
+
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, 2)
+        if len(data) < 2:
+            raise EndOfDataException("Not enough data to parse XML element comment start.")
+
+        if data[:2] == '<?':
+            ctx.skip(bytes_len)
+
+            # Create node for comment parsing.
+            instruction_node = parser.new_data_node(node)
+            instruction_node.ctx()._init_state(XmlParsingProcessorInstruction)
+
+            # Add to content tree and schedule for processing
+            node._value.append(instruction_node)
+            ctx._descendants.append(instruction_node)
+
+            # When we ascend, return to content parsing.
+            ctx._next_state(XmlParsingContent)
+            return pparse.AGAIN
+
+        raise Exception(f"Expected <?, got {data[:2]}")
+
+
 class XmlParsingProcessorInstruction(XmlParsingState):
     CHUNK_SIZE = 0x100
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
 
-        data, bytes_len = parser.decoded_peek(ctx, XmlParsingComment.CHUNK_SIZE)
+        data, bytes_len = parser.decoded_peek(ctx, XmlParsingProcessorInstruction.CHUNK_SIZE)
         if len(data) < 3:
             raise EndOfDataException("Not enough data to parse XML processor instruction.")
 
@@ -355,6 +450,56 @@ class XmlParsingProcessorInstruction(XmlParsingState):
         return pparse.ASCEND
 
 
+# We just saw a '<' in document phase, what do we do?
+class XmlParsingContent(XmlParsingState):
+    CHUNK_SIZE = 0x100
+
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, XmlParsingContent.CHUNK_SIZE)
+        if len(data) < 2:
+            raise EndOfDataException("Not enough data to parse XML element content.")
+
+        if data[:2] == '<!':
+            if len(data) >= 4 and data[:4] == '<!--':
+                ctx._next_state(XmlParsingCommentStart)
+                return pparse.AGAIN
+
+            if len(data) >= 9 and data[:4] == '<![CDATA[':
+                ctx._next_state(XmlParsingCDataStart)
+                return pparse.AGAIN
+
+            raise EndOfDataException("Not enough data to parse XML markup declaration.")
+
+        if data[:2] == '<?':
+            ctx._next_state(XmlParsingProcessorInstructionStart)
+            return pparse.AGAIN
+
+        if data[:2] == '</':
+            parser.encoded_skip(ctx, data[:2])
+            ctx._next_state(XmlParsingElementClosingTag)
+            return pparse.AGAIN
+        
+        if data[:1] == '<':
+            child_node = parser.new_map_node(node)
+            child_node.ctx()._init_state(XmlParsingElementStart)
+            node._value['content']._value.append(child_node)
+            ctx._descendants.append(child_node)
+            return pparse.AGAIN
+        
+        # Everything else is a text node child.
+        text_node = parser.new_data_node(node)
+        text_node.ctx()._init_state(XmlParsingTextNode)
+        node._value['content']._value.append(text_node)
+        ctx._descendants.append(text_node)
+        return pparse.AGAIN
+
+
+# ---- Doctype ----
+
+
 class XmlParsingDoctype(XmlParsingState):
     # TODO: Implement me!
     def parse_data(self, node: pparse.Node):
@@ -363,10 +508,19 @@ class XmlParsingDoctype(XmlParsingState):
         return pparse.ASCEND
 
 
+# ---- Prolog / Epilog / Encoding ----
+
+
+class XmlParsingEpilog(XmlParsingState):
+    def parse_data(self, node: pparse.Node):
+        breakpoint()
+        print("In epilog")
+        parser._end_container_node(node)
+        return pparse.ASCEND
 
 
 class XmlParsingProlog(XmlParsingState):
-    WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020']
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
 
     def parse_data(self, node: pparse.Node):
         
@@ -381,7 +535,7 @@ class XmlParsingProlog(XmlParsingState):
         if len(data) < 3:
             raise EndOfDataException(f"Not enough data to parse XML. Offset: {ctx.tell()}")
 
-        if len(data) >= 6 and data[:5] == b'<?xml' and chr(data[5]) in XmlParsingProlog.WHITESPACE_CHARACTERS:
+        if len(data) >= 6 and data[:5] == b'<?xml' and chr(data[5]) in XmlParsingProlog.WHITESPACE:
             raise Exception("Found unexpected xml declaration.")
 
         if len(data) >= 4 and data[:4] == '<!--':
@@ -397,7 +551,6 @@ class XmlParsingProlog(XmlParsingState):
             ctx._descendants.append(comment_node)
             # When we ascend, consume whitespace before returning to XmlParsingProlog
             ctx._next_states([XmlParsingMetaWhitespace, XmlParsingProlog])
-            # TODO: Should this be next?
             return pparse.AGAIN
 
         if data[:2] == '<?': # TODO: Check if its followed by legal non-whitespace.
@@ -411,7 +564,6 @@ class XmlParsingProlog(XmlParsingState):
             ctx._descendants.append(processor_instruction_node)
             # When we ascend, consume whitespace before returning to XmlParsingProlog
             ctx._next_states([XmlParsingMetaWhitespace, XmlParsingProlog])
-            # TODO: Should this be next?
             return pparse.AGAIN
 
         if len(data) >= 9 and data[:9] == '<!DOCTYPE': # TODO: Check if its followed by legal non-whitespace.
@@ -425,7 +577,6 @@ class XmlParsingProlog(XmlParsingState):
             ctx._descendants.append(doctype_node)
             # When we ascend, consume whitespace before returning to XmlParsingProlog
             ctx._next_states([XmlParsingMetaWhitespace, XmlParsingProlog])
-            # TODO: Should this be next?
             return pparse.AGAIN
 
         if data[:1] == '<':
@@ -448,35 +599,7 @@ class XmlParsingProlog(XmlParsingState):
         log.debug(f"XmlParsingProlog({id(node):x}) off {ctx.tell()} data {data}")
 
 
-class XmlParsingMetaWhitespace(XmlParsingState):
-    CHUNK_SIZE = 0x100
-    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
 
-    def parse_data(self, node: pparse.Node):
-        ctx = node.ctx()
-        parser = ctx.parser()
-
-        data, bytes_len = parser.decoded_peek(ctx, XmlParsingMetaWhitespace.CHUNK_SIZE)
-        #breakpoint()
-        if len(data) == 0:
-            # If we're looking at whitespace and we're in root node
-            # and we have document, return NEXT
-            # TODO: Determine if we're root node and if we have 'document'.
-            return pparse.NEXT
-        if len(data) < 1:
-            raise EndOfDataException("Not enough data to parse XML meta whitespace.")
-
-        log.debug(f"XmlParsingWhitespace({id(node):x}) off {ctx.tell()} data {data[:10]}")
-
-        offset = 0
-        while offset < len(data):
-            if not data[offset : offset + 1] in XmlParsingMetaWhitespace.WHITESPACE:
-                break
-            offset += 1
-        parser.encoded_skip(ctx, data[:offset])
-
-        # Chained state.
-        return pparse.NEXT
 
 
 class XmlParsingXmlDeclarationStandalone(XmlParsingState):
@@ -842,74 +965,74 @@ class XmlParsingBom(XmlParsingState):
 
 '''
 
-## States
+    ## States
 
-XmlParsingProlog
-  XmlParsingBom
-  XmlParsingXmlDeclaration
-  XmlParsingDocType
+    XmlParsingProlog
+    XmlParsingBom
+    XmlParsingXmlDeclaration
+    XmlParsingDocType
 
-XmlParsingDocument
-XmlParsingEpilog
+    XmlParsingDocument
+    XmlParsingEpilog
 
-XmlParsingProcessingInstruction
-XmlParsingTextNode
-XmlParsingCData
-XmlParsingValue
+    XmlParsingProcessingInstruction
+    XmlParsingTextNode
+    XmlParsingCData
+    XmlParsingValue
 
-XmlParsingEntity - Note: May change with DocType implementation
+    XmlParsingEntity - Note: May change with DocType implementation
 
-XmlParsingWhitespace - Whitespace between `<`/`>` (everything else is a text node).
+    XmlParsingWhitespace - Whitespace between `<`/`>` (everything else is a text node).
 
 
-## Init
+    ## Init
 
-Initial XML State checks BOM and <?xml{WHITESPACE} for encoding. If BOM is UTF16 
-and <?xml and <?xml says not UTF16, bad. If <?xml states utf-8 or something else 
-not in conflict with BOM, assign the partial decoder and move into prolog state.
+    Initial XML State checks BOM and <?xml{WHITESPACE} for encoding. If BOM is UTF16 
+    and <?xml and <?xml says not UTF16, bad. If <?xml states utf-8 or something else 
+    not in conflict with BOM, assign the partial decoder and move into prolog state.
 
-## Phases
+    ## Phases
 
-In prolog state, process processor instructions, comments, whitespace (no 
-non-whitespace text), and markup declarations (DOCTYPE, CDATA).
+    In prolog state, process processor instructions, comments, whitespace (no 
+    non-whitespace text), and markup declarations (DOCTYPE, CDATA).
 
-The first element encountered in prolog triggers descendent into document state
-with the parent node set to epilog state. In the document state, we process 
-start/end/empty tags, character data, comments, processor instructions, 
-CDATA sections, whitespace, and entity references.
+    The first element encountered in prolog triggers descendent into document state
+    with the parent node set to epilog state. In the document state, we process 
+    start/end/empty tags, character data, comments, processor instructions, 
+    CDATA sections, whitespace, and entity references.
 
-Once we ascend from the root element, we're in the epilog state where we can 
-process whitespace, comments, and processor instructions. Anything else is an
-error.
+    Once we ascend from the root element, we're in the epilog state where we can 
+    process whitespace, comments, and processor instructions. Anything else is an
+    error.
 
-## Text
+    ## Text
 
-Text Nodes and Attributes trigger string parsing. All strings are surrounded by
-`>`/`<` or `"`.
+    Text Nodes and Attributes trigger string parsing. All strings are surrounded by
+    `>`/`<` or `"`.
 
-Built in entities include:
-  - `&amp;`, '&', `\u0026`
-  - `&lt;`, '<', `\u003c`
-  - `&gt;`, '>', `\u003e`
-  - `&apos;`, '\'', `\u0027`
-  - `&quot;`, '"', `\u0022`
-  - `&#60;` - decimal character references
-  - `&#x3c;` - hex character references
+    Built in entities include:
+    - `&amp;`, '&', `\u0026`
+    - `&lt;`, '<', `\u003c`
+    - `&gt;`, '>', `\u003e`
+    - `&apos;`, '\'', `\u0027`
+    - `&quot;`, '"', `\u0022`
+    - `&#60;` - decimal character references
+    - `&#x3c;` - hex character references
 
-Legal XML characters:
-  - `\u0009`, `\u000a`, `\u000d`
-  - `\u0020` - `\ud7ff`,
-  - `\ue000` - `\ufffd`
-  - `\U00010000` - `\U00010fff`
+    Legal XML characters:
+    - `\u0009`, `\u000a`, `\u000d`
+    - `\u0020` - `\ud7ff`,
+    - `\ue000` - `\ufffd`
+    - `\U00010000` - `\U00010fff`
 
-Illegal XML characters:
-  - `\u0000` - `\u0008`
-  - `\u000b` - `\u000c`
-  - `\u000e` - `\u001f`
-  - `\ud800` - `\udfff`
-  - `\ufffe` - `\uffff`
+    Illegal XML characters:
+    - `\u0000` - `\u0008`
+    - `\u000b` - `\u000c`
+    - `\u000e` - `\u001f`
+    - `\ud800` - `\udfff`
+    - `\ufffe` - `\uffff`
 
-CDATA may produce text node
-processing instruction may produce PI node
+    CDATA may produce text node
+    processing instruction may produce PI node
 
 '''
