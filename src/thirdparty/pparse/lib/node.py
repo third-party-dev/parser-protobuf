@@ -9,6 +9,8 @@ from .exceptions import (
 )
 from .node_context import NodeContext
 
+# TODO: Dumper should not be using thirdparty.pparse.lib if called here.
+from thirdparty.pparse.dump import Dumper
 
 class UnloadedValue:
     def __repr__(self):
