@@ -445,8 +445,10 @@ class XmlParsingProcessorInstructionStart(XmlParsingState):
             #ctx.skip(bytes_len)
 
             # Create node for comment parsing.
-            instruction_node = parser.new_data_node(node)
-            instruction_node.ctx()._init_state(XmlParsingProcessorInstruction)
+            instruction_node = parser.new_map_node(node)
+            instruction_node._value['target'] = ''
+            instruction_node._value['data'] = ''
+            instruction_node.ctx()._init_state(XmlParsingProcessorInstructionTarget)
 
             # Add to content tree and schedule for processing
             node._value.append(instruction_node)
@@ -458,6 +460,30 @@ class XmlParsingProcessorInstructionStart(XmlParsingState):
         raise Exception(f"Expected <?, got {data[:2]}")
 
 
+class XmlParsingProcessorInstructionTarget(XmlParsingState):
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003f'] # tab, nl, cr, sp, ?
+    CHUNK_SIZE = 0x100
+    def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
+
+        data, bytes_len = parser.decoded_peek(ctx, XmlParsingProcessorInstructionTarget.CHUNK_SIZE)
+        if len(data) < 2:
+            raise EndOfDataException("Not enough data to parse XML processor instruction.")
+
+        tag_end = next((i for i, c in enumerate(data) if c in XmlParsingProcessorInstructionTarget.WHITESPACE), -1)
+        if tag_end < 0:
+            parser.encoded_skip(data)
+            node._value['target'] += data
+            return pparse.AGAIN
+
+        node._value['target'] += data[:tag_end]
+        parser.encoded_skip(ctx, data[:tag_end])
+
+        ctx._next_states([XmlParsingMetaWhitespace, XmlParsingProcessorInstruction])
+        return pparse.AGAIN
+
+
 class XmlParsingProcessorInstruction(XmlParsingState):
     CHUNK_SIZE = 0x100
     def parse_data(self, node: pparse.Node):
@@ -465,20 +491,17 @@ class XmlParsingProcessorInstruction(XmlParsingState):
         parser = ctx.parser()
 
         data, bytes_len = parser.decoded_peek(ctx, XmlParsingProcessorInstruction.CHUNK_SIZE)
-        if len(data) < 3:
+        if len(data) < 2:
             raise EndOfDataException("Not enough data to parse XML processor instruction.")
-
-        if node._value == pparse.UNLOADED_VALUE:
-            node._value = ''
 
         instruction_end = data.find('?>')
         if instruction_end < 0:
             # Skip last 1 in case its part of the '?>'
-            node._value += data[:-1]
+            node._value['data'] += data[:-1]
             parser.encoded_skip(data[:-1])
             return pparse.AGAIN
 
-        node._value += data[:instruction_end]
+        node._value['data'] += data[:instruction_end]
         parser.encoded_skip(ctx, data[:instruction_end+2])
         parser._end_container_node(node)
         
