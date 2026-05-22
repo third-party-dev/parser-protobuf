@@ -79,6 +79,9 @@ safetensors = "thirdparty.pparse.cli.pparse_safetensors:register_pparse_safetens
 # Register tflite as a pparse subcommand
 tflite = "thirdparty.pparse.cli.pparse_tflite:register_pparse_tflite"
 
+# Register xml as a pparse subcommand
+xml = "thirdparty.pparse.cli.pparse_xml:register_pparse_xml"
+
 # Register zip as a pparse subcommand
 zip = "thirdparty.pparse.cli.pparse_zip:register_pparse_zip"
 

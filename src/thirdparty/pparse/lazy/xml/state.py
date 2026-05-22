@@ -67,7 +67,7 @@ class XmlParsingMetaWhitespace(XmlParsingState):
 
 
 class XmlParsingEqualSeparator(XmlParsingState):
-    WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020']
+    WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020'] # tab, nl, cr, sp
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -82,7 +82,7 @@ class XmlParsingEqualSeparator(XmlParsingState):
             return pparse.NEXT
         
         breakpoint()
-        raise Exception(f"Expected '\"', got {data}")
+        raise Exception(f"In XmlParsingEqualSeparator, expected '\"', got {data}")
 
 
 class XmlParsingElementAttrValue(XmlParsingState):
@@ -114,7 +114,7 @@ class XmlParsingElementAttrValue(XmlParsingState):
                 node._value['attrib'][ctx._cur_attr_name] += data[1:end_quote+1]
                 parser.encoded_skip(ctx, data[:end_quote+2])
                 ctx._next_state(XmlParsingElement)
-                return pparse.AGAIN
+                return pparse.NEXT
         
         elif ctx._cur_attr_name in node._value:
             # Assume we've already seen the start quote.
@@ -124,7 +124,7 @@ class XmlParsingElementAttrValue(XmlParsingState):
             if end_quote < 0:
                 # No end of quote, store what we've got and try again.
                 node._value['attrib'][ctx._cur_attr_name] += data
-                ctx.skip(bytes_len)
+                parser.encoded_skip(ctx, data)
                 return pparse.AGAIN
 
             if end_quote >= 0:
@@ -132,7 +132,7 @@ class XmlParsingElementAttrValue(XmlParsingState):
                 node._value['attrib'][ctx._cur_attr_name] += data[:end_quote]
                 parser.encoded_skip(ctx, data[:end_quote+1])
                 ctx._next_state(XmlParsingElement)
-                return pparse.AGAIN
+                return pparse.NEXT
 
 
 class XmlParsingElementAttrName(XmlParsingState):
@@ -153,7 +153,7 @@ class XmlParsingElementAttrName(XmlParsingState):
         name_end = next((i for i, c in enumerate(data) if c in XmlParsingElementAttrName.DELIMITERS), -1)
         if name_end < 0:
             ctx._cur_attr_name += data
-            ctx.skip(bytes_len)
+            parser.encoded_skip(ctx, data)
             return pparse.AGAIN
 
         ctx._cur_attr_name += data[:name_end]
@@ -218,7 +218,7 @@ class XmlParsingTextNode(XmlParsingState):
         text_end = data.find('<')
         if text_end < 0:
             ctx._cur_text_node += data
-            ctx.skip(bytes_len)
+            parser.encoded_skip(ctx, data)
             return pparse.AGAIN
         
         if text_end >= 0:
@@ -257,6 +257,7 @@ class XmlParsingElement(XmlParsingState):
             return pparse.AGAIN
 
         ctx._next_states([
+            XmlParsingMetaWhitespace,
             XmlParsingElementAttrName,
             XmlParsingMetaWhitespace,
             XmlParsingEqualSeparator,
@@ -282,7 +283,7 @@ class XmlParsingElementTag(XmlParsingState):
 
         tag_end = next((i for i, c in enumerate(data) if c in XmlParsingElementTag.WHITESPACE), -1)
         if tag_end < 0:
-            ctx.skip(bytes_len)
+            parser.encoded_skip(ctx, data)
             node._value['tag'] += data
             return pparse.AGAIN
 
@@ -329,7 +330,6 @@ class XmlParsingCDataStart(XmlParsingState):
 
         if data[:9] == '<![CDATA[':
             parser.encoded_skip(ctx, data[:9])
-            #ctx.skip(bytes_len)
 
             # Create node for comment parsing.
             cdata_node = parser.new_data_node(node)
@@ -385,7 +385,6 @@ class XmlParsingCommentStart(XmlParsingState):
 
         if data[:4] == '<!--':
             parser.encoded_skip(ctx, data[:4])
-            #ctx.skip(bytes_len)
 
             # Create node for comment parsing.
             comment_node = parser.new_data_node(node)
@@ -442,7 +441,6 @@ class XmlParsingProcessorInstructionStart(XmlParsingState):
 
         if data[:2] == '<?':
             parser.encoded_skip(ctx, data[:2])
-            #ctx.skip(bytes_len)
 
             # Create node for comment parsing.
             instruction_node = parser.new_map_node(node)
@@ -760,7 +758,6 @@ class XmlParsingDeclAttributeName(XmlParsingState):
         if equal_offset < 0:
             ctx._attr_name_builder += data
             parser.encoded_skip(ctx, data)
-            #ctx.skip(bytes_len)
             return pparse.AGAIN
 
         ctx._attr_name_builder += data[:equal_offset]
@@ -813,7 +810,6 @@ class XmlParsingDeclAttributeValue(XmlParsingState):
                 # No end of quote, store what we've got and try again.
                 node._value[attr_name] += data
                 parser.encoded_skip(ctx, data)
-                #ctx.skip(bytes_len)
                 return pparse.AGAIN
 
             if end_quote >= 0:
@@ -996,8 +992,11 @@ class XmlParsingBom(XmlParsingState):
             ctx._next_state(XmlParsingUtf8)
             return pparse.AGAIN
 
-        breakpoint()
-        raise UnsupportedFormatException("Not a valid XML start")
+        else:
+            # Anything else is assumed Utf8
+            # TODO: Consider validating <?xml doesn't show up later.
+            ctx._next_state(XmlParsingUtf8)
+            return pparse.AGAIN
 
 '''
 
