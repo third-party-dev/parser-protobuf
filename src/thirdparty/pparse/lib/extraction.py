@@ -11,10 +11,10 @@ class Extraction:
     def __init__(self, name: str = None, source: Optional["Extraction"] = None):
         # The extraction we came from. Detect parser via source.
         self._source: Optional["Extraction"] = source
-        self._name: Optional[str] = name
+        self._name: Optional[str] = name  # name of extraction
         self._parser = {}  # parsers by id
-        self._result = {}  # results by id
-        self._extractions = []
+        self._result = {}  # results by parser id
+        self._extractions = []   # child extractions
 
     def name(self):
         return self._name
