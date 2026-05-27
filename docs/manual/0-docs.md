@@ -1,4 +1,4 @@
-# Partial Parsing
+# Progressive Parsing
 
 ## Purpose
 
