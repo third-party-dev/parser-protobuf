@@ -12,7 +12,6 @@ requires-python = ">=3.9"
 dependencies = [
     "numpy",
     "protobuf",
-    "flatbuffers"
 ]
 
 # Requires PEP 621 (setuptools>=61)

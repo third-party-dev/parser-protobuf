@@ -7,9 +7,6 @@ log = logging.getLogger(__name__)
 from google.protobuf import descriptor_pb2
 
 
-
-
-
 class Field:
     # From: google/protobuf/descriptor.proto (FieldDescriptorProto)
     TYPE_DOUBLE = 1
