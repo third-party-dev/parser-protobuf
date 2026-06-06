@@ -41,6 +41,10 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
         # node._value['pkl']._value[0]._value - Pickle stream's stack (list).
         # node._value['pkl']._value[0]._value[0] - REDUCE_CALL on stack.
 
+        if type(pkl).__name__ != 'ReduceCall' and type(pkl).__name__ != 'NewCall':
+            # TODO: pkl start is assumed at a specific path. Need to allow specifying path.
+            raise pparse.UnsupportedFormatException(f"Expected ReduceCall in pickle, found {type(pkl).__name__}.")
+
         # TODO: Consider adding option to "force_traversal".
         if len(pkl) == 0:
             arr = []
@@ -48,6 +52,8 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
         else:
             for name in pkl:
                 #node._value['tensors'][name] = Tensor(node, pkl[name], name)
+
+                # ! There is a bug here when processing yolov5su.
 
                 tensor = parser.get_tensor_node(node, name, pkl[name])
                 # ! TODO: Check if the name has already been set!

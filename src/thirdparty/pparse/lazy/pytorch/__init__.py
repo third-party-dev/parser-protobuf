@@ -48,10 +48,12 @@ def configure_pparser(**kwargs):
                 return
 
             if '_parameters' in state and len(state['_parameters'].keys()) > 0:
+
                 metrics['param_cnt'] += len(state['_parameters'].keys())
                 for k in state['_parameters'].keys():
                     param_name = f"{'.'.join(path_arr)}.{k}"
                     # ! Being presumptuous on our part.
+
                     reduce_call = state['_parameters'][k].arg[2]
 
                     tensor = self.get_tensor_node(node, param_name, reduce_call)

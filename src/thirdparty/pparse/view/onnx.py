@@ -36,7 +36,12 @@ class Tensor(pparse.Tensor):
 
     # Return (safetensors equivalent) shape
     def get_shape(self):
-        shape = self._init_node.value['dims']
+        if 'dims' in self._init_node.value:
+            shape = self._init_node.value['dims']
+        else:
+            # Assuming no dims means this is a constant
+            # TODO: We can further verify its a "tensor" by looking for 'data_type', 'name', and 'raw_data'.
+            shape = [1]
         return shape
 
 
