@@ -115,6 +115,9 @@ class Onnx:
 
             traceback.print_exc()
 
+        # ** New Development Of Graph Interface
+        self.idx_nodes, self.idx_to_name = self.graph_nodes()
+
         return self
 
 
@@ -143,3 +146,84 @@ class Onnx:
             if node.value["name"] == name:
                 return node
         return None
+
+
+    # ** ---- New Development Of Graph Interface ----
+
+    def _collect_all_nodes(self, graph):
+        for node in graph:
+            #breakpoint()
+            yield node._value
+            if 'attribute' in node._value:
+                for attr_node in node._value['attribute']:
+                    if 'g' in attr_node._value:
+                        yield from self._collect_all_nodes(attr_node._value['g'])
+                    # repeated subgraphs (rare)
+                    if 'graphs' in attr_node._value:
+                        # ! untested
+                        for subgraph in attr_node._value['graphs']:
+                            yield from self._collect_all_nodes(subgraph)
+
+    def collect_all_nodes(self):
+        try:
+            all_nodes = list(self._collect_all_nodes(self.root_node()._value['graph']._value['node']))
+        except Exception as e:
+            import traceback
+            traceback.print_exc()
+            print(e)
+            raise
+        return all_nodes
+
+    def graph_nodes(self):
+        '''
+            A list of nodes that describe inputs and outputs in a way that we can use to
+            reconstruct the graph. Aside from inputs/outputs, it may also have names,
+            operation, and other attributes.
+
+            TODO: Normalize this notion.
+            - Without operation names, we can generate based on existing attributes.
+            - Without node name, we can generate based on path and existing attributes.
+
+            Maybe all graphs need to be generalized into a list of nodes where:
+            - inputs are a list of indicies
+            - outputs are a list of indicies
+            - index is the self-referential index
+            - attributes are key values about the node (name)
+
+            A graph described with indicies along does not require semantics. We can
+            shove all model specific semantics into the attributes. Common attributes
+            can be declared and made more canonical: name, op_type.
+            
+            [ { inputs:[], outputs:[], index: _idx_, attributes: {} } ]
+        '''
+        
+        nodes = self.collect_all_nodes()
+        name_to_idx = {}
+        idx_counter = 0
+
+        def get_idx(name):
+            nonlocal idx_counter
+            if name not in name_to_idx:
+                name_to_idx[name] = idx_counter
+                idx_counter += 1
+            return name_to_idx[name]
+
+        indexed_nodes = []
+        for i, node in enumerate(nodes):
+            indexed_nodes.append({
+                'idx': i,
+                'input': [get_idx(t) for t in node['input']],
+                'output': [get_idx(t) for t in node['output']],
+                'attrs': {
+                    'op_type': node['op_type'],
+                    'name': node['name'],
+                }
+            })
+
+        idx_to_name = {v: k for k, v in name_to_idx.items()}
+        return indexed_nodes, idx_to_name
+
+
+    '''
+    (Pdb) nodes = obj.collect_all_nodes()
+    '''
