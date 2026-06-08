@@ -62,6 +62,38 @@ def register_pparse_pytorch(subparsers):
     )
     pytorch_transform_parser.set_defaults(func=pytorch_transform)
 
+    pytorch_nn_calls_parser = pytorch_subparser.add_parser(
+        "nn-calls", help="list all torch.nn NewCalls found in the pickle"
+    )
+    pytorch_nn_calls_parser.add_argument("path")
+    pytorch_nn_calls_parser.set_defaults(func=pytorch_nn_calls)
+
+
+def pytorch_nn_calls(args):
+    from thirdparty.pparse.utils import activate_logging
+    activate_logging(args)
+
+    from thirdparty.pparse.view.pytorch import PyTorch
+    from thirdparty.pparse.lazy.pytorch import iter_new_calls
+
+    print(f"Parsing pytorch from: {args.path}")
+
+    try:
+        obj = PyTorch().open_fpath(args.path)
+        pkl_root = obj.root_node()._value['pkl']
+        for pkl_stream in pkl_root._value:
+            for nc in iter_new_calls(pkl_stream._value):
+                #if nc.module.startswith('torch.nn'):
+                print(f"mod={nc.module}  func={nc.function}")
+    except Exception as e:
+        print(e)
+        import traceback
+        traceback.print_exc()
+
+    if hasattr(args, "breakpoint") and args.breakpoint:
+        print(f"Locals: {list(locals().keys())}")
+        breakpoint()
+
 
 def pytorch_unpickle(args):
     from thirdparty.pparse.utils import activate_logging

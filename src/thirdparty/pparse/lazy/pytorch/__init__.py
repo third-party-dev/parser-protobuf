@@ -8,6 +8,32 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pytorch.state import PyTorchParsingZip, PyTorchParsingState
 from thirdparty.pparse.lazy.pytorch.meta import PT
 
+
+def iter_new_calls(value):
+    """Recursively yield every NewCall in the pickle value tree."""
+    from thirdparty.pparse.lazy.pickle.calls import NewCall, ReduceCall, PersistentCall
+
+    if isinstance(value, NewCall):
+        yield value
+        yield from iter_new_calls(value.arg)
+        if value.state is not None:
+            yield from iter_new_calls(value.state)
+        yield from iter_new_calls(dict(value))
+    elif isinstance(value, ReduceCall):
+        yield from iter_new_calls(value.arg)
+        if value.state is not None:
+            yield from iter_new_calls(value.state)
+        yield from iter_new_calls(dict(value))
+    elif isinstance(value, PersistentCall):
+        yield from iter_new_calls(value.arg)
+    elif isinstance(value, dict):
+        for v in value.values():
+            yield from iter_new_calls(v)
+    elif isinstance(value, (list, tuple)):
+        for item in value:
+            yield from iter_new_calls(item)
+
+
 def configure_pparser(**kwargs):
 
     class Parser(pparse.Parser):
