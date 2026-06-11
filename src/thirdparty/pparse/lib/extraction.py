@@ -1,25 +1,31 @@
 
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .reader import (
     Reader,
     Cursor,
 )
 
+if TYPE_CHECKING:
+    from .node import Node
+    from .parser import Parser
+
 # Generic artifact that ties parsers to cursor-ed data.
 class Extraction:
-    def __init__(self, name: str = None, source: Optional["Extraction"] = None):
+    def __init__(self, name: Optional[str] = None, source: Optional[Extraction] = None) -> None:
         # The extraction we came from. Detect parser via source.
-        self._source: Optional["Extraction"] = source
+        self._source: Optional[Extraction] = source
         self._name: Optional[str] = name  # name of extraction
-        self._parser = {}  # parsers by id
-        self._result = {}  # results by parser id
-        self._extractions = []   # child extractions
+        self._parser: Dict[str, Any] = {}  # parsers by id
+        self._result: Dict[Any, Optional[Node]] = {}  # results by parser id
+        self._extractions: list = []   # child extractions
 
-    def name(self):
+    def name(self) -> Optional[str]:
         return self._name
 
-    def set_name(self, name):
+    def set_name(self, name: str) -> Extraction:
         self._name = name
         return self
 
@@ -31,18 +37,18 @@ class Extraction:
     # needs to create a result slot that will contain the root node of the result and
     # the root node will hold the initial parser instance (which gets copied to all
     # relevant children).
-    def add_result(self, id, root_node: Optional["Node"]):
+    def add_result(self, id: Any, root_node: Optional[Node]) -> None:
         self._result[id] = root_node
 
     # TODO: Create passthrough load() for result or results
 
-    def add_parser(self, id, parser: Optional["Parser"]):
+    def add_parser(self, id: str, parser: Optional[Parser]) -> None:
         self._parser[id] = parser
 
-    def has_parser(self, parser_id):
+    def has_parser(self, parser_id: str) -> bool:
         return parser_id in self._parser
 
-    def discover_parsers(self, parser_registry):
+    def discover_parsers(self, parser_registry: Dict[str, Any]) -> Extraction:
         for pname, parser in parser_registry.items():
             if not self.has_parser(pname):
                 if parser.match_extension(self.name()):
@@ -54,20 +60,20 @@ class Extraction:
 
         return self
 
-    def open(self):
+    def open(self) -> Reader:
         raise NotImplementedError()
 
     # Process all data at once.
     # TODO: Parse data lazily.
     # TODO: What is the interface that only parses what we need to?
-    def scan_data(self):
+    def scan_data(self) -> Extraction:
         for parser in self._parser.values():
             parser.scan_data()
         return self
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
-    def from_xml(cls, xml_src, xml_root):
+    def from_xml(cls, xml_src: Any, xml_root: Any) -> Extraction:
         raise NotImplementedError("from_xml not implemented")
 
     # extraction.to_xml() -> "<job />"
@@ -79,10 +85,10 @@ class Extraction:
 class BytesExtraction(Extraction):
     def __init__(
         self,
-        name: str = None,
-        source: Optional["Extraction"] = None,
-        reader: Reader = None,
-    ):
+        name: Optional[str] = None,
+        source: Optional[Extraction] = None,
+        reader: Optional[Reader] = None,
+    ) -> None:
         super().__init__(name, source)
 
         if (source is None and reader is None) or (source and reader):
@@ -96,15 +102,15 @@ class BytesExtraction(Extraction):
         # self._reader cursor is only used for dup() and tell()
         self._reader = reader
 
-    def open(self):
+    def open(self) -> Reader:
         return self._reader.dup()
 
-    def tell(self):
+    def tell(self) -> int:
         return self._reader.tell()
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
-    def from_xml(cls, xml_src, pparse_xml = None):
+    def from_xml(cls, xml_src: Any, pparse_xml: Optional[Any] = None) -> BytesExtraction:
 
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         xml = XmlNode.as_node(xml_src)

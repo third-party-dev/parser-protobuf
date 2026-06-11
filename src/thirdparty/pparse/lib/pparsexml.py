@@ -1,31 +1,38 @@
 
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
 from thirdparty.pparse.lib import (
     BytesExtraction
 )
 
+if TYPE_CHECKING:
+    from thirdparty.pparse.lib.parser import Parser
+
 # Job's only purpose is to facilitate kick off of XML import.
 class PparseXml:
 
-    def __init__(self, xml):
+    def __init__(self, xml: Any) -> None:
         self.xml = xml
 
         # Table for reference matching
-        self._result_ref_to_extraction = {}
+        self._result_ref_to_extraction: Dict[int, BytesExtraction] = {}
 
-    def add_result_ref(self, result_ref_id, extraction):
+    def add_result_ref(self, result_ref_id: int, extraction: BytesExtraction) -> None:
         self._result_ref_to_extraction[result_ref_id] = extraction
     
     def has_extraction(self, result_ref_id) -> bool:
         return result_ref_id in self._result_ref_to_extraction
 
-    def get_extraction(self, result_ref_id):
+    def get_extraction(self, result_ref_id: int) -> BytesExtraction:
         return self._result_ref_to_extraction[result_ref_id]
 
     # pparse xmls use pparse as the root element, but it is wrong to assume <pparse />
     # is the root of the xml we're working with. Instead, we assume its the top of the
     # scope pparse is able to process and reason about.
     @classmethod
-    def from_xml(cls, xml_src):
+    def from_xml(cls, xml_src: Any) -> PparseXml:
 
         # TODO: Consider xmlnode.py, xmlentry.py, and shoving this class in _xml.py.
         from thirdparty.pparse._xml import XmlNode
@@ -90,7 +97,7 @@ class PparseXml:
 
 # TODO: This is a working class name. :(
 class ResultRef:
-    def __init__(self, pparse_xml, result_xml):
+    def __init__(self, pparse_xml: PparseXml, result_xml: Any) -> None:
         self.pparse_xml = pparse_xml
         self.result_xml = result_xml
         result_ref_id = int(self.result_xml['id'])
@@ -100,7 +107,7 @@ class ResultRef:
 # This is weird because the parser creates the node and the node creates the context.
 # therefore we want to create or track a parser and context arguments.
 class ContextRef:
-    def __init__(self, result_ref, context_xml = None, parser = None):
+    def __init__(self, result_ref: ResultRef, context_xml: Optional[Any] = None, parser: Optional[Parser] = None) -> None:
         self.result_ref = result_ref
         self.context_xml = context_xml
         self.parser = parser

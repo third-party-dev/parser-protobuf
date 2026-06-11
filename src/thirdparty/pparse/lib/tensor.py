@@ -1,4 +1,9 @@
+from __future__ import annotations
+
+from typing import Any, List
+
 import numpy
+
 
 class Tensor:
     STTYPE_STRUCT = {
@@ -42,21 +47,21 @@ class Tensor:
     }
 
     # Return (safetensors equivalent) type
-    def get_type(self):
+    def get_type(self) -> str:
         raise NotImplementedError()
 
     # Return (safetensors equivalent) shape
-    def get_shape(self):
+    def get_shape(self) -> List[int]:
         raise NotImplementedError()
 
     # Return raw data as extracted from source
-    def get_data_bytes(self):
+    def get_data_bytes(self) -> bytes:
         raise NotImplementedError()
 
     # Return raw data as python array of dtype
-    def as_array(self):
+    def as_array(self) -> Any:
         raise NotImplementedError()
 
     # Return raw data as numpy array of dtype
-    def as_numpy(self):
+    def as_numpy(self) -> numpy.ndarray:
         raise NotImplementedError()

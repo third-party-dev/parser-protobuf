@@ -1,7 +1,9 @@
+from __future__ import annotations
 
 import io
 import os
 import stat
+from typing import Any, Optional
 
 from .reader import (
     Reader,
@@ -21,16 +23,16 @@ from .reader import (
 
 # Data interface.
 class Data:
-    def open(self, offset=0) -> Reader:
+    def open(self, offset: int = 0) -> Cursor:
         return Cursor(self, offset)
 
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> bytes:
         raise NotImplementedError()
 
-    def seek(self, cursor) -> int:
+    def seek(self, cursor: Cursor) -> int:
         return cursor.tell()
 
-    def read(self, cursor, length):
+    def read(self, cursor: Cursor, length: int) -> bytes:
         # Dumb implementation.
         data = self.peek(cursor, length)
         self.seek(cursor)
@@ -38,7 +40,7 @@ class Data:
 
 
 '''
-  HttpRangedData is very dumb and slow. If we add caching, we can potentially bump the performance 
+  HttpRangedData is very dumb and slow. If we add caching, we can potentially bump the performance
   by more than double. The below metrics are misleading when comparing against each other. You need
   to understand the relationship between Range supported/not-supported, between deque based cache and
   linked list based cache, and the relationship between the application and the target kernels' page
@@ -73,7 +75,7 @@ class Data:
       real    0m15.338s
       user    0m9.357s
       sys     0m3.129s
-    
+
     HttpRangedData without Range header (i.e. python -m http.server):
       * Not tested. (VERY LONG)
 
@@ -87,7 +89,7 @@ class Data:
       user  0m0.951s
       sys   0m2.645s
 
-    
+
     HttpCachedData with chunk_size 4096*256, chunks 1024, without Range header (i.e. python -m http.server):
       Note: 1,073,741,824B / 1GB cache using linked list
       Note: Test case only valid when entire target fits in memory.
@@ -150,7 +152,7 @@ class HttpCachedData(Data):
     # Max Chunks
     MAX_CHUNKS = 1024
 
-    def __init__(self, url: str, chunk_size: int = CHUNK_SIZE, chunk_max_count: int = MAX_CHUNKS, session=None):
+    def __init__(self, url: str, chunk_size: int = CHUNK_SIZE, chunk_max_count: int = MAX_CHUNKS, session: Optional[Any] = None) -> None:
 
         # ** If we're in a situation where we're requesting a file from a    **
         # ** remote resource that does not support Range, we might as well   **
@@ -173,13 +175,13 @@ class HttpCachedData(Data):
 
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> bytes:
         return self.httpdata._read(cursor.tell(), length)
 
 
 
 class HttpRangeData(Data):
-    def __init__(self, url: str=None):
+    def __init__(self, url: Optional[str] = None) -> None:
         if not url:
             raise ValueError("url must be a string that points to a valid url")
         self._url = url
@@ -204,7 +206,7 @@ class HttpRangeData(Data):
         return int(content_length)
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> bytes:
         if length <= 0:
             return b""
 
@@ -214,7 +216,7 @@ class HttpRangeData(Data):
 
         response = self._session.get(self._url, headers=headers)
         response.raise_for_status()
-            
+
         if response.status_code == 206:
             return response.content
 
@@ -225,11 +227,11 @@ class HttpRangeData(Data):
         raise IOError(f"Range request failed with status {response.status_code}")
 
     # Progress cursor without reading (no copy).
-    def seek(self, cursor) -> None:
+    def seek(self, cursor: Cursor) -> int:
         return cursor.tell()
 
     # Read the data.
-    def read(self, cursor, length):
+    def read(self, cursor: Cursor, length: int) -> bytes:
         return self.peek(cursor, length)
 
 
@@ -237,7 +239,7 @@ class HttpRangeData(Data):
   TODO: Consider an architecture that allows stacking Data objects?
   Encodings: Utf8Data, Utf16Data, GzipData
 
-  Utf8Data/Utf16Data should take a FileData or ByteIoData. Because 
+  Utf8Data/Utf16Data should take a FileData or ByteIoData. Because
   Utf8 is not byte for byte, seeking is a challenge. A seek in utf8
   is based on glyphs whereas a seek on FileData is based on byte offset.
 
@@ -247,7 +249,7 @@ class HttpRangeData(Data):
 
   Performing the tracking of the keyframes depends on the available
   memory:
-              1,048,576 -   1 MiB - @ 4MB => 
+              1,048,576 -   1 MiB - @ 4MB =>
               4,194,304 -   4 MiB -
           1,073,741,824 -   1 GiB -
         549,755,813,888 - 512 GiB -
@@ -260,7 +262,7 @@ class HttpRangeData(Data):
   4,194,304 * 1024 => 4g,294m,967k,296
   4,294,967,296 * 1024 => 4t,398g,046m,511k,104 -> 4TB
   4,398,046,511,104 * 1024 => 4p,503t,599g,627m,370k,496
-  
+
 
 '''
 
@@ -269,7 +271,7 @@ class HttpRangeData(Data):
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class FileData(Data):
 
-    def __init__(self, path=None):
+    def __init__(self, path: Optional[str] = None) -> None:
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
         self._path = path
@@ -283,23 +285,23 @@ class FileData(Data):
             self.length = st.st_size
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> bytes:
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return self._fobj.read(length)
 
     # Progress cursor without reading (no copy).
-    def seek(self, cursor) -> None:
+    def seek(self, cursor: Cursor) -> int:
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
 
     # Read the data.
-    def read(self, cursor, length):
+    def read(self, cursor: Cursor, length: int) -> bytes:
         self.seek(cursor)
         return self._fobj.read(length)
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
-    def from_xml(cls, xml_src): # -> cls:
+    def from_xml(cls, xml_src: Any) -> FileData: # -> cls:
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         xml = XmlNode.as_node(xml_src)
 
@@ -329,7 +331,7 @@ class FileData(Data):
 
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class FileMmapData(Data):
-    def __init__(self, path=None):
+    def __init__(self, path: Optional[str] = None) -> None:
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
         self._path = path
@@ -345,7 +347,7 @@ class FileMmapData(Data):
         self._mmap = mmap.mmap(self._fobj.fileno(), 0, access=mmap.ACCESS_READ)
         self._mem = memoryview(self._mmap)
 
-    def _load_length(self):
+    def _load_length(self) -> None:
         # TODO: This size is only relevant if the size doesn't change.
         fd = self._fobj.fileno()
         st = os.fstat(fd)
@@ -354,17 +356,17 @@ class FileMmapData(Data):
             self.length = st.st_size
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> memoryview:
         off = cursor.tell()
         return self._mem[off : off + length]
 
     # Progress cursor without reading (no copy).
-    def seek(self, cursor) -> None:
+    def seek(self, cursor: Cursor) -> int:
         # Noop for mmap.
         return cursor.tell()
 
     # Read the data.
-    def read(self, cursor, length, mode=None):
+    def read(self, cursor: Cursor, length: int, mode: Any = None) -> memoryview:
         off = cursor.tell()
         return self._mem[off : off + length]
 
@@ -376,31 +378,31 @@ class FileMmapData(Data):
 # Real World Use Case: File-format is a ZIP and the header is a file in the ZIP.
 #
 class BytesIoData(Data):
-    def __init__(self, bytes_io: io.BytesIO = None):
+    def __init__(self, bytes_io: Optional[io.BytesIO] = None) -> None:
         if not bytes_io or not isinstance(bytes_io, io.BytesIO):
             raise ValueError("bytes_io must be io.BytesIO and not be None")
 
         self._bytes_io = bytes_io
         self.length = len(self._bytes_io.getbuffer())
 
-    def _load_length(self):
+    def _load_length(self) -> None:
         pass
 
     # Create a cursor, like a logical file descriptor.
-    def open(self, offset=0):
+    def open(self, offset: int = 0) -> Cursor:
         return Cursor(self, offset)
 
     # Read data ahead without progressing cursor.
-    def peek(self, cursor, length):
+    def peek(self, cursor: Cursor, length: int) -> bytes:
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return self._bytes_io.read(length)
 
     # Progress cursor without reading (no copy).
-    def seek(self, cursor) -> None:
+    def seek(self, cursor: Cursor) -> int:
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
 
     # Read the data.
-    def read(self, cursor, length):
+    def read(self, cursor: Cursor, length: int) -> bytes:
         self.seek(cursor)
         return self._bytes_io.read(length)

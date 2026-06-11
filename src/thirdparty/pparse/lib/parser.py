@@ -1,4 +1,8 @@
 
+from __future__ import annotations
+
+from typing import Any, Dict, Optional, Type, Union
+
 from .extraction import (
     Extraction
 )
@@ -62,7 +66,7 @@ from .extraction import (
 # Base Parser for Extraction parsers.
 class Parser:
     
-    def __init__(self, source: Extraction, id: str, base_state_cls = None):
+    def __init__(self, source: Extraction, id: str, base_state_cls: Optional[Type[Any]] = None) -> None:
         if not isinstance(source, Extraction):
             raise TypeError("source must be an Extraction")
 
@@ -89,7 +93,7 @@ class Parser:
                 self._all_states[state.__name__] = state
 
 
-    def _init_state_as_cls(self, init_state):
+    def _init_state_as_cls(self, init_state: Union[str, Type[Any]]) -> Type[Any]:
         if isinstance(init_state, str):
             if init_state not in self._all_states:
                 raise Exception(f"{self._base_state_cls.__name__} subclass given as string ({init_state}) is not in scope.")
@@ -104,20 +108,20 @@ class Parser:
         return init_state
 
 
-    def source(self):
+    def source(self) -> Extraction:
         return self._source
 
     # This processes all data at once.
     # TODO: What is the interface that only parses what we need to?
-    def scan_data(self):
+    def scan_data(self) -> None:
         raise NotImplementedError()
 
     @staticmethod
-    def match_extension(fname):
+    def match_extension(fname: str) -> bool:
         return False
 
     @staticmethod
-    def match_magic(cursor):
+    def match_magic(cursor: Any) -> bool:
         return False
 
 

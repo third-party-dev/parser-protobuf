@@ -1,5 +1,7 @@
 
-from typing import Optional
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 from .reader import Reader, Range
 from .constants import AGAIN, ASCEND, NEXT
 from .exceptions import (
@@ -12,8 +14,11 @@ from .node_context import NodeContext
 # TODO: Dumper should not be using thirdparty.pparse.lib if called here.
 from thirdparty.pparse.dump import Dumper
 
+if TYPE_CHECKING:
+    from .parser import Parser
+
 class UnloadedValue:
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "<UNLOADED_VALUE />"
 
 
@@ -22,7 +27,7 @@ UNLOADED_VALUE = UnloadedValue()
 
 class RecursionControl:
     MAX_DEPTH = 9223372036854775807
-    def __init__(self, min_depth=0, max_depth=MAX_DEPTH, callback=None):
+    def __init__(self, min_depth: int = 0, max_depth: int = MAX_DEPTH, callback: Optional[Callable[[Node], bool]] = None) -> None:
         self.cur_depth = 0
 
         self.max_seen_depth = 0
@@ -31,7 +36,7 @@ class RecursionControl:
         self.max_depth = max_depth
         self.cb = callback
 
-    def stopped(self, node) -> bool:
+    def stopped(self, node: Node) -> bool:
         if self.cur_depth < self.min_depth:
             return False
         if self.cur_depth > self.max_depth:
@@ -40,18 +45,18 @@ class RecursionControl:
         if self.cb is not None:
             return self.cb(node)
     
-    def increase_depth(self, amount=1):
+    def increase_depth(self, amount: int = 1) -> None:
         self.cur_depth += amount
         if self.cur_depth > self.max_seen_depth:
             self.max_seen_depth = self.cur_depth
-    
-    def decrease_depth(self, amount=1):
+
+    def decrease_depth(self, amount: int = 1) -> None:
         self.cur_depth -= amount
-    
-    def current_depth(self):
+
+    def current_depth(self) -> int:
         return self.cur_depth
 
-    def deepest_depth(self):
+    def deepest_depth(self) -> int:
         return self.max_seen_depth
 
 
@@ -71,7 +76,7 @@ class RecursionControl:
       specific class going forward. (maybe a generic self._attrs:dict required at node level)
 '''
 class Node:
-    def __init__(self, reader: Reader, parser: "Parser", default_value = UNLOADED_VALUE, parent: "Node" = None, ctx_class: NodeContext = None, ctx_args={}):
+    def __init__(self, reader: Reader, parser: Parser, default_value: Any = UNLOADED_VALUE, parent: Optional[Node] = None, ctx_class: Optional[Type[NodeContext]] = None, ctx_args: Dict[str, Any] = {}) -> None:
 
         # Reference to the start of data for parsing node.
         self._reader = reader.dup()
@@ -93,32 +98,32 @@ class Node:
         self._value = default_value
 
     @property
-    def value(self):
+    def value(self) -> Any:
         if self._value == UNLOADED_VALUE:
             #breakpoint()
             self.load()
         return self._value
 
-    def ctx(self):
+    def ctx(self) -> NodeContext:
         return self._ctx
 
-    def clear_ctx(self):
+    def clear_ctx(self) -> Node:
         # TODO: Archive context here. Archive in parser?
         self._ctx = None
         return self
 
-    def tell(self):
+    def tell(self) -> int:
         return self._reader.tell()
 
-    def set_length(self, length):
+    def set_length(self, length: int) -> Node:
         self._reader = Range(self._reader.dup(), length)
         return self
 
-    def length(self):
+    def length(self) -> int:
         # TODO: Check for range?
         return self._reader.length()
 
-    def load(self, recursion: Optional[RecursionControl] = None):
+    def load(self, recursion: Optional[RecursionControl] = None) -> Optional[Node]:
         '''
             load() manages RecursionControl lifetime, enabling load() to have different
             behaviors per call and manage recursion relative to current node.
@@ -194,12 +199,11 @@ class Node:
 
         return self
 
-    def unload(self):
+    def unload(self) -> None:
         # TODO: Do we have context?
         self.value = pparse.UNLOADED_VALUE
 
-
-    def dump(self, depth=0, step=2, dumper=None):
+    def dump(self, depth: int = 0, step: int = 2, dumper: Any = None) -> None:
         node_attrs =  [f'off="{self.tell()}"']
 
         if not dumper:
@@ -208,7 +212,7 @@ class Node:
 
 
     @classmethod
-    def from_xml(cls, src_xml, ctx_ref):
+    def from_xml(cls, src_xml: Any, ctx_ref: Any) -> Optional[Node]:
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         node_xml = XmlNode.as_node(src_xml)
         
