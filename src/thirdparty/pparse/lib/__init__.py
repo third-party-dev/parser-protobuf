@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+"""Public API for the pparse framework.
+
+Exports all symbols so callers can import everything they need from ``thirdparty.pparse.lib``.
+"""
 
 import logging
 log = logging.getLogger(__name__)

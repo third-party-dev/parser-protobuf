@@ -1,3 +1,4 @@
+"""Extraction classes that couple a data source to one or more parsers."""
 
 from __future__ import annotations
 
@@ -14,6 +15,17 @@ if TYPE_CHECKING:
 
 # Generic artifact that ties parsers to cursor-ed data.
 class Extraction:
+    """Abstract representation of a named data source with zero or more attached parsers.
+
+    An ``Extraction`` couples a raw data source (file, URL, in-memory buffer) 
+    with the parsers that know how to interpret it.  Subclasses implement
+    ``open()`` to return a ``Reader`` positioned at the start of the data.
+
+    Args:
+        name: A human-readable name for this extraction (e.g. a filename).
+        source: The parent this ``Extraction`` was derived from, if any.
+    """
+
     def __init__(self, name: Optional[str] = None, source: Optional[Extraction] = None) -> None:
         # The extraction we came from. Detect parser via source.
         self._source: Optional[Extraction] = source
@@ -23,9 +35,22 @@ class Extraction:
         self._extractions: list = []   # child extractions
 
     def name(self) -> Optional[str]:
+        """Return the name of this extraction.
+
+        Returns:
+            The extraction name, or ``None`` if not set.
+        """
         return self._name
 
     def set_name(self, name: str) -> Extraction:
+        """Set the name of this extraction.
+
+        Args:
+            name: The new name.
+
+        Returns:
+            ``self``, to allow chaining.
+        """
         self._name = name
         return self
 
@@ -38,17 +63,51 @@ class Extraction:
     # the root node will hold the initial parser instance (which gets copied to all
     # relevant children).
     def add_result(self, id: Any, root_node: Optional[Node]) -> None:
+        """Register a root node against a result slot.
+
+        Args:
+            id: The result identifier (typically a string key).
+            root_node: The root ``Node`` of the parse result, or ``None`` if
+                the result has not been populated yet.
+        """
         self._result[id] = root_node
 
     # TODO: Create passthrough load() for result or results
 
     def add_parser(self, id: str, parser: Optional[Parser]) -> None:
+        """Register a parser under a string identifier.
+
+        Args:
+            id: A unique string key for this parser.
+            parser: The ``Parser`` instance to register.
+        """
         self._parser[id] = parser
 
     def has_parser(self, parser_id: str) -> bool:
+        """Return whether a parser with the given ID has been registered.
+
+        Args:
+            parser_id: The parser identifier to check.
+
+        Returns:
+            ``True`` if a parser with that ID exists, ``False`` otherwise.
+        """
         return parser_id in self._parser
 
     def discover_parsers(self, parser_registry: Dict[str, Any]) -> Extraction:
+        """Auto-detect applicable parsers from a registry and register them.
+
+        For each parser in ``parser_registry`` that has not already been
+        registered, the method tries ``match_extension`` on the extraction
+        name and then ``match_magic`` on the data bytes.  The first matching
+        parser is instantiated and registered.
+
+        Args:
+            parser_registry: A mapping of parser ID strings to parser classes.
+
+        Returns:
+            ``self``, to allow chaining.
+        """
         for pname, parser in parser_registry.items():
             if not self.has_parser(pname):
                 if parser.match_extension(self.name()):
@@ -61,12 +120,27 @@ class Extraction:
         return self
 
     def open(self) -> Reader:
+        """Return a fresh ``Reader`` positioned at the start of the ``Extraction``'s data.
+
+        Returns:
+            A ``Reader`` ready for use at offset 0.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
         raise NotImplementedError()
 
     # Process all data at once.
     # TODO: Parse data lazily.
     # TODO: What is the interface that only parses what we need to?
     def scan_data(self) -> Extraction:
+        """Trigger all registered parsers to scan the full data source.
+
+        Note: Legacy/Unused
+
+        Returns:
+            ``self``, to allow chaining.
+        """
         for parser in self._parser.values():
             parser.scan_data()
         return self
@@ -74,15 +148,52 @@ class Extraction:
     # extraction = Extraction.from_xml("<job />")
     @classmethod
     def from_xml(cls, xml_src: Any, xml_root: Any) -> Extraction:
+        """Load and resume ``Extraction`` from state in XML.
+
+        Args:
+            xml_src: An XML element or string describing the extraction.
+            xml_root: The root XML context used to resolve references.
+
+        Returns:
+            A populated ``Extraction`` instance.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
         raise NotImplementedError("from_xml not implemented")
 
     # extraction.to_xml() -> "<job />"
     def to_xml(self) -> str:
+        """Stop and save the current state of ``Extraction`` to XML.
+
+        Returns:
+            An XML string representation of this extraction.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
         raise NotImplementedError("to_xml not implemented")
 
 
 # Generic artifact that ties parsers to cursor-ed data.
 class BytesExtraction(Extraction):
+    """An ``Extraction`` backed by an existing ``Reader`` (bytes already in hand).
+
+    Used when the raw data is accessible via a ``Reader`` — for example, a
+    ``Range`` wrapping a memory-mapped file or a ``BytesIoData`` cursor.
+    Exactly one of ``source`` or ``reader`` must be provided.
+
+    Args:
+        name: A human-readable name for this extraction (e.g. relative filename).
+        source: Parent ``Extraction`` to ``open`` a ``Reader``.
+        reader: An existing ``Reader`` to use directly.
+
+    Note: Use only source xor reader, not both (i.e. one and only one must be set).
+
+    Raises:
+        ValueError: If both or neither of ``source`` and ``reader`` are provided.
+    """
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -103,14 +214,42 @@ class BytesExtraction(Extraction):
         self._reader = reader
 
     def open(self) -> Reader:
+        """Return ``Reader`` positioned at the start of the data.
+
+        Returns:
+            A duplicated ``Reader`` at offset 0.
+        """
         return self._reader.dup()
 
     def tell(self) -> int:
+        """Return the current byte offset of the internal reader.
+
+        Returns:
+            The current read position.
+        """
         return self._reader.tell()
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
     def from_xml(cls, xml_src: Any, pparse_xml: Optional[Any] = None) -> BytesExtraction:
+        """Load and resume a ``BytesExtraction`` from an XML element.
+
+        Reads the ``<datasource />`` child element to create the underlying
+        data object, wraps it in a ``Range``, and recursively processes any
+        child extractions and result references.
+
+        Args:
+            xml_src: An XML element or string describing the extraction.
+            pparse_xml: The parent ``PparseXml`` resolver, required when
+                result references (``<result />``) are present.
+
+        Returns:
+            A populated ``BytesExtraction`` with its reader set up.
+
+        Raises:
+            Exception: If required attributes or elements are missing, or if
+                result references are present but no resolver is provided.
+        """
 
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         xml = XmlNode.as_node(xml_src)

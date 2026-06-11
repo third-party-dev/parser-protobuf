@@ -1,3 +1,5 @@
+"""pparse constants"""
+
 from typing import Final
 
 # Generally, rerun the parser on same node.

@@ -1,3 +1,4 @@
+"""Base ``Parser`` class for format-specific extraction parsers."""
 
 from __future__ import annotations
 
@@ -12,7 +13,7 @@ from .extraction import (
 
     It is the parser's responsibility to be lazy. The framework will allow a parser to
     attempt to scan over the data within its scope. The parser can choose to do all of
-    the parsing in this phase, or ramain willfully ignorant of the data until the user
+    the parsing in this phase, or remain willfully ignorant of the data until the user
     references the data.
 
     It is difficult to anticipate the types of references that all interfaces would
@@ -65,7 +66,28 @@ from .extraction import (
 
 # Base Parser for Extraction parsers.
 class Parser:
-    
+    """Abstract base class for format-specific parsers attached to an ``Extraction``.
+
+    A ``Parser`` is responsible for lazily interpreting the bytes provided by
+    its ``Extraction`` and populating a tree of ``Node`` objects.  Concrete
+    subclasses override ``match_extension`` and ``match_magic`` so the framework
+    can auto-detect the right parser for a given data source.
+
+    If ``base_state_cls`` is provided the constructor automatically discovers
+    all transitive subclasses and registers them by name in ``_all_states``,
+    enabling state lookup by string name via ``_init_state_as_cls``. (Required for
+    XML load and resume.)
+
+    Args:
+        source: The ``Extraction`` this parser will consume.
+        id: A unique string identifier for this parser within the extraction.
+        base_state_cls: Optional base class for the parser's state machine.
+            All subclasses of this class are registered in ``_all_states``.
+
+    Raises:
+        TypeError: If ``source`` is not an ``Extraction`` instance.
+    """
+
     def __init__(self, source: Extraction, id: str, base_state_cls: Optional[Type[Any]] = None) -> None:
         if not isinstance(source, Extraction):
             raise TypeError("source must be an Extraction")
@@ -94,6 +116,23 @@ class Parser:
 
 
     def _init_state_as_cls(self, init_state: Union[str, Type[Any]]) -> Type[Any]:
+        """Resolve ``init_state`` to a state class, validating it in the process.
+
+        Accepts either a string name (looked up in ``_all_states``) or an
+        actual class object (validated as a subclass of ``_base_state_cls``).
+        (Required for XML load and resume.)
+
+        Args:
+            init_state: A state class or the string name of a registered state.
+
+        Returns:
+            The resolved state class.
+
+        Raises:
+            Exception: If a string name is not registered, if the argument is
+                not a class object, or if the class is not a subclass of
+                ``_base_state_cls``.
+        """
         if isinstance(init_state, str):
             if init_state not in self._all_states:
                 raise Exception(f"{self._base_state_cls.__name__} subclass given as string ({init_state}) is not in scope.")
@@ -109,19 +148,49 @@ class Parser:
 
 
     def source(self) -> Extraction:
+        """Return the ``Extraction`` this parser is consuming.
+
+        Returns:
+            The parent ``Extraction`` instance.
+        """
         return self._source
 
     # This processes all data at once.
     # TODO: What is the interface that only parses what we need to?
     def scan_data(self) -> None:
+        """Parse the entire data source eagerly, populating the node tree.
+
+        Note: Legacy / Unused
+
+        Raises:
+            NotImplementedError: Must be implemented by each concrete subclass.
+        """
         raise NotImplementedError()
 
     @staticmethod
     def match_extension(fname: str) -> bool:
+        """Return whether the given filename suggests this parser can handle the data.
+
+        Args:
+            fname: The filename or path to test.
+
+        Returns:
+            ``True`` if the extension matches, ``False`` otherwise.
+            The base implementation always returns ``False``.
+        """
         return False
 
     @staticmethod
     def match_magic(cursor: Any) -> bool:
+        """Return whether the magic bytes at the start of the data match this format.
+
+        Args:
+            cursor: A ``Reader`` positioned at the beginning of the data.
+
+        Returns:
+            ``True`` if the magic bytes match, ``False`` otherwise.
+            The base implementation always returns ``False``.
+        """
         return False
 
 

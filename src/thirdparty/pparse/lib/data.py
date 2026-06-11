@@ -1,3 +1,5 @@
+"""Data source implementations that back ``Cursor`` and ``Range`` objects."""
+
 from __future__ import annotations
 
 import io
@@ -23,16 +25,72 @@ from .reader import (
 
 # Data interface.
 class Data:
+    """Abstract data backend that provides I/O operations to ``Cursor`` objects.
+
+    ``Data`` subclasses own the access to persistent storage (file, HTTP URL, mmap,
+    in-memory ``BytesIO``).  ``Data`` implements ``peek`` for non-advancing reads;
+    seek and read are provided with default implementations built on top of
+    ``peek``.
+
+    The design keeps offset tracking out of ``Data``: a ``Cursor`` manages
+    the current position and passes itself to ``Data`` methods as a handle. A
+    ``Cursor`` is not unlike a user-space defined file descriptor.
+    """
+
     def open(self, offset: int = 0) -> Cursor:
+        """Return a new ``Cursor`` into this data source at ``offset``.
+
+        Args:
+            offset: Initial byte offset for the cursor.
+
+        Returns:
+            A ``Cursor`` positioned at ``offset``.
+        """
         return Cursor(self, offset)
 
     def peek(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes at the cursor's position without advancing offset.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+
+        Raises:
+            NotImplementedError: Must be implemented by subclasses.
+        """
         raise NotImplementedError()
 
     def seek(self, cursor: Cursor) -> int:
+        """Update the underlying file descriptor or upstream libraries internal offset.
+
+        The base implementation is a no-op that returns the cursor's current
+        position.  Subclasses that maintain their own file pointer should
+        override ``seek``.
+
+        Args:
+            cursor: The ``Cursor`` whose offset should be applied.
+
+        Returns:
+            The cursor's current byte offset.
+        """
         return cursor.tell()
 
     def read(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes.
+
+        The base implementation uses ``peek``.  Subclasses that can perform a more 
+        efficient read-and-seek in a single syscall should override ``read``.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Max number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         # Dumb implementation.
         data = self.peek(cursor, length)
         self.seek(cursor)
@@ -147,6 +205,26 @@ class Data:
 from thirdparty.pparse._httpdata import _HttpCachedData
 
 class HttpCachedData(Data):
+    """``Data`` backend that fetches remote content via HTTP with a local chunk cache.
+
+    Downloads the target resource in fixed-size chunks and keeps a bounded
+    LRU-style cache in memory.  Supports servers that advertise
+    ``Accept-Ranges: bytes``; falls back to a "download from beginning" when Range
+    requests are not available.
+
+    Args:
+        url: The full HTTP/HTTPS URL of the target resource.
+        chunk_size: Size of each cache chunk in bytes. (Ideally close to page size or hardware cache size)
+        chunk_max_count: Maximum number of chunks to keep in the cache (consider SDRAM available to process).
+        session: An optional ``requests.Session`` to use for HTTP calls.
+            A new session is created when this is ``None``.
+
+    Raises:
+        Exception: If Range requests are not supported and the file is larger
+            than the total cache capacity.
+    """
+    # TODO FOR DOCS: Does it work even when file does not fit in cache?
+
     # ~ 4MiB
     CHUNK_SIZE = 4096*256
     # Max Chunks
@@ -176,11 +254,34 @@ class HttpCachedData(Data):
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes at the cursor's position via the chunk cache.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         return self.httpdata._read(cursor.tell(), length)
 
 
 
 class HttpRangeData(Data):
+    """``Data`` backend that issues a fresh HTTP Range request for every read.
+
+    Simple but slow: each ``peek`` translates directly into one HTTP request
+    with a ``Range`` header.  There is no caching, so sequential access
+    patterns incur one round-trip per read.  Prefer ``HttpCachedData`` for
+    any non-trivial use.
+
+    Args:
+        url: The full HTTP/HTTPS URL of the target resource.
+
+    Raises:
+        ValueError: If ``url`` is empty or ``None``.
+    """
+
     def __init__(self, url: Optional[str] = None) -> None:
         if not url:
             raise ValueError("url must be a string that points to a valid url")
@@ -195,6 +296,14 @@ class HttpRangeData(Data):
 
 
     def _load_length(self) -> int:
+        """Fetch the ``Content-Length`` of the remote data via an HTTP HEAD request.
+
+        Returns:
+            The size of the remote resource in bytes.
+
+        Raises:
+            ValueError: If the server does not return a ``Content-Length`` header.
+        """
         response = self._session.head(self._url)
         # TODO: Determine how to handle exceptions.
         response.raise_for_status()
@@ -207,6 +316,18 @@ class HttpRangeData(Data):
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes at the cursor's position via an HTTP Range request.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+
+        Raises:
+            IOError: If the server returns an unexpected HTTP status code.
+        """
         if length <= 0:
             return b""
 
@@ -228,10 +349,28 @@ class HttpRangeData(Data):
 
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
+        """HTTP Range requests are stateless, so no sync is needed. (i.e. its a no op.)
+
+        Args:
+            cursor: The ``Cursor`` whose position to return.
+
+        Returns:
+            The cursor's current byte offset.
+        """
+        # TODO: Consider calling super().seek(cursor) to make clear we're doing nothing?
         return cursor.tell()
 
     # Read the data.
     def read(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Max number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         return self.peek(cursor, length)
 
 
@@ -270,6 +409,18 @@ class HttpRangeData(Data):
 
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class FileData(Data):
+    """``Data`` backend that reads from a local file via a buffer.
+
+    Opens the file in binary read mode and uses ``seek()`` + ``read()`` syscalls
+    for each access.  The file object is kept open for the lifetime of the
+    instance (shared with all associated ``Reader``s).
+
+    Args:
+        path: Absolute or relative path to the file to read.
+
+    Raises:
+        ValueError: If ``path`` is empty, ``None``, or does not exist.
+    """
 
     def __init__(self, path: Optional[str] = None) -> None:
         if not path or not os.path.exists(path):
@@ -286,22 +437,64 @@ class FileData(Data):
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
+        """Seek the file to the cursor's position and read ``length`` bytes.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return self._fobj.read(length)
 
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
+        """Update file descriptor to the cursor's byte offset.
+
+        Args:
+            cursor: The ``Cursor`` whose offset to apply.
+
+        Returns:
+            The cursor's current byte offset.
+        """
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
 
     # Read the data.
     def read(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Max number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         self.seek(cursor)
         return self._fobj.read(length)
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
     def from_xml(cls, xml_src: Any) -> FileData: # -> cls:
+        """Deserialize a ``FileData`` from a ``<datasource />`` XML element.
+
+        Reads the ``posix_path`` (or ``windows_path``) from the element's
+        ``<extra />`` child and attempts to validate the file is unchanges by
+        comparing the on-disk file length to the XML recorded length.
+
+        Args:
+            xml_src: An XML element or string for the ``<datasource />`` node.
+
+        Returns:
+            A ``FileData`` instance opened on the described file.
+
+        Raises:
+            Exception: If the element tag is wrong, a path key is missing, or
+                the recorded length does not match the file on disk.
+        """
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         xml = XmlNode.as_node(xml_src)
 
@@ -331,6 +524,22 @@ class FileData(Data):
 
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class FileMmapData(Data):
+    """``Data`` backend that memory-maps a local file for zero-copy access.
+
+    Uses ``mmap`` and a ``memoryview`` overlay so that slice operations
+    return a ``memoryview`` without copying bytes.  This is the fastest
+    backend for local files when random access patterns are common.
+
+    Note: Untested in production use. (Unused/Legacy)
+
+    Args:
+        path: Absolute or relative path to the file to map.
+
+    Raises:
+        ValueError: If ``path`` is empty, ``None``, or does not exist.
+        Exception: If ``mmap`` is not available on the platform.
+    """
+
     def __init__(self, path: Optional[str] = None) -> None:
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
@@ -348,6 +557,11 @@ class FileMmapData(Data):
         self._mem = memoryview(self._mmap)
 
     def _load_length(self) -> None:
+        """Populate ``self.length`` from the file's ``stat`` size.
+
+        Note: The recorded size is only accurate at open time; it will not
+        reflect subsequent truncations or appends.
+        """
         # TODO: This size is only relevant if the size doesn't change.
         fd = self._fobj.fileno()
         st = os.fstat(fd)
@@ -357,16 +571,43 @@ class FileMmapData(Data):
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> memoryview:
+        """Return a zero-copy ``memoryview`` slice at the cursor's position.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to expose.
+
+        Returns:
+            A ``memoryview`` over the requested byte range.
+        """
         off = cursor.tell()
         return self._mem[off : off + length]
 
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
+        """No-op seek — mmap access is always random, so no pointer sync is needed.
+
+        Args:
+            cursor: The ``Cursor`` whose position to return.
+
+        Returns:
+            The cursor's current byte offset.
+        """
         # Noop for mmap.
         return cursor.tell()
 
     # Read the data.
     def read(self, cursor: Cursor, length: int, mode: Any = None) -> memoryview:
+        """Return a zero-copy ``memoryview`` slice at the cursor's position.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to expose.
+            mode: Unused; present for interface compatibility.
+
+        Returns:
+            A ``memoryview`` over the requested byte range.
+        """
         off = cursor.tell()
         return self._mem[off : off + length]
 
@@ -378,6 +619,19 @@ class FileMmapData(Data):
 # Real World Use Case: File-format is a ZIP and the header is a file in the ZIP.
 #
 class BytesIoData(Data):
+    """``Data`` backend backed by an in-memory ``io.BytesIO`` buffer.
+
+    Useful when the raw bytes are already in memory, e.g. when a file inside
+    a ZIP archive has been decompressed into a buffer and needs to be parsed
+    as its own extraction.
+
+    Args:
+        bytes_io: The ``BytesIO`` buffer to read from.
+
+    Raises:
+        ValueError: If ``bytes_io`` is ``None`` or is not a ``BytesIO`` instance.
+    """
+
     def __init__(self, bytes_io: Optional[io.BytesIO] = None) -> None:
         if not bytes_io or not isinstance(bytes_io, io.BytesIO):
             raise ValueError("bytes_io must be io.BytesIO and not be None")
@@ -386,23 +640,58 @@ class BytesIoData(Data):
         self.length = len(self._bytes_io.getbuffer())
 
     def _load_length(self) -> None:
+        """``BytesIO`` length is read eagerly in ``__init__``."""
         pass
 
     # Create a cursor, like a logical file descriptor.
     def open(self, offset: int = 0) -> Cursor:
+        """Return a new ``Cursor`` into this buffer at ``offset``.
+
+        Args:
+            offset: Initial byte offset for the cursor.
+
+        Returns:
+            A ``Cursor`` positioned at ``offset``.
+        """
         return Cursor(self, offset)
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
+        """Seek the buffer to the cursor's position and read ``length`` bytes.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return self._bytes_io.read(length)
 
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
+        """Update ``BytesIO`` internal position to the cursor's byte offset.
+
+        Args:
+            cursor: The ``Cursor`` whose offset to apply.
+
+        Returns:
+            The cursor's current byte offset.
+        """
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
 
     # Read the data.
     def read(self, cursor: Cursor, length: int) -> bytes:
+        """Read ``length`` bytes.
+
+        Args:
+            cursor: The ``Cursor`` indicating where to read from.
+            length: Max number of bytes to read.
+
+        Returns:
+            Up to ``length`` bytes of data.
+        """
         self.seek(cursor)
         return self._bytes_io.read(length)

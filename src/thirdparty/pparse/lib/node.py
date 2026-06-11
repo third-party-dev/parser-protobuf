@@ -1,3 +1,4 @@
+"""Node — the core data unit of the pparse parse-tree."""
 
 from __future__ import annotations
 
@@ -18,6 +19,11 @@ if TYPE_CHECKING:
     from .parser import Parser
 
 class UnloadedValue:
+    """Sentinel object used as the default value of a ``Node`` before it is parsed.
+
+    A single module-level instance ``UNLOADED_VALUE`` is used everywhere.
+    """
+
     def __repr__(self) -> str:
         return "<UNLOADED_VALUE />"
 
@@ -26,7 +32,24 @@ UNLOADED_VALUE = UnloadedValue()
 
 
 class RecursionControl:
+    """Configurable guard that limits how deeply ``Node.load`` recurses.
+
+    ``RecursionControl`` is passed to ``Node.load`` to give callers
+    fine-grained control over which parts of the parse tree are eagerly
+    expanded.  At each node, ``stopped`` is called to decide whether
+    recursion should halt.
+
+    Args:
+        min_depth: Nodes at depths below this value are always loaded,
+            ignoring ``max_depth`` and the callback.
+        max_depth: Nodes at depths above this value are never loaded.
+        callback: An optional callable that receives a ``Node`` and returns
+            ``True`` to stop recursion at that node.  Only called when
+            ``min_depth <= cur_depth <= max_depth``.
+    """
+
     MAX_DEPTH = 9223372036854775807
+
     def __init__(self, min_depth: int = 0, max_depth: int = MAX_DEPTH, callback: Optional[Callable[[Node], bool]] = None) -> None:
         self.cur_depth = 0
 
@@ -37,6 +60,16 @@ class RecursionControl:
         self.cb = callback
 
     def stopped(self, node: Node) -> bool:
+        """Return whether recursion should halt at ``node``.
+
+        Args:
+            node: The ``Node`` that is about to be loaded.
+
+        Returns:
+            ``True`` if loading ``node`` should be skipped, ``False`` if it
+            should proceed.  Returns ``None`` (falsy) when depth is within
+            the min/max window and no callback is configured.
+        """
         if self.cur_depth < self.min_depth:
             return False
         if self.cur_depth > self.max_depth:
@@ -46,17 +79,37 @@ class RecursionControl:
             return self.cb(node)
     
     def increase_depth(self, amount: int = 1) -> None:
+        """Increment the current recursion depth and update the high-water mark.
+
+        Args:
+            amount: Number of levels to increase by.
+        """
         self.cur_depth += amount
         if self.cur_depth > self.max_seen_depth:
             self.max_seen_depth = self.cur_depth
 
     def decrease_depth(self, amount: int = 1) -> None:
+        """Decrement the current recursion depth.
+
+        Args:
+            amount: Number of levels to decrease by.
+        """
         self.cur_depth -= amount
 
     def current_depth(self) -> int:
+        """Return the current recursion depth.
+
+        Returns:
+            The number of ``load`` calls currently on the call stack.
+        """
         return self.cur_depth
 
     def deepest_depth(self) -> int:
+        """Return the maximum recursion depth seen since this instance was created.
+
+        Returns:
+            The high-water mark for recursion depth.
+        """
         return self.max_seen_depth
 
 
@@ -76,6 +129,27 @@ class RecursionControl:
       specific class going forward. (maybe a generic self._attrs:dict required at node level)
 '''
 class Node:
+    """A single node in the pparse parse-tree.
+
+    A ``Node`` represents a region of binary data that a ``Parser`` knows about
+    and _possibly_ how to interpret.  Its ``_value`` starts as ``UNLOADED_VALUE`` and is
+    populated lazily on first access via the ``value`` property, which
+    triggers ``load()``.
+
+    Each node owns a ``NodeContext`` that carries the parser's state machine (for the Node)
+    and a ``Reader`` positioned at the start of the node's data offset.
+
+    Args:
+        reader: A ``Reader`` positioned at the start of this node's data.
+        parser: The ``Parser`` responsible for interpreting this node.
+        default_value: Initial value; defaults to ``UNLOADED_VALUE`` so that
+            the node is parsed lazily on first access.
+        parent: The parent ``Node``, or ``None`` for the root.
+        ctx_class: An optional ``NodeContext`` subclass to instantiate instead
+            of the default ``NodeContext``.
+        ctx_args: Extra keyword arguments forwarded to ``ctx_class``.
+    """
+
     def __init__(self, reader: Reader, parser: Parser, default_value: Any = UNLOADED_VALUE, parent: Optional[Node] = None, ctx_class: Optional[Type[NodeContext]] = None, ctx_args: Dict[str, Any] = {}) -> None:
 
         # Reference to the start of data for parsing node.
@@ -99,50 +173,109 @@ class Node:
 
     @property
     def value(self) -> Any:
+        """Return the parsed value, triggering ``load()`` if not yet parsed.
+
+        Returns:
+            The node's parsed value (dict, list, scalar, or nested ``Node``).
+        """
         if self._value == UNLOADED_VALUE:
             #breakpoint()
             self.load()
         return self._value
 
     def ctx(self) -> NodeContext:
+        """Return the ``NodeContext`` for this node.
+
+        Returns:
+            The ``NodeContext`` holding the parser state for this node.
+        """
         return self._ctx
 
     def clear_ctx(self) -> Node:
+        """Release the ``NodeContext`` to free memory.
+
+        Should only be called once the node's value is fully loaded and
+        re-parsing is no longer needed or acceptably thrown away for restoration
+        of memory.
+
+        Returns:
+            ``self``, to allow chaining.
+        """
         # TODO: Archive context here. Archive in parser?
         self._ctx = None
         return self
 
     def tell(self) -> int:
+        """Return the absolute byte offset of the start of this node's data.
+
+        Returns:
+            The node's start position within the data source.
+        """
         return self._reader.tell()
 
     def set_length(self, length: int) -> Node:
+        """Replace the internal reader with a ``Range`` of ``length`` bytes.
+
+        Args:
+            length: Number of bytes in this node's data region.
+
+        Returns:
+            ``self``, to allow chaining.
+        """
         self._reader = Range(self._reader.dup(), length)
         return self
 
     def length(self) -> int:
+        """Return the byte length of this node's data region.
+
+        Returns:
+            The number of bytes in the node's ``Range``.
+        """
         # TODO: Check for range?
         return self._reader.length()
 
     def load(self, recursion: Optional[RecursionControl] = None) -> Optional[Node]:
-        '''
-            load() manages RecursionControl lifetime, enabling load() to have different
-            behaviors per call and manage recursion relative to current node.
+        """Parse this node's data region and populate ``_value``.
 
-            CAUTION: Recursion control is a mechanism that allows parsers to delegate recursion
-            decisions to the caller or user of the API. It does not enforce or provide 
-            tightly controlled governance over the parts of the Node tree that get processed.
+        Drives the parser state machine until ``EndOfNodeException`` (success),
+        ``EndOfDataException`` (propagated), or ``UnsupportedFormatException``
+        (propagated) is raised.  Whenever the state machine registers
+        descendant nodes they are immediately loaded in depth-first order,
+        subject to ``recursion`` constraints.
 
-            RULE: load() should handle the recursive behavior, not the parser state.
+        ``load()`` manages ``RecursionControl`` lifetime, enabling different
+        behaviors per call and managing recursion depth relative to the
+        current node.
 
-            RULE: Leaky abstraction when recursion policy stored in Node or NodeContext!
+        CAUTION: Recursion control is a mechanism that allows parsers to delegate recursion
+        decisions to the caller or user of the API. It does not enforce or provide
+        tight controls over the parts of the Node tree that get processed.
 
-            NOTE: json is weird because you have to recurse every time. Since I implemented
-            JSON first, I believe its driving some of the anti-patterns in pparse. If
-            we want to save on memory for JSON, we could theoretically parse and allocate
-            nodes and as we complete branches of a depth first parse we deallocated.
-            I naturally want to do this for recursive=False, but since recursive=False
-            is default, it makes it feel like unnecessary thrashing of the CPU. 
-        '''
+        RULE: load() should handle the recursive behavior, not the parser state.
+
+        RULE: Leaky abstraction when recursion policy stored in Node or NodeContext!
+
+        NOTE: json parsing is weird because you have to recurse every time. Since I 
+        implemented JSON first, I believe its driving some of the anti-patterns in pparse.
+        If we want to save on memory for JSON, we could theoretically parse and allocate
+        nodes and as we complete branches of a depth first parse we deallocated.
+        I naturally want to do this for recursive=False, but since recursive=False
+        is default, it makes it feel like unnecessary thrashing of the CPU.
+
+        Args:
+            recursion: An optional ``RecursionControl`` that limits how deeply
+                the parse tree is expanded.  When ``None`` all reachable
+                descendants are loaded eagerly.
+
+        Returns:
+            ``self`` if loading completed, ``None`` if ``recursion`` halted
+            loading before any state was run.
+
+        Raises:
+            EndOfDataException: If the data source is exhausted unexpectedly.
+            UnsupportedFormatException: If the data does not match the expected
+                format.
+        """
 
         # Increment the depth on entrance to load().
         # NOTE: Checking for recursion here because we don't want to mess with reentrant
@@ -199,11 +332,22 @@ class Node:
 
         return self
 
+
     def unload(self) -> None:
+        """Reset this node's value to ``UNLOADED_VALUE`` so it can be re-parsed when needed."""
         # TODO: Do we have context?
         self.value = pparse.UNLOADED_VALUE
 
+
     def dump(self, depth: int = 0, step: int = 2, dumper: Any = None) -> None:
+        """Render this node to the given dumper for debugging or serialization.
+
+        Args:
+            depth: Current indentation depth passed to the dumper.
+            step: Number of spaces per indentation level.
+            dumper: A ``Dumper`` instance; ``Dumper.default()`` is used when
+                this is ``None``.
+        """
         node_attrs =  [f'off="{self.tell()}"']
 
         if not dumper:
@@ -213,6 +357,25 @@ class Node:
 
     @classmethod
     def from_xml(cls, src_xml: Any, ctx_ref: Any) -> Optional[Node]:
+        """Reconstruct a ``Node`` from a ``<node />`` XML element.
+
+        Reads parser, context, and value information from the XML, resolves
+        the appropriate parser via a built-in registry, and recursively
+        deserializes any nested ``<node />`` values.
+
+        Args:
+            src_xml: A ``<node />`` XML element or string.
+            ctx_ref: A ``ContextRef`` carrying the parent result reference,
+                optional context XML, and resolved parser.
+
+        Returns:
+            The reconstructed ``Node``, or ``None`` if the node has no
+            ``<value />`` element (i.e. is left in the unloaded state).
+
+        Raises:
+            Exception: If the element is not a ``<node />`` or required
+                attributes are missing.
+        """
         from thirdparty.pparse._xml import XmlNode, XmlEntry
         node_xml = XmlNode.as_node(src_xml)
         

@@ -1,3 +1,5 @@
+"""Abstract base class for tensor values parsed from binary model formats."""
+
 from __future__ import annotations
 
 from typing import Any, List
@@ -6,6 +8,14 @@ import numpy
 
 
 class Tensor:
+    """Abstract representation of a typed, shaped tensor stored in a binary format.
+
+    Subclasses are expected to implement all abstract methods to provide
+    access to the underlying data in a format-independent way.  The class
+    also provides lookup tables that map pparse dtype strings to struct
+    format characters, element sizes, and NumPy dtypes.
+    """
+
     STTYPE_STRUCT = {
         "I8": "b",
         "U8": "B",
@@ -48,20 +58,45 @@ class Tensor:
 
     # Return (safetensors equivalent) type
     def get_type(self) -> str:
+        """Return the safetensors-compatible dtype string for this tensor.
+
+        Returns:
+            A dtype string such as ``"F32"``, ``"I64"``, etc.
+        """
         raise NotImplementedError()
 
     # Return (safetensors equivalent) shape
     def get_shape(self) -> List[int]:
+        """Return the safetensors-compatible shape of this tensor.
+
+        Returns:
+            A list of dimension sizes, e.g. ``[batch, channels, height, width]``.
+        """
         raise NotImplementedError()
 
     # Return raw data as extracted from source
     def get_data_bytes(self) -> bytes:
+        """Return the raw tensor data exactly as it appears in the source.
+
+        Returns:
+            The raw byte content of the tensor.
+        """
         raise NotImplementedError()
 
     # Return raw data as python array of dtype
     def as_array(self) -> Any:
+        """Return the tensor data as a Python array typed to the tensor's dtype.
+
+        Returns:
+            A Python sequence or array object representing the tensor values.
+        """
         raise NotImplementedError()
 
     # Return raw data as numpy array of dtype
     def as_numpy(self) -> numpy.ndarray:
+        """Return the tensor data as a NumPy array typed to the tensor's dtype and shape.
+
+        Returns:
+            A ``numpy.ndarray`` with the appropriate dtype and shape.
+        """
         raise NotImplementedError()
