@@ -81,9 +81,7 @@ class Field:
 
 
     def __repr__(self) -> str:
-        return (
-            f"  Field: {self.name} #{self.number} : {self.type_str()}({self.type_name})"
-        )
+        return f"  Field: {self.name} #{self.number} : {self.type_str()}({self.type_name})"
 
 
 class Protobuf:

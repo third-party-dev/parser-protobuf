@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Type, Union
 
-from .extraction import (
-    Extraction
-)
+from .extraction import Extraction
 
 """
     Parser Considerations:
@@ -113,6 +111,7 @@ class Parser:
 
             def all_subclasses(base_cls):
                 return base_cls.__subclasses__() + [s for sub in base_cls.__subclasses__() for s in all_subclasses(sub)]
+
             state_classes = all_subclasses(base_state_cls)
             for state in state_classes:
                 self._all_states[state.__name__] = state
@@ -138,14 +137,18 @@ class Parser:
         """
         if isinstance(init_state, str):
             if init_state not in self._all_states:
-                raise Exception(f"{self._base_state_cls.__name__} subclass given as string ({init_state}) is not in scope.")
+                raise Exception(
+                    f"{self._base_state_cls.__name__} subclass given as string ({init_state}) is not in scope."
+                )
             return self._all_states[init_state]
 
         if self._base_state_cls:
             if not isinstance(init_state, type):
                 raise Exception("init_state parameter is not a class object.")
             if not issubclass(init_state, self._base_state_cls):
-                raise Exception(f"Given state class ({init_state.__name__}) not a subclass of {self._base_state_cls.__name__}")
+                raise Exception(
+                    f"Given state class ({init_state.__name__}) not a subclass of {self._base_state_cls.__name__}"
+                )
 
         return init_state
 
@@ -198,6 +201,3 @@ class Parser:
             The base implementation always returns ``False``.
         """
         return False
-
-
-

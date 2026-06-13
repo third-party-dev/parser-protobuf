@@ -10,5 +10,11 @@ builddevpkgs TAG="":
 test:
     ./scripts/pytest.sh
 
+format:
+    @echo "--- ruff format ---"
+    @ruff format .
+    @echo "--- spacing methods ---"
+    @./scripts/method_spacing.py
+
 checks:
     @ruff check .

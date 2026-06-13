@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from typing import Any
@@ -18,8 +19,9 @@ def register_pparse_xml(subparsers: Any) -> None:
 
 def xml_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.view.xml import Xml
 
     print(f"Parsing xml from: {args.path}")
@@ -35,10 +37,9 @@ def xml_view(args: Any) -> None:
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
         breakpoint()
-
-

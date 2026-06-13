@@ -77,7 +77,9 @@ class Onnx:
         self._tensor_meta: dict[str, Tensor] = {}
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None) -> Onnx:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Onnx:
         # from importlib import resources
         # data_path = resources.files("thirdparty.pparse.data")
         # proto = PbImport(data_path / "proto" / "onnx.pb")
@@ -90,16 +92,16 @@ class Onnx:
                 init_msgtype=".onnx.ModelProto",
                 pkg_namespace="thirdparty.pparse.data",
                 relative_path="proto/onnx.pb",
-                #proto=proto
+                # proto=proto
             )
             parser = parser_class(self._extraction, 'protobuf')
 
             self._extraction.add_result('protobuf', parser.make_root_node())
             self._extraction._result['protobuf'].load(recursion=recursion)
 
-            #self._extraction.add_parser('protobuf', parser)
-            #self._extraction.discover_parsers({"protobuf": parser})
-            #self._extraction._parser['protobuf']._root.load(recursion=recursion)
+            # self._extraction.add_parser('protobuf', parser)
+            # self._extraction.discover_parsers({"protobuf": parser})
+            # self._extraction._parser['protobuf']._root.load(recursion=recursion)
 
             # Some light post processing.
             self.root = self._extraction._result["protobuf"]
@@ -134,7 +136,9 @@ class Onnx:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None) -> Onnx:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Onnx:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 
@@ -156,7 +160,7 @@ class Onnx:
     # ** ---- New Development Of Graph Interface ----
     def _collect_all_nodes(self, graph: Any) -> Iterator[Any]:
         for node in graph:
-            #breakpoint()
+            # breakpoint()
             yield node._value
             if 'attribute' in node._value:
                 for attr_node in node._value['attribute']:
@@ -174,6 +178,7 @@ class Onnx:
             all_nodes = list(self._collect_all_nodes(self.root_node()._value['graph']._value['node']))
         except Exception as e:
             import traceback
+
             traceback.print_exc()
             print(e)
             raise
@@ -181,9 +186,8 @@ class Onnx:
 
 
     def graph_nodes(self) -> tuple[list[dict[str, Any]], dict[int, str]]:
-        """graph_nodes
-        """
-        
+        """graph_nodes"""
+
         '''
             A list of nodes that describe inputs and outputs in a way that we can use to
             reconstruct the graph. Aside from inputs/outputs, it may also have names,
@@ -220,19 +224,20 @@ class Onnx:
 
         indexed_nodes = []
         for i, node in enumerate(nodes):
-            indexed_nodes.append({
-                'idx': i,
-                'input': [get_idx(t) for t in node['input']],
-                'output': [get_idx(t) for t in node['output']],
-                'attrs': {
-                    'op_type': node['op_type'],
-                    'name': node['name'],
+            indexed_nodes.append(
+                {
+                    'idx': i,
+                    'input': [get_idx(t) for t in node['input']],
+                    'output': [get_idx(t) for t in node['output']],
+                    'attrs': {
+                        'op_type': node['op_type'],
+                        'name': node['name'],
+                    },
                 }
-            })
+            )
 
         idx_to_name = {v: k for k, v in name_to_idx.items()}
         return indexed_nodes, idx_to_name
-
 
     '''
     (Pdb) nodes = obj.collect_all_nodes()

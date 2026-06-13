@@ -24,14 +24,15 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
     if 'init_msgtype' in kwargs:
         init_msgtype = kwargs['init_msgtype']
 
-    #pkg_namespace = None
-    #relative_path = None
+    # pkg_namespace = None
+    # relative_path = None
     proto = PbImport()
     if 'pkg_namespace' in kwargs and 'relative_path' in kwargs:
         from importlib import resources
+
         data_path = resources.files(kwargs['pkg_namespace'])
         proto = PbImport(data_path / kwargs['relative_path'])
-        #proto = kwargs['proto']
+        # proto = kwargs['proto']
 
     class Parser(pparse.Parser):
 
@@ -58,7 +59,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return Parser(extraction, parent=parent)
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[ProtobufParsingState] = ProtobufParsingTag) -> pparse.Node:
+        def make_root_node(
+            self, parent: Optional[pparse.Node] = None, init_state: Type[ProtobufParsingState] = ProtobufParsingTag
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = pparse.Node(self._source.open(), self, default_value={}, parent=parent, ctx_class=NodeContext)
@@ -75,7 +78,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
             # Initial node is a map of type '.onnx.ModelProto'
             # protobuf_type = proto.by_type_name('.onnx.ModelProto')
-            #protobuf_type = self.schema.by_type_name(init_msgtype)
+            # protobuf_type = self.schema.by_type_name(init_msgtype)
 
             # TODO: Consider adding hook for booking as the nodes are completed.
             # # def _node_complete_callable(parser, node_ctx, user_arg):
@@ -142,9 +145,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             else:
                 data = ctx.read(4)
             if not data or len(data) < 4:
-                msg = (
-                    f"Not enough data to parse Protobuf I32 data. Offset: {ctx.tell()}"
-                )
+                msg = f"Not enough data to parse Protobuf I32 data. Offset: {ctx.tell()}"
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<I", data)[0]
 
@@ -156,9 +157,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             else:
                 data = ctx.read(8)
             if not data or len(data) < 8:
-                msg = (
-                    f"Not enough data to parse Protobuf I64 data. Offset: {ctx.tell()}"
-                )
+                msg = f"Not enough data to parse Protobuf I64 data. Offset: {ctx.tell()}"
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<Q", data)[0]
 
@@ -208,9 +207,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         def _end_container_node(self, ctx: pparse.NodeContext) -> None:
             parent = ctx._parent
             if parent:
-                log.debug(
-                    f"end_container (off:{ctx.tell()}): Backtracking to parent {parent}."
-                )
+                log.debug(f"end_container (off:{ctx.tell()}): Backtracking to parent {parent}.")
 
                 # Set the end pointer to advance parent past field.
                 ctx.mark_end()

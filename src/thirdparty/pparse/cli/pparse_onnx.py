@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from typing import Any
@@ -36,9 +37,7 @@ def register_pparse_onnx(subparsers: Any) -> None:
     onnx_hash_parser.set_defaults(func=onnx_hash)
 
     # Generic "transform" command that implicitly does the "to safetensors" op
-    onnx_transform_parser = onnx_subparser.add_parser(
-        "transform", help="transform pytorch"
-    )
+    onnx_transform_parser = onnx_subparser.add_parser("transform", help="transform pytorch")
     onnx_transform_parser.add_argument(
         "--keep_lm_head",
         dest="keep_lm_head",
@@ -47,17 +46,16 @@ def register_pparse_onnx(subparsers: Any) -> None:
         default=False,
     )
     onnx_transform_parser.add_argument("path")
-    onnx_transform_parser.add_argument(
-        "outpath", default="converted_output.safetensors"
-    )
+    onnx_transform_parser.add_argument("outpath", default="converted_output.safetensors")
     onnx_transform_parser.set_defaults(func=onnx_transform)
 
 
 def onnx_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
-    #from thirdparty.pparse.utils import pparse_repr
+
+    # from thirdparty.pparse.utils import pparse_repr
     from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Parsing onnx from: {args.path}")
@@ -73,6 +71,7 @@ def onnx_view(args: Any) -> None:
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -82,9 +81,10 @@ def onnx_view(args: Any) -> None:
 
 def onnx_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
-    #from thirdparty.pparse.view.onnx import Onnx
+
+    # from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Hashing onnx from: {args.path} with: arc")
 
@@ -109,9 +109,10 @@ def onnx_hash(args: Any) -> None:
 
 def onnx_transform(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
-    #from thirdparty.pparse.view.onnx import Onnx
+
+    # from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Transform pytorch from: {args.path} to: {args.outpath}")
 

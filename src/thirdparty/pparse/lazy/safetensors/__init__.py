@@ -6,7 +6,11 @@ from typing import Any, Optional, Type
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
-from thirdparty.pparse.lazy.safetensors.state import SafetensorsParsingLength, SafetensorsParsingTensorNode, SafetensorsParsingState
+from thirdparty.pparse.lazy.safetensors.state import (
+    SafetensorsParsingLength,
+    SafetensorsParsingTensorNode,
+    SafetensorsParsingState,
+)
 
 
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
@@ -30,7 +34,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[SafetensorsParsingState] = SafetensorsParsingLength) -> pparse.Node:
+        def make_root_node(
+            self,
+            parent: Optional[pparse.Node] = None,
+            init_state: Type[SafetensorsParsingState] = SafetensorsParsingLength,
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             # Current path of pending things.
@@ -51,7 +59,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return Parser(extraction)
 
 
-        def tensor_node_from(self, tensor_reader: pparse.Reader, node: pparse.Node, header_key: str, header_node: pparse.Node) -> pparse.Node:
+        def tensor_node_from(
+            self, tensor_reader: pparse.Reader, node: pparse.Node, header_key: str, header_node: pparse.Node
+        ) -> pparse.Node:
 
             # TODO: I don't like this.
             header_length = node.value['header_length']
@@ -63,11 +73,10 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             # Create node with new range
             tensor_node = pparse.Node(tensor_range, node.ctx().parser(), parent=node)
             # Set the handling state.
-            #tensor_node.ctx().header_key = header_key
+            # tensor_node.ctx().header_key = header_key
             tensor_node.ctx()._next_state(SafetensorsParsingTensorNode)
 
             return tensor_node
-
 
         # def _scan_children(self):
         #     try:

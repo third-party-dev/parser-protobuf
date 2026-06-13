@@ -9,6 +9,7 @@ log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.protobuf.meta import Field, Protobuf
+
 # from thirdparty.pparse.lazy.protobuf.node import Node, NodeArray, NodeContext, NodeMap
 from thirdparty.pparse.lazy.protobuf.node import NodeContext
 
@@ -53,6 +54,7 @@ Packed: [tag varint (LEN)] [byte_length varint] [varint0] [varint1] [varintN]
 parser._root._value['graph']._value['node'][0]._value['attribute'][0]._value['t']
 '''
 
+
 class ProtobufParsingSimplePacked(ProtobufParsingState):
 
 
@@ -64,7 +66,7 @@ class ProtobufParsingSimplePacked(ProtobufParsingState):
 
         while ctx.tell() < ctx._length:
             node._value.append(parser.parse_varint(ctx))
-        
+
         # We're done.
         ctx._next_state(ProtobufParsingComplete)
         return pparse.ASCEND
@@ -95,7 +97,6 @@ class ProtobufParsingWireTypeLen(ProtobufParsingState):
 
         ctx._next_state(ProtobufParsingComplete)
         return pparse.ASCEND
-        
 
         # if ctx._field.type in Protobuf.inline_types:
         #     breakpoint()
@@ -130,8 +131,8 @@ class ProtobufParsingWireTypeI32(ProtobufParsingState):
 
     # TODO: Split based on wire_type
     def parse_data(self, node: pparse.Node) -> int:
-        #ctx = node.ctx()
-        #parser = ctx.parser()
+        # ctx = node.ctx()
+        # parser = ctx.parser()
         breakpoint()
 
 

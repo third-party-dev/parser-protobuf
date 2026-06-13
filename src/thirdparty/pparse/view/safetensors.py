@@ -90,9 +90,7 @@ class Tensor:
         dtype = self.get_type()
         struct_type = Tensor.STTYPE_STRUCT[dtype]
         shape = self.get_shape()
-        return numpy.frombuffer(
-            self._data, dtype=numpy.dtype(f"<{struct_type}")
-        ).reshape(shape)
+        return numpy.frombuffer(self._data, dtype=numpy.dtype(f"<{struct_type}")).reshape(shape)
 
 
 class SafeTensors:
@@ -169,7 +167,9 @@ class SafeTensors:
         return hashlib.sha256(sane_json.encode("utf-8")).hexdigest()
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.safetensors", recursion: Optional[pparse.RecursionControl] = None) -> SafeTensors:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.safetensors", recursion: Optional[pparse.RecursionControl] = None
+    ) -> SafeTensors:
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
             self._extraction = pparse.BytesExtraction(name=fname, reader=data_range)
@@ -178,9 +178,9 @@ class SafeTensors:
             self._extraction.add_result('safetensors', parser.make_root_node())
             self._extraction._result['safetensors'].load(recursion=recursion)
 
-            #self._extraction.add_parser('safetensors', parser)
-            #self._extraction.discover_parsers({"safetensors": LazySafetensorsParser})
-            #self._extraction._parser['safetensors']._root.load(recursion=recursion)
+            # self._extraction.add_parser('safetensors', parser)
+            # self._extraction.discover_parsers({"safetensors": LazySafetensorsParser})
+            # self._extraction._parser['safetensors']._root.load(recursion=recursion)
 
         except pparse.EndOfDataException:
             pass
@@ -201,13 +201,14 @@ class SafeTensors:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.safetensors", recursion: Optional[pparse.RecursionControl] = None) -> SafeTensors:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.safetensors", recursion: Optional[pparse.RecursionControl] = None
+    ) -> SafeTensors:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 
 # ! UNTESTED
 class SafeTensorsIndexTensor(pparse.Tensor):
-
     STTYPE_STRUCT: dict[str, str] = {
         "I8": "b",
         "U8": "B",
@@ -294,7 +295,9 @@ class SafeTensorsIndex:
 
 
     # fpath - Index file.
-    def _parse(self, idx_data: Any, fname: str = "unnamed.index.json", recursion: Optional[pparse.RecursionControl] = None) -> SafeTensorsIndex:
+    def _parse(
+        self, idx_data: Any, fname: str = "unnamed.index.json", recursion: Optional[pparse.RecursionControl] = None
+    ) -> SafeTensorsIndex:
         try:
             # Process the index file.
             idx_range = pparse.Range(idx_data.open(), idx_data.length)
@@ -306,10 +309,9 @@ class SafeTensorsIndex:
             self._extraction.add_result('safetensors_index', parser.make_root_node())
             self._extraction._result['safetensors_index'].load(recursion=recursion)
 
-            #self._extraction.discover_parsers({"safetensors_index": LazySafetensorsIndexParser})
-            #self._root = self._extraction._result['safetensors_index']
-            #self._root.load(recursion=recursion)
-
+            # self._extraction.discover_parsers({"safetensors_index": LazySafetensorsIndexParser})
+            # self._root = self._extraction._result['safetensors_index']
+            # self._root.load(recursion=recursion)
 
         except pparse.EndOfDataException:
             pass
@@ -330,5 +332,7 @@ class SafeTensorsIndex:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.index.json", recursion: Optional[pparse.RecursionControl] = None) -> SafeTensorsIndex:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.index.json", recursion: Optional[pparse.RecursionControl] = None
+    ) -> SafeTensorsIndex:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)

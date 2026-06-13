@@ -28,7 +28,7 @@ class SafetensorsIndexParsingTensors(SafetensorsIndexParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         node._value['tensors'] = {}
         for stfname in node._value['stfiles']:
@@ -50,12 +50,13 @@ class SafetensorsIndexParsingShards(SafetensorsIndexParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         from thirdparty.pparse.lazy.safetensors import configure_pparser
 
         # ! Super hacky way to get path to the weight_map files.
         from pathlib import Path
+
         prefix = Path(node._reader._cursor._data._path).parent
 
         weight_map = node.value['index'].value.value['weight_map'].value
@@ -75,9 +76,10 @@ class SafetensorsIndexParsingIndex(SafetensorsIndexParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         from thirdparty.pparse.lazy.json import configure_pparser
+
         json_parser = configure_pparser().from_reader(node.ctx().reader())
 
         node._value['index'] = json_parser.make_root_node(parent=node)

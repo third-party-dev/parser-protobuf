@@ -49,10 +49,17 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[OmParsingState] = OmParsingHeader, ctx_args: dict[str, Any] = {}) -> pparse.Node:
+        def make_root_node(
+            self,
+            parent: Optional[pparse.Node] = None,
+            init_state: Type[OmParsingState] = OmParsingHeader,
+            ctx_args: dict[str, Any] = {},
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
-            root = pparse.Node(self._source.open(), self, parent=parent, ctx_class=pparse.NodeContext, ctx_args=ctx_args)
+            root = pparse.Node(
+                self._source.open(), self, parent=parent, ctx_class=pparse.NodeContext, ctx_args=ctx_args
+            )
             root.ctx()._next_state(init_state)
             return root
 

@@ -84,7 +84,7 @@ class Data:
     def read(self, cursor: Cursor, length: int) -> bytes:
         """Read ``length`` bytes.
 
-        The base implementation uses ``peek``.  Subclasses that can perform a more 
+        The base implementation uses ``peek``.  Subclasses that can perform a more
         efficient read-and-seek in a single syscall should override ``read``.
 
         Args:
@@ -207,6 +207,7 @@ class Data:
 
 from thirdparty.pparse._httpdata import _HttpCachedData
 
+
 class HttpCachedData(Data):
     """``Data`` backend that fetches remote content via HTTP with a local chunk cache.
 
@@ -226,15 +227,18 @@ class HttpCachedData(Data):
         Exception: If Range requests are not supported and the file is larger
             than the total cache capacity.
     """
+
     # TODO FOR DOCS: Does it work even when file does not fit in cache?
 
     # ~ 4MiB
-    CHUNK_SIZE = 4096*256
+    CHUNK_SIZE = 4096 * 256
     # Max Chunks
     MAX_CHUNKS = 1024
 
 
-    def __init__(self, url: str, chunk_size: int = CHUNK_SIZE, chunk_max_count: int = MAX_CHUNKS, session: Optional[Any] = None) -> None:
+    def __init__(
+        self, url: str, chunk_size: int = CHUNK_SIZE, chunk_max_count: int = MAX_CHUNKS, session: Optional[Any] = None
+    ) -> None:
 
         # ** If we're in a situation where we're requesting a file from a    **
         # ** remote resource that does not support Range, we might as well   **
@@ -253,7 +257,9 @@ class HttpCachedData(Data):
         if not self._supports_ranges and self.length > chunk_size * chunk_max_count:
             raise Exception("CAUTION: No ranged queries on server and target to large for cache.")
 
-        self.httpdata = _HttpCachedData(url, chunk_size=chunk_size, chunk_max_count=chunk_max_count, session=self._session)
+        self.httpdata = _HttpCachedData(
+            url, chunk_size=chunk_size, chunk_max_count=chunk_max_count, session=self._session
+        )
 
 
     # Read data ahead without progressing cursor.
@@ -411,7 +417,6 @@ class HttpRangeData(Data):
 '''
 
 
-
 # Data manages mmap and fobj. Cursor does not manage mmap or fobj.
 class FileData(Data):
     """``Data`` backend that reads from a local file via a buffer.
@@ -488,7 +493,7 @@ class FileData(Data):
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
-    def from_xml(cls, xml_src: Any) -> FileData: # -> cls:
+    def from_xml(cls, xml_src: Any) -> FileData:  # -> cls:
         """Deserialize a ``FileData`` from a ``<datasource />`` XML element.
 
         Reads the ``posix_path`` (or ``windows_path``) from the element's
@@ -506,6 +511,7 @@ class FileData(Data):
                 the recorded length does not match the file on disk.
         """
         from thirdparty.pparse._xml import XmlNode, XmlEntry
+
         xml = XmlNode.as_node(xml_src)
 
         # Do we have the correct node?
@@ -520,7 +526,9 @@ class FileData(Data):
 
         data = cls(path)
         if data.length != extra['length']:
-            raise Exception(f"Mismatch of length on import of {path}: xml length {extra['length']} real length {data.length}.")
+            raise Exception(
+                f"Mismatch of length on import of {path}: xml length {extra['length']} real length {data.length}."
+            )
 
         # Let the XML tree hold the reference
         xml.set_obj_inst(data)

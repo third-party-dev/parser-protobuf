@@ -5,10 +5,12 @@ from __future__ import annotations
 from typing import Any, Iterator, Optional
 
 import logging
+
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.xml import configure_pparser
+
 
 class Xml:
 
@@ -17,7 +19,9 @@ class Xml:
         self._extraction: Optional[pparse.BytesExtraction] = None
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.xml", recursion: Optional[pparse.RecursionControl] = None) -> Xml:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.xml", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Xml:
 
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
@@ -47,16 +51,20 @@ class Xml:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.xml", recursion: Optional[pparse.RecursionControl] = None) -> Xml:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.xml", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Xml:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 
     def as_etree(self) -> ElementTree:
         from thirdparty.pparse.view.xml import ElementTree
+
         return ElementTree().from_pparse_node(self.root_node().value['document'], recursive=True)
 
 
 # ! In real ElementTree, attribute name namespaces are expanded.
+
 
 class Element:
 
@@ -84,24 +92,25 @@ class Element:
         # Get tag
         self.tag = node.value['tag']
 
-
         # Get text
-        if 'content' in node.value and len(node.value['content'].value) > 0 and \
-            isinstance(node.value['content'].value[0].value, str):
+        if (
+            'content' in node.value
+            and len(node.value['content'].value) > 0
+            and isinstance(node.value['content'].value[0].value, str)
+        ):
             self.text = node.value['content'].value[0].value
-
 
             # Get tail
         if node.ctx() and node.ctx().parent() and node.ctx().parent():
             parent = node.ctx().parent()
             if 'content' in parent.value:
                 try:
-
                     index = parent.value['content'].value.find(node)
 
-                    if len(parent.value['content'].value) > index+1 and \
-                        isinstance(parent.value['content'].value[index+1].value, str):
-                        self.tail = parent.value['content'].value[index+1].value
+                    if len(parent.value['content'].value) > index + 1 and isinstance(
+                        parent.value['content'].value[index + 1].value, str
+                    ):
+                        self.tail = parent.value['content'].value[index + 1].value
                 except Exception:
                     breakpoint()
 
@@ -147,7 +156,7 @@ class Element:
     def find(self, match: str, namespaces: Optional[Any] = None) -> Optional[Element]:
         if namespaces is not None:
             raise NotImplementedError("Namespaces not implemented in pparse xml find")
-        if next((i for i, c in enumerate(match) if c in ['/','[']), -1) >= 0:
+        if next((i for i, c in enumerate(match) if c in ['/', '[']), -1) >= 0:
             raise NotImplementedError("Path matching not implemented in pparse xml find")
 
         return next(self.iterfind(match), None)
@@ -156,7 +165,7 @@ class Element:
     def findall(self, match: str, namespaces: Optional[Any] = None) -> list[Element]:
         if namespaces is not None:
             raise NotImplementedError("Namespaces not implemented in pparse xml findall")
-        if next((i for i, c in enumerate(match) if c in ['/','[']), -1) >= 0:
+        if next((i for i, c in enumerate(match) if c in ['/', '[']), -1) >= 0:
             raise NotImplementedError("Path matching not implemented in pparse xml findall")
 
         return list(self.iterfind(match))
@@ -165,7 +174,7 @@ class Element:
     def findtext(self, match: str, default: Optional[str] = None, namespaces: Optional[Any] = None) -> Optional[str]:
         if namespaces is not None:
             raise NotImplementedError("Namespaces not implemented in pparse xml findtext")
-        if next((i for i, c in enumerate(match) if c in ['/','[']), -1) >= 0:
+        if next((i for i, c in enumerate(match) if c in ['/', '[']), -1) >= 0:
             raise NotImplementedError("Path matching not implemented in pparse xml findtext")
 
         elem = self.find(match, namespaces)
@@ -188,7 +197,7 @@ class Element:
     def iterfind(self, match: str, namespaces: Optional[Any] = None) -> Iterator[Element]:
         if namespaces is not None:
             raise NotImplementedError("Namespaces not implemented in pparse xml iterfind")
-        if next((i for i, c in enumerate(match) if c in ['/','[']), -1) >= 0:
+        if next((i for i, c in enumerate(match) if c in ['/', '[']), -1) >= 0:
             raise NotImplementedError("Path matching not implemented in pparse xml iterfind")
 
         if match == ".":

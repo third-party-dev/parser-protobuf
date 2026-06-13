@@ -46,7 +46,7 @@ class SafetensorsParsingTensorNode(SafetensorsParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         node._value = ctx.read(ctx.left())
 
@@ -64,7 +64,7 @@ class SafetensorsParsingTensorsMeta(SafetensorsParsingState):
         # We only need the data reference, we seek(tensor_data_start) for each node.
         tensor_reader = ctx.reader()
         node._value['tensors'] = {}
-        for k,v in node.value['header'].value.value.items():
+        for k, v in node.value['header'].value.value.items():
             if k == '__metadata__':
                 continue
             # Create UNLOADED nodes for each Tensor.
@@ -72,7 +72,7 @@ class SafetensorsParsingTensorsMeta(SafetensorsParsingState):
 
         # We're done.
         node.ctx()._next_state(SafetensorsParsingComplete)
-        #breakpoint()
+        # breakpoint()
         return pparse.ASCEND
 
         # # Keep it going forward.
@@ -87,10 +87,11 @@ class SafetensorsParsingHeaderSetup(SafetensorsParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
-        #breakpoint()
+        # breakpoint()
         from thirdparty.pparse.lazy.json import configure_pparser
+
         json_parser = configure_pparser().from_reader(node.ctx().reader())
 
         node._value['header'] = json_parser.make_root_node(parent=node)
@@ -108,13 +109,11 @@ class SafetensorsParsingLength(SafetensorsParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(8)
         if len(data) < 8:
-            raise pparse.EndOfDataException(
-                "Not enough data to parse Safetensors Header Length"
-            )
+            raise pparse.EndOfDataException("Not enough data to parse Safetensors Header Length")
 
         header_length = struct.unpack("<Q", data)[0]
         node._value['header_length'] = header_length
@@ -123,5 +122,3 @@ class SafetensorsParsingLength(SafetensorsParsingState):
 
         ctx._next_state(SafetensorsParsingHeaderSetup)
         return pparse.AGAIN
-
-

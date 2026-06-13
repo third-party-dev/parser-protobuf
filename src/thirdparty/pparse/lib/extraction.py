@@ -12,11 +12,12 @@ if TYPE_CHECKING:
     from .node import Node
     from .parser import Parser
 
+
 # Generic artifact that ties parsers to cursor-ed data.
 class Extraction:
     """Abstract representation of a named data source with zero or more attached parsers.
 
-    An ``Extraction`` couples a raw data source (file, URL, in-memory buffer) 
+    An ``Extraction`` couples a raw data source (file, URL, in-memory buffer)
     with the parsers that know how to interpret it.  Subclasses implement
     ``open()`` to return a ``Reader`` positioned at the start of the data.
 
@@ -32,7 +33,7 @@ class Extraction:
         self._name: Optional[str] = name  # name of extraction
         self._parser: Dict[str, Any] = {}  # parsers by id
         self._result: Dict[Any, Optional[Node]] = {}  # results by parser id
-        self._extractions: list = []   # child extractions
+        self._extractions: list = []  # child extractions
 
 
     def name(self) -> Optional[str]:
@@ -263,6 +264,7 @@ class BytesExtraction(Extraction):
         """
 
         from thirdparty.pparse._xml import XmlNode
+
         xml = XmlNode.as_node(xml_src)
 
         if not xml.has_attr("name"):
@@ -296,7 +298,7 @@ class BytesExtraction(Extraction):
         if len(xml.results) and pparse_xml is None:
             raise Exception("Result references found, but missing reference resolver.")
 
-        #extraction.result_refs = []
+        # extraction.result_refs = []
         for result_ref in xml.results:
             if not result_ref.has_attr('id'):
                 raise Exception("All result references must have id attribute.")
@@ -311,7 +313,7 @@ class BytesExtraction(Extraction):
             extraction_cls = globals()[child_extraction['type']]
             # ! Error, xml_root not defined.
             breakpoint()
-            #child_extraction.set_obj_inst(extraction_cls.from_xml(child_extraction, xml_root))
+            # child_extraction.set_obj_inst(extraction_cls.from_xml(child_extraction, xml_root))
 
         return extraction
 

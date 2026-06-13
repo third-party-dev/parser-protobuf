@@ -44,13 +44,36 @@ exclude = [
     "tests",
     "src/thirdparty/pparse/data",
     "src/thirdparty/pparse/external",
+    #"src/thirdparty/pparse/ident",
+    #"src/thirdparty/pparse/cli",
+    #"src/thirdparty/pparse/view",
+    #"src/thirdparty/pparse/lazy",
+    #"src/thirdparty/pparse/lib",
+    #"src/thirdparty/pparse/_httpdata.py",
+    #"src/thirdparty/pparse/_xml.py",
+    #src/thirdparty/pparse/dump.py",
+    #"src/thirdparty/pparse/utils.py",
 ]
+line-length = 120
+
+[tool.ruff.format]
+exclude = [
+    "docs",
+    "outputs",
+    "scripts",
+    "tests",
+    "src/thirdparty/pparse/data",
+    "src/thirdparty/pparse/external",
+    "src/thirdparty/pparse/ident/**",
+]
+quote-style = "preserve"
 
 [tool.ruff.lint]
+# E402 - Removing rule defers imports not needed for arg parsing.
 ignore = ["E402"]
-per-file-ignores = {
-    "src/thirdparty/pparse/lib/__init__.py" = ["E402"]
-}
+
+[tool.ruff.lint.per-file-ignores]
+"src/thirdparty/pparse/lib/__init__.py" = ["E402"]
 
 [project.scripts]
 pparse = "thirdparty.pparse.cli:main"

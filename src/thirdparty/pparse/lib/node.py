@@ -18,6 +18,7 @@ from thirdparty.pparse.dump import Dumper
 if TYPE_CHECKING:
     from .parser import Parser
 
+
 class UnloadedValue:
     """Sentinel object used as the default value of a ``Node`` before it is parsed.
 
@@ -52,7 +53,9 @@ class RecursionControl:
     MAX_DEPTH = 9223372036854775807
 
 
-    def __init__(self, min_depth: int = 0, max_depth: int = MAX_DEPTH, callback: Optional[Callable[[Node], bool]] = None) -> None:
+    def __init__(
+        self, min_depth: int = 0, max_depth: int = MAX_DEPTH, callback: Optional[Callable[[Node], bool]] = None
+    ) -> None:
         self.cur_depth = 0
 
         self.max_seen_depth = 0
@@ -77,7 +80,7 @@ class RecursionControl:
             return False
         if self.cur_depth > self.max_depth:
             return True
-        
+
         if self.cb is not None:
             return self.cb(node)
 
@@ -120,8 +123,6 @@ class RecursionControl:
         return self.max_seen_depth
 
 
-
-
 '''
     NEW PLAN:
     - phase 1: ctx is always loaded and node always UNLOADED until parent says otherwise
@@ -135,6 +136,8 @@ class RecursionControl:
     - with new plan, we should have generic node for 99% of cases. NodeContext is the parser
       specific class going forward. (maybe a generic self._attrs:dict required at node level)
 '''
+
+
 class Node:
     """A single node in the pparse parse-tree.
 
@@ -158,7 +161,15 @@ class Node:
     """
 
 
-    def __init__(self, reader: Reader, parser: Parser, default_value: Any = UNLOADED_VALUE, parent: Optional[Node] = None, ctx_class: Optional[Type[NodeContext]] = None, ctx_args: Dict[str, Any] = {}) -> None:
+    def __init__(
+        self,
+        reader: Reader,
+        parser: Parser,
+        default_value: Any = UNLOADED_VALUE,
+        parent: Optional[Node] = None,
+        ctx_class: Optional[Type[NodeContext]] = None,
+        ctx_args: Dict[str, Any] = {},
+    ) -> None:
 
         # Reference to the start of data for parsing node.
         self._reader = reader.dup()
@@ -188,7 +199,7 @@ class Node:
             The node's parsed value (dict, list, scalar, or nested ``Node``).
         """
         if self._value == UNLOADED_VALUE:
-            #breakpoint()
+            # breakpoint()
             self.load()
         return self._value
 
@@ -270,7 +281,7 @@ class Node:
 
         RULE: Leaky abstraction when recursion policy stored in Node or NodeContext!
 
-        NOTE: json parsing is weird because you have to recurse every time. Since I 
+        NOTE: json parsing is weird because you have to recurse every time. Since I
         implemented JSON first, I believe its driving some of the anti-patterns in pparse.
         If we want to save on memory for JSON, we could theoretically parse and allocate
         nodes and as we complete branches of a depth first parse we deallocated.
@@ -294,7 +305,7 @@ class Node:
 
         # Increment the depth on entrance to load().
         # NOTE: Checking for recursion here because we don't want to mess with reentrant
-        #       states and we don't want to wipe or confuse _descendants todo lists. 
+        #       states and we don't want to wipe or confuse _descendants todo lists.
         # CAUTION:
         # - states can add multiple branches at once.
         # - states can iterate multiple times in a single "depth level"
@@ -302,16 +313,15 @@ class Node:
             if recursion.stopped(self):
                 return
             recursion.increase_depth()
-            #print(f"INCREASE {recursion.cur_depth}")
+            # print(f"INCREASE {recursion.cur_depth}")
 
-        # Maybe a naughty pattern, but for now we retry until 
+        # Maybe a naughty pattern, but for now we retry until
         # Retry until state returns UnsupportedFormatException or EndOfNodeException
         # ! When EndOfDataException raised, we need a way to retry. For now, fail.
         try:
             # RULE: AGAIN is a Parser return. Not a Node is complete status!
             res = AGAIN
             while res in (AGAIN, NEXT):
-
                 if res == NEXT and len(self.ctx()._state_stack) > 1:
                     # Throw it away.
                     self.ctx()._pop_state()
@@ -324,7 +334,6 @@ class Node:
                     calls the load() method on those elements.
                 '''
                 while self.ctx()._descendants:
-                    
                     # ! Here, we're making Node responsible for _descendants cleanup.
                     child = self.ctx()._descendants.pop(0)
 
@@ -343,7 +352,7 @@ class Node:
             # Decrement the depth on exit from load() (exceptions included).
             if recursion is not None:
                 recursion.decrease_depth()
-                #print(f"DECREASE {recursion.cur_depth}")
+                # print(f"DECREASE {recursion.cur_depth}")
 
         return self
 
@@ -364,7 +373,7 @@ class Node:
             dumper: A ``Dumper`` instance; ``Dumper.default()`` is used when
                 this is ``None``.
         """
-        node_attrs =  [f'off="{self.tell()}"']
+        node_attrs = [f'off="{self.tell()}"']
 
         if not dumper:
             dumper = Dumper.default()
@@ -393,12 +402,13 @@ class Node:
                 attributes are missing.
         """
         from thirdparty.pparse._xml import XmlNode, XmlEntry
+
         node_xml = XmlNode.as_node(src_xml)
-        
+
         if not node_xml.has_tag('node'):
             raise Exception(f"Expected <node />, got: {node_xml}")
 
-        #reader = ctx_ref.result_ref.extraction._reader.dup()
+        # reader = ctx_ref.result_ref.extraction._reader.dup()
 
         # offset = None
         # length = None
@@ -407,7 +417,7 @@ class Node:
         #     # use range
         #     offset = int(xml['offset'])
         #     length = int(xml['length'])
-            
+
         #     cursor = Cursor(data, offset)
         #     reader = Range(cursor, length)
         # elif xml.has_attr("offset"):
@@ -416,26 +426,27 @@ class Node:
         #     reader = Cursor(data, offset)
         # else:
         #     raise Exception("Expected offset in <node />")
-        
 
         # Get context data here because we init context with Node constructor.
-        #ctx_class = NodeContext
-        #ctx_args = {}
-        #parser_name = None
-        #state_name = None
+        # ctx_class = NodeContext
+        # ctx_args = {}
+        # parser_name = None
+        # state_name = None
 
         # ! -----------------------------------------------------------------------------------------------------------
         # ! Ok for development, but this needs to be done at runtime with a user provided allow list.
         from thirdparty.pparse.lazy.flatbuffers import configure_pparser as configure_flatbuffers_pparser
         from thirdparty.pparse.lazy.json import configure_pparser as configure_json_pparser
         from thirdparty.pparse.lazy.om import configure_pparser as configure_om_pparser
-        #from thirdparty.pparse.lazy.onnx import configure_pparser as configure_onnx_pparser
+
+        # from thirdparty.pparse.lazy.onnx import configure_pparser as configure_onnx_pparser
         from thirdparty.pparse.lazy.pickle import configure_pparser as configure_pickle_pparser
         from thirdparty.pparse.lazy.protobuf import configure_pparser as configure_protobuf_pparser
         from thirdparty.pparse.lazy.pytorch import configure_pparser as configure_pytorch_pparser
         from thirdparty.pparse.lazy.safetensors import configure_pparser as configure_safetensors_pparser
         from thirdparty.pparse.lazy.safetensors.index import configure_pparser as configure_safetensors_index_pparser
         from thirdparty.pparse.lazy.zip import configure_pparser as configure_zip_pparser
+
         parser_registry = {
             'thirdparty.pparse.lazy.flatbuffers': configure_flatbuffers_pparser,
             'thirdparty.pparse.lazy.json': configure_json_pparser,
@@ -452,19 +463,18 @@ class Node:
 
         # If we were provided a parser reference, use it.
         parser_ref = ctx_ref.parser
-        #context_state = None
+        # context_state = None
 
         context_xml = node_xml.get("context")
         if context_xml is not None:
-
             if context_xml.has_attr('type'):
                 raise Exception("custom context types not implemented for import yet")
                 # TODO: Get the actual cls? throw if not in scope?
-                #ctx_class = context_xml['type']
+                # ctx_class = context_xml['type']
 
             if context_xml.get("extra"):
-                #extra_xml = context_xml.extra
-                #ctx_args = XmlEntry.as_map(extra_xml)
+                # extra_xml = context_xml.extra
+                # ctx_args = XmlEntry.as_map(extra_xml)
                 pass
 
             parser_xml = context_xml.get('parser')
@@ -474,22 +484,22 @@ class Node:
                     raise Exception(f"<parser /> must have a type: {parser_xml}")
                 if parser_xml['type'] not in parser_registry:
                     raise Exception(f"<parser /> type not in parser registry: {parser_xml}")
-                
+
                 if not parser_xml.has_attr('name'):
                     raise Exception(f"<parser /> must have a name: {parser_xml}")
-                
+
                 parser_args = {}
                 if len(parser_xml) >= 1:
                     parser_args = XmlEntry.as_map(parser_xml)
-                
+
                 # Create a new parser.
                 parser_factory = parser_registry[parser_xml['type']]
                 parser_cls = parser_factory(**parser_args)
                 parser_ref = parser_cls(ctx_ref.result_ref.extraction, parser_xml['name'])
-            
+
             if context_xml.has_attr('state'):
                 # TODO: Validate state against parser (which would should now have.)
-                #context_state = context_xml['state']
+                # context_state = context_xml['state']
                 pass
 
         # Using make_root_node() to create the node, ignorant of parent, state, or context type.
@@ -508,8 +518,8 @@ class Node:
         # Update ctx_ref for value processing.
         # TODO: Consider performing this after parser_ref update (might save memory?)
         from thirdparty.pparse.lib.pparsexml import ContextRef
-        ctx_ref = ContextRef(ctx_ref.result_ref, ctx_ref.context_xml, parser_ref)
 
+        ctx_ref = ContextRef(ctx_ref.result_ref, ctx_ref.context_xml, parser_ref)
 
         # TODO: Process the node's value from XML here. (Recursive.)
         value_xml = node_xml.get("value")
@@ -525,20 +535,20 @@ class Node:
             def _process_node_entry(entry):
                 if len(entry) != 1 or not entry.get("node"):
                     raise Exception("Expecting only <node /> in <entry type=\"node\" />.")
-                
+
                 node_xml = entry.node
 
                 # TODO: Do better.
                 node_cls = Node
                 if node_xml.has_attr("type"):
                     node_cls = globals()[node_xml['type']]
-                
-                
+
                 return node_cls.from_xml(node_xml, ctx)
+
             return _process_node_entry
 
         node_cb = process_node_entry(ctx_ref)
-        #breakpoint()
+        # breakpoint()
         node._value = XmlEntry.using(value_xml, node_cb)
 
         return node

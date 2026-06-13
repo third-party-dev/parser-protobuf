@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from typing import Any
@@ -63,8 +64,9 @@ def register_pparse_om(subparsers: Any) -> None:
 
 def om_header(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.view.om import Om
 
     print(f"Parsing om header from: {args.path}")
@@ -77,6 +79,7 @@ def om_header(args: Any) -> None:
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -86,8 +89,9 @@ def om_header(args: Any) -> None:
 
 def om_parse(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     import thirdparty.pparse.lib as pparse
     from thirdparty.pparse.view.om import Om
 
@@ -96,19 +100,20 @@ def om_parse(args: Any) -> None:
     try:
         recursion = pparse.RecursionControl()
         obj = Om().open_fpath(args.path, recursion=recursion)
-        #print(f"DEEPEST_DEPTH: {recursion.deepest_depth()}")
+        # print(f"DEEPEST_DEPTH: {recursion.deepest_depth()}")
 
-        #protobuf = obj.root_node()._value['partition_table']._value[1]._value['protobuf']._value
+        # protobuf = obj.root_node()._value['partition_table']._value[1]._value['protobuf']._value
 
         if args.print:
             obj.root_node().dump()
 
         header = obj._extraction._result['om']
-        #modeldef = obj._extraction._extractions[0]._result['protobuf']
+        # modeldef = obj._extraction._extractions[0]._result['protobuf']
 
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -117,6 +122,7 @@ def om_parse(args: Any) -> None:
         print("  print(header.dumps())")
         print("  print(modeldef.dumps())")
         breakpoint()
+
 
 '''
 from pprint import pprint
@@ -138,7 +144,6 @@ size = desc['weight_size']
 dtype = desc['dtype']
 shape = desc['shape'].value['dim'].value
 '''
-
 
 
 # def om_view(args):

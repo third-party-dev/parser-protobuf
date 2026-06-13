@@ -8,7 +8,7 @@ from typing import Any, Optional
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
-#from thirdparty.pparse.lib import NodeContext as BaseNodeContext
+# from thirdparty.pparse.lib import NodeContext as BaseNodeContext
 
 
 class NodeContext(pparse.NodeContext):

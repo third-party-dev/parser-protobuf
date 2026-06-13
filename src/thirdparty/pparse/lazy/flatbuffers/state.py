@@ -7,12 +7,12 @@ import struct
 from collections import OrderedDict
 
 log = logging.getLogger(__name__)
-#logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
+# logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.utils import ListType
 from thirdparty.pparse.lazy.flatbuffers.node import NodeContext
-#from thirdparty.pparse.lazy.flatbuffers.node import Node, NodeTable, NodeVector, NodeVTable, NodeField
+# from thirdparty.pparse.lazy.flatbuffers.node import Node, NodeTable, NodeVector, NodeVTable, NodeField
 
 
 class FlatbuffersParsingState(object):
@@ -88,15 +88,15 @@ class FlatbuffersParsingVectorOfScalars(FlatbuffersParsingState):
                 return super().__new__(cls, data)
 
         if type_desc['type']['element'].lower() == 'ubyte':
-            #node._value = BytesWrapper(ctx.read(elem_size * elem_count))
+            # node._value = BytesWrapper(ctx.read(elem_size * elem_count))
             data_len = elem_size * elem_count
             # ! TODO: This should be a special case for dumping.
             node._value = BytesWrapper(ctx.read(data_len))
-            #node._value = TupleWrapper(struct.unpack(f'{data_len}B', ctx.read(data_len)))
+            # node._value = TupleWrapper(struct.unpack(f'{data_len}B', ctx.read(data_len)))
             node._value._pparse_type = ListType.UBYTE
             ctx._next_state(FlatBuffersParsingComplete)
             return pparse.ASCEND
-        
+
         if type_desc['type']['element'].lower() == 'byte':
             data_len = elem_size * elem_count
             node._value = TupleWrapper(struct.unpack(f'{data_len}b', ctx.read(data_len)))
@@ -110,7 +110,7 @@ class FlatbuffersParsingVectorOfScalars(FlatbuffersParsingState):
             node._value._pparse_type = ListType.INT
             ctx._next_state(FlatBuffersParsingComplete)
             return pparse.ASCEND
-        
+
         if type_desc['type']['element'].lower() == 'float':
             # TODO: Consider more efficient handler (esp with array is large)
             node._value = TupleWrapper(struct.unpack(f'<{elem_count}f', ctx.read(elem_size * elem_count)))
@@ -140,7 +140,7 @@ class FlatbuffersParsingVectorOfStrings(FlatbuffersParsingState):
         ctx = node.ctx()
         parser = ctx.parser()
 
-        #type_desc = ctx.type_desc()
+        # type_desc = ctx.type_desc()
 
         # Generate nodes for each string and append to descendants in Post
         elem_count = parser.read_u32(ctx)
@@ -152,8 +152,6 @@ class FlatbuffersParsingVectorOfStrings(FlatbuffersParsingState):
             ctx.skip(parser.peek_u32(ctx))
             # We're now at the target string.
             node._value.append(parser.new_node_string(node))
-
-        
 
         # Not until the loop is done do we try to submit descendants.
 
@@ -209,7 +207,6 @@ class FlatbuffersParsingTableField(FlatbuffersParsingState):
             ctx._descendants.append(node._value)
             return pparse.ASCEND
 
-
         if type_desc['type']['base_type'].lower() == 'vector':
             # TODO: All of these are good candidates for deferral.
             if type_desc['type']['element'].lower() == 'obj':
@@ -232,7 +229,6 @@ class FlatbuffersParsingTableField(FlatbuffersParsingState):
             if type_desc['type']['element'].lower() == 'string':
                 ctx._next_state(FlatbuffersParsingVectorOfStrings)
                 return pparse.AGAIN
-            
 
         if type_desc['type']['base_type'].lower() == 'union':
             raise ValueError("A union should never reach FlatbuffersParsingTableField")
@@ -300,7 +296,7 @@ class FlatbuffersParsingTable(FlatbuffersParsingState):
                 # Get utype value from current offset, reset, jump to union offset.
                 utype = struct.unpack('<B', ctx.peek(1))[0]
                 ctx.seek(node.tell())
-                ctx.skip(ctx._field_offsets[field_idx+1])
+                ctx.skip(ctx._field_offsets[field_idx + 1])
 
                 utype_desc = field_descs[field_idx]
                 enum = parser.schema.enums[utype_desc['type']['index']]
@@ -322,7 +318,6 @@ class FlatbuffersParsingTable(FlatbuffersParsingState):
             if field_descs[field_idx]['type']['base_type'].lower() == 'union':
                 # Skipping union in favor of handling from utype
                 continue
-
 
             ctx.skip(parser.peek_u32(ctx))
             ctx._fields[field_idx] = pparse.Node(ctx.reader(), parser, parent=node, ctx_class=NodeContext)
@@ -399,6 +394,6 @@ class FlatbuffersParsingRootTableOffset(FlatbuffersParsingState):
         ctx._next_state(FlatBuffersParsingComplete)
         return pparse.ASCEND
 
-        #raise pparse.EndOfNodeException("end of node in FlatbuffersParsingRootTableOffset")
-        #parser.current = ctx.node().value
-        #parser.current.ctx()._next_state(FlatbuffersParsingVTable)
+        # raise pparse.EndOfNodeException("end of node in FlatbuffersParsingRootTableOffset")
+        # parser.current = ctx.node().value
+        # parser.current.ctx()._next_state(FlatbuffersParsingVTable)

@@ -36,7 +36,6 @@ class DequeLRUCache:
         self._order.append(key)
 
 
-
 class LRUCacheEntry:
     # Pythonic memory optimization
     __slots__ = ("key", "value", "prev", "next")
@@ -47,7 +46,6 @@ class LRUCacheEntry:
         self.value: Any = value
         self.prev: Optional[LRUCacheEntry] = None
         self.next: Optional[LRUCacheEntry] = None
-
 
 
 class LinkedListLRUCache:
@@ -107,12 +105,12 @@ def _get_cache(maxsize: int) -> Union[LinkedListLRUCache, DequeLRUCache]:
     return DequeLRUCache(maxsize)
 
 
-
-
 class _HttpCachedData:
 
 
-    def __init__(self, url: str, chunk_size: int = 4096, chunk_max_count: int = 256, session: Optional[requests.Session] = None) -> None:
+    def __init__(
+        self, url: str, chunk_size: int = 4096, chunk_max_count: int = 256, session: Optional[requests.Session] = None
+    ) -> None:
         self._url: str = url
         self._chunk_size: int = chunk_size
         self._cache: Union[LinkedListLRUCache, DequeLRUCache] = _get_cache(chunk_max_count)
@@ -206,13 +204,13 @@ class _HttpCachedData:
         #     raise ValueError(f"Requested {length} bytes exceeds cache capacity.")
 
         start_idx = offset // self._chunk_size
-        end_idx   = (offset + length - 1) // self._chunk_size
+        end_idx = (offset + length - 1) // self._chunk_size
 
         # If the request doesn't cross chunk boundary, return as is.
         if start_idx == end_idx:
             chunk = self._get_chunk(start_idx)
             lo = offset - start_idx * self._chunk_size
-            return memoryview(chunk)[lo:lo + length].tobytes()
+            return memoryview(chunk)[lo : lo + length].tobytes()
 
         # When cross the boundary, (without an MMU :( ), must copy-to result.
         available = min(length, max(0, len(self) - offset))
@@ -227,7 +225,7 @@ class _HttpCachedData:
             slice_len = hi - lo
             if slice_len <= 0:
                 break
-            result[written:written + slice_len] = chunk[lo:hi]
+            result[written : written + slice_len] = chunk[lo:hi]
             written += slice_len
 
         return bytes(result[:written])

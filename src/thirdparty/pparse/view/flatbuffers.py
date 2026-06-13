@@ -19,10 +19,17 @@ class Flatbuffers:
         self._extraction: Optional[pparse.BytesExtraction] = None
 
 
-    def _parse(self, data_source: Any, json_schema_path: str, fname: str = "unnamed.flatbuffers.bin", recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
+    def _parse(
+        self,
+        data_source: Any,
+        json_schema_path: str,
+        fname: str = "unnamed.flatbuffers.bin",
+        recursion: Optional[pparse.RecursionControl] = None,
+    ) -> Flatbuffers:
 
         import json
         from pathlib import Path
+
         with open(json_schema_path, "r") as fobj:
             json_schema = json.loads(fobj.read())
 
@@ -36,9 +43,9 @@ class Flatbuffers:
             self._extraction.add_result('flatbuffers', parser.make_root_node())
             self._extraction._result['flatbuffers'].load(recursion=recursion)
 
-            #self._extraction.add_parser('flatbuffers', parser)
-            #self._extraction.discover_parsers({"flatbuffers": parser})
-            #self._extraction._parser['flatbuffers']._root.load(recursion=recursion)
+            # self._extraction.add_parser('flatbuffers', parser)
+            # self._extraction.discover_parsers({"flatbuffers": parser})
+            # self._extraction._parser['flatbuffers']._root.load(recursion=recursion)
 
         except pparse.EndOfDataException as e:
             print(e)
@@ -56,9 +63,17 @@ class Flatbuffers:
         return self._extraction._result['flatbuffers']
 
 
-    def open_fpath(self, fpath: str, json_schema_path: str, recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
+    def open_fpath(
+        self, fpath: str, json_schema_path: str, recursion: Optional[pparse.RecursionControl] = None
+    ) -> Flatbuffers:
         return self._parse(pparse.FileData(path=fpath), json_schema_path, fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, json_schema_path: str, fname: str = "unnamed.flatbuffers.bin", recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
+    def from_bytesio(
+        self,
+        bytes_io: Any,
+        json_schema_path: str,
+        fname: str = "unnamed.flatbuffers.bin",
+        recursion: Optional[pparse.RecursionControl] = None,
+    ) -> Flatbuffers:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), json_schema_path, fname=fname, recursion=recursion)

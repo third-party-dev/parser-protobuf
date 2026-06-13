@@ -5,27 +5,28 @@ import struct
 from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
-#logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
+# logging.basicConfig(level=logging.DEBUG, format='%(levelname)s:%(message)s')
 
 import thirdparty.pparse.lib as pparse
-#from thirdparty.pparse.lazy.flatbuffers.node import Node, NodeVector, NodeTable
+
+# from thirdparty.pparse.lazy.flatbuffers.node import Node, NodeVector, NodeTable
 from thirdparty.pparse.lazy.flatbuffers.state import (
     FlatbuffersParsingRootTableOffset,
     FlatbuffersParsingVTable,
     FlatbuffersParsingString,
-    FlatbuffersParsingState
+    FlatbuffersParsingState,
 )
 from thirdparty.pparse.lazy.flatbuffers.meta import FlatbuffersSchema
 from thirdparty.pparse.lazy.flatbuffers.node import NodeContext
 
 
-#proto = OnnxPb()
+# proto = OnnxPb()
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     ext_list = ['.unknown']
     if 'ext_list' in kwargs:
         ext_list = kwargs['ext_list']
-    
+
     json_schema = {}
     if 'json_schema' in kwargs:
         json_schema = kwargs['json_schema']
@@ -50,7 +51,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[FlatbuffersParsingState] = FlatbuffersParsingRootTableOffset) -> pparse.Node:
+        def make_root_node(
+            self,
+            parent: Optional[pparse.Node] = None,
+            init_state: Type[FlatbuffersParsingState] = FlatbuffersParsingRootTableOffset,
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = pparse.Node(self._source.open(), self, default_value={}, parent=parent)

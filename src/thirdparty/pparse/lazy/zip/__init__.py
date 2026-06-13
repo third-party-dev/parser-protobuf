@@ -34,11 +34,13 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[ZipParsingState] = ZipParsingMagic) -> pparse.Node:
+        def make_root_node(
+            self, parent: Optional[pparse.Node] = None, init_state: Type[ZipParsingState] = ZipParsingMagic
+        ) -> pparse.Node:
 
             init_state = self._init_state_as_cls(init_state)
 
-            root = pparse.Node(self._source.open(), self, default_value = [], parent = parent)
+            root = pparse.Node(self._source.open(), self, default_value=[], parent=parent)
             root.ctx()._next_state(init_state)
             return root
 
@@ -54,11 +56,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
 
         def new_map_node(self, parent: pparse.Node) -> pparse.Node:
-            return pparse.Node(parent.ctx().reader(), self, default_value = {}, parent = parent)
+            return pparse.Node(parent.ctx().reader(), self, default_value={}, parent=parent)
 
 
         def new_data_node(self, parent: pparse.Node) -> pparse.Node:
-            return pparse.Node(parent.ctx().reader(), self, parent = parent)
+            return pparse.Node(parent.ctx().reader(), self, parent=parent)
 
 
         def _end_container_node(self, node: pparse.Node) -> None:
@@ -78,6 +80,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         @classmethod
         def from_xml(cls, source: Any) -> None:
             from thirdparty.pparse._xml import XmlNode
+
             xml = XmlNode.as_node(source)
 
             # Do we have the correct node?
@@ -86,5 +89,5 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 raise Exception(f"Expected parser node. Got: {xml.get_el().tag}")
             if xml['type'] != "zip":
                 raise Exception(f"Expected type zip parser. Got: {xml['type']}")
-            
+
     return Parser

@@ -8,14 +8,15 @@ log = logging.getLogger(__name__)
 
 from thirdparty.pparse.lib import (
     EndOfDataException,
-    #EndOfNodeException,
-    #UnsupportedFormatException,
+    # EndOfNodeException,
+    # UnsupportedFormatException,
 )
 
 from thirdparty.pparse.utils import decode_utf8_partial
 
 
 # ---- Generic ----
+
 
 class XmlParsingState(object):
 
@@ -48,7 +49,7 @@ class XmlParsingMetaWhitespace(XmlParsingState):
         parser = ctx.parser()
 
         data, bytes_len = parser.decoded_peek(ctx, XmlParsingMetaWhitespace.CHUNK_SIZE)
-        #breakpoint()
+        # breakpoint()
         if len(data) == 0:
             # If we're looking at whitespace and we're in root node
             # and we have document, return NEXT
@@ -71,7 +72,7 @@ class XmlParsingMetaWhitespace(XmlParsingState):
 
 
 class XmlParsingEqualSeparator(XmlParsingState):
-    WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020'] # tab, nl, cr, sp
+    WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020']  # tab, nl, cr, sp
 
 
     def parse_data(self, node: pparse.Node):
@@ -85,7 +86,7 @@ class XmlParsingEqualSeparator(XmlParsingState):
         if data[0] == '=':
             parser.encoded_skip(ctx, data[0])
             return pparse.NEXT
-        
+
         breakpoint()
         raise Exception(f"In XmlParsingEqualSeparator, expected '\"', got {data}")
 
@@ -117,11 +118,11 @@ class XmlParsingElementAttrValue(XmlParsingState):
 
             if end_quote >= 0:
                 # Yes, whole value found in single go.
-                node._value['attrib'][ctx._cur_attr_name] += data[1:end_quote+1]
-                parser.encoded_skip(ctx, data[:end_quote+2])
+                node._value['attrib'][ctx._cur_attr_name] += data[1 : end_quote + 1]
+                parser.encoded_skip(ctx, data[: end_quote + 2])
                 ctx._next_state(XmlParsingElement)
                 return pparse.NEXT
-        
+
         elif ctx._cur_attr_name in node._value:
             # Assume we've already seen the start quote.
 
@@ -136,7 +137,7 @@ class XmlParsingElementAttrValue(XmlParsingState):
             if end_quote >= 0:
                 # Yes, whole value found.
                 node._value['attrib'][ctx._cur_attr_name] += data[:end_quote]
-                parser.encoded_skip(ctx, data[:end_quote+1])
+                parser.encoded_skip(ctx, data[: end_quote + 1])
                 ctx._next_state(XmlParsingElement)
                 return pparse.NEXT
 
@@ -165,7 +166,7 @@ class XmlParsingElementAttrName(XmlParsingState):
 
         ctx._cur_attr_name += data[:name_end]
         parser.encoded_skip(ctx, data[:name_end])
-        
+
         # Chained state.
         return pparse.NEXT
 
@@ -180,7 +181,7 @@ class XmlParsingElementClosingTagEnd(XmlParsingState):
         data, bytes_len = parser.decoded_peek(ctx, 1)
         if len(data) < 1:
             raise EndOfDataException("Not enough data to parse XML element closing tag.")
-        
+
         if data[:1] != '>':
             raise Exception(f"Expected >, got {data[:1]}")
         parser.encoded_skip(ctx, data[:1])
@@ -189,7 +190,7 @@ class XmlParsingElementClosingTagEnd(XmlParsingState):
 
 
 class XmlParsingElementClosingTag(XmlParsingState):
-    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003e'] # tab, nl, cr, sp, >
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003e']  # tab, nl, cr, sp, >
     CHUNK_SIZE = 0x100
 
 
@@ -222,7 +223,7 @@ class XmlParsingTextNode(XmlParsingState):
         data, bytes_len = parser.decoded_peek(ctx, XmlParsingTextNode.CHUNK_SIZE)
         if len(data) < 1:
             raise EndOfDataException("Not enough data to parse XML text node.")
-        
+
         if not hasattr(ctx, '_cur_text_node'):
             ctx._cur_text_node = ''
 
@@ -231,7 +232,7 @@ class XmlParsingTextNode(XmlParsingState):
             ctx._cur_text_node += data
             parser.encoded_skip(ctx, data)
             return pparse.AGAIN
-        
+
         if text_end >= 0:
             ctx._cur_text_node += data[:text_end]
             parser.encoded_skip(ctx, data[:text_end])
@@ -256,7 +257,7 @@ class XmlParsingElement(XmlParsingState):
             parser.encoded_skip(ctx, data[:2])
             parser._end_container_node(node)
             return pparse.ASCEND
-        
+
         if data[:1] == '>':
             parser.encoded_skip(ctx, data[:1])
 
@@ -269,21 +270,23 @@ class XmlParsingElement(XmlParsingState):
             ctx._next_state(XmlParsingComplete)
             return pparse.AGAIN
 
-        ctx._next_states([
-            XmlParsingMetaWhitespace,
-            XmlParsingElementAttrName,
-            XmlParsingMetaWhitespace,
-            XmlParsingEqualSeparator,
-            XmlParsingMetaWhitespace,
-            XmlParsingElementAttrValue,
-            XmlParsingMetaWhitespace,
-            XmlParsingElement,
-        ])
+        ctx._next_states(
+            [
+                XmlParsingMetaWhitespace,
+                XmlParsingElementAttrName,
+                XmlParsingMetaWhitespace,
+                XmlParsingEqualSeparator,
+                XmlParsingMetaWhitespace,
+                XmlParsingElementAttrValue,
+                XmlParsingMetaWhitespace,
+                XmlParsingElement,
+            ]
+        )
         return pparse.AGAIN
 
 
 class XmlParsingElementTag(XmlParsingState):
-    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u002f', '\u003e'] # tab, nl, cr, sp, /, >
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u002f', '\u003e']  # tab, nl, cr, sp, /, >
     CHUNK_SIZE = 0x100
 
 
@@ -387,7 +390,7 @@ class XmlParsingCData(XmlParsingState):
             return pparse.AGAIN
 
         node._value += data[:cdata_end]
-        parser.encoded_skip(ctx, data[:cdata_end+3])
+        parser.encoded_skip(ctx, data[: cdata_end + 3])
         parser._end_container_node(node)
         return pparse.ASCEND
 
@@ -412,7 +415,7 @@ class XmlParsingCommentStart(XmlParsingState):
             comment_node.ctx()._init_state(XmlParsingComment)
 
             # Add to content tree and schedule for processing
-            #breakpoint()
+            # breakpoint()
             node._value.append(comment_node)
             ctx._descendants.append(comment_node)
 
@@ -445,9 +448,9 @@ class XmlParsingComment(XmlParsingState):
             return pparse.AGAIN
 
         node._value += data[:comment_end]
-        parser.encoded_skip(ctx, data[:comment_end+3])
+        parser.encoded_skip(ctx, data[: comment_end + 3])
         parser._end_container_node(node)
-        
+
         return pparse.ASCEND
 
 
@@ -483,7 +486,7 @@ class XmlParsingProcessorInstructionStart(XmlParsingState):
 
 
 class XmlParsingProcessorInstructionTarget(XmlParsingState):
-    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003f'] # tab, nl, cr, sp, ?
+    WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003f']  # tab, nl, cr, sp, ?
     CHUNK_SIZE = 0x100
 
 
@@ -528,9 +531,9 @@ class XmlParsingProcessorInstruction(XmlParsingState):
             return pparse.AGAIN
 
         node._value['data'] += data[:instruction_end]
-        parser.encoded_skip(ctx, data[:instruction_end+2])
+        parser.encoded_skip(ctx, data[: instruction_end + 2])
         parser._end_container_node(node)
-        
+
         return pparse.ASCEND
 
 
@@ -545,7 +548,6 @@ class XmlParsingContent(XmlParsingState):
 
         data, bytes_len = parser.decoded_peek(ctx, XmlParsingContent.CHUNK_SIZE)
         if len(data) < 2:
-
             # If we're the document root, ASCEND.
             if node.ctx() and node.ctx().parent():
                 if isinstance(node.ctx().parent()._value, dict):
@@ -575,12 +577,12 @@ class XmlParsingContent(XmlParsingState):
             parser.encoded_skip(ctx, data[:2])
             ctx._next_state(XmlParsingElementClosingTag)
             return pparse.AGAIN
-        
+
         if data[:1] == '<':
             #! bug?
             ctx._next_states([XmlParsingElementStart, XmlParsingContent])
             return pparse.AGAIN
-        
+
         # Everything else is a text node child.
         text_node = parser.new_data_node(node)
         text_node.ctx()._init_state(XmlParsingTextNode)
@@ -666,10 +668,10 @@ class XmlParsingEpilog(XmlParsingState):
 
         if data[:2] == '</':
             raise Exception("Found invalid closing tag in epilog.")
-        
+
         if data[:1] == '<':
             raise Exception("Found invalid element start in epilog.")
-        
+
         # Everything else is whitespace.
         ctx._next_states([XmlParsingMetaWhitespace, XmlParsingEpilog])
         return pparse.AGAIN
@@ -688,12 +690,14 @@ class XmlParsingEpilogStart(XmlParsingState):
         parser = ctx.parser()
 
         node._value['epilog'] = parser.new_list_node(node)
-        node._value['epilog'].ctx()._init_states([
-            XmlParsingMetaWhitespace,
-            XmlParsingEpilog,
-        ])
+        node._value['epilog'].ctx()._init_states(
+            [
+                XmlParsingMetaWhitespace,
+                XmlParsingEpilog,
+            ]
+        )
         ctx._descendants.append(node._value['epilog'])
-        
+
         ctx._next_states([XmlParsingMetaWhitespace, XmlParsingComplete])
         return pparse.AGAIN
 
@@ -743,12 +747,12 @@ class XmlParsingProlog(XmlParsingState):
 
         if data[:2] == '</':
             raise Exception("Found invalid closing tag in prolog.")
-        
+
         if data[:1] == '<':
             # Found the end of the prolog.
             ctx._next_state(XmlParsingPrologFinish)
             return pparse.AGAIN
-        
+
         # Everything else is whitespace.
         ctx._next_states([XmlParsingMetaWhitespace, XmlParsingProlog])
         return pparse.AGAIN
@@ -764,19 +768,21 @@ class XmlParsingPrologStart(XmlParsingState):
         parser = ctx.parser()
 
         node._value['prolog'] = parser.new_list_node(node)
-        node._value['prolog'].ctx()._init_states([
-            XmlParsingMetaWhitespace,
-            XmlParsingProlog,
-        ])
+        node._value['prolog'].ctx()._init_states(
+            [
+                XmlParsingMetaWhitespace,
+                XmlParsingProlog,
+            ]
+        )
         ctx._descendants.append(node._value['prolog'])
-        
+
         ctx._next_states([XmlParsingMetaWhitespace, XmlParsingContentStart])
         return pparse.AGAIN
 
 
 # Always Whitespace -> Attribute -> Whitespace -> '=' -> Whitespace -> Value
 class XmlParsingDeclAttributeName(XmlParsingState):
-    DELIMITERS = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003d'] # tab, nl, cr, sp, =
+    DELIMITERS = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003d']  # tab, nl, cr, sp, =
     CHUNK_SIZE = 0x100
 
 
@@ -795,7 +801,7 @@ class XmlParsingDeclAttributeName(XmlParsingState):
 
         # Find first index of any character from DELIMITERS or -1 for none (similar to str.find()).
         equal_offset = next((i for i, c in enumerate(data) if c in XmlParsingDeclAttributeName.DELIMITERS), -1)
-        #equal_offset = data.find('=')
+        # equal_offset = data.find('=')
         if equal_offset < 0:
             ctx._attr_name_builder += data
             parser.encoded_skip(ctx, data)
@@ -840,10 +846,10 @@ class XmlParsingDeclAttributeValue(XmlParsingState):
 
             if end_quote >= 0:
                 # Yes, whole value found in single go.
-                node._value[attr_name] += data[1:end_quote+1]
-                parser.encoded_skip(ctx, data[:end_quote+2])
+                node._value[attr_name] += data[1 : end_quote + 1]
+                parser.encoded_skip(ctx, data[: end_quote + 2])
                 return pparse.NEXT
-        
+
         elif ctx._cur_attr_name in node._value:
             # Assume we've already seen the start quote.
 
@@ -858,7 +864,7 @@ class XmlParsingDeclAttributeValue(XmlParsingState):
             if end_quote >= 0:
                 # Yes, whole value found.
                 node._value[attr_name] += data[:end_quote]
-                parser.encoded_skip(ctx, data[:end_quote+1])
+                parser.encoded_skip(ctx, data[: end_quote + 1])
                 return pparse.NEXT
 
 
@@ -882,17 +888,19 @@ class XmlParsingXmlDeclaration(XmlParsingState):
             parser.encoded_skip(ctx, data[:2])
             parser._end_container_node(node)
             return pparse.ASCEND
-        
+
         # Iterate through all attributes.
-        ctx._next_states([
-            XmlParsingDeclAttributeName,
-            XmlParsingMetaWhitespace,
-            XmlParsingEqualSeparator,
-            XmlParsingMetaWhitespace,
-            XmlParsingDeclAttributeValue,
-            XmlParsingMetaWhitespace,
-            XmlParsingXmlDeclaration,
-        ])
+        ctx._next_states(
+            [
+                XmlParsingDeclAttributeName,
+                XmlParsingMetaWhitespace,
+                XmlParsingEqualSeparator,
+                XmlParsingMetaWhitespace,
+                XmlParsingDeclAttributeValue,
+                XmlParsingMetaWhitespace,
+                XmlParsingXmlDeclaration,
+            ]
+        )
 
         return pparse.AGAIN
 
@@ -915,12 +923,14 @@ class XmlParsingXmlDeclarationStart(XmlParsingState):
             parser.encoded_skip(ctx, data[:5])
 
             node._value['xml_decl'] = parser.new_map_node(node)
-            node._value['xml_decl'].ctx()._init_states([
-                XmlParsingMetaWhitespace,
-                XmlParsingXmlDeclaration,
-            ])
+            node._value['xml_decl'].ctx()._init_states(
+                [
+                    XmlParsingMetaWhitespace,
+                    XmlParsingXmlDeclaration,
+                ]
+            )
             ctx._descendants.append(node._value['xml_decl'])
-        
+
         ctx._next_states([XmlParsingMetaWhitespace, XmlParsingPrologStart])
         return pparse.AGAIN
 
@@ -930,7 +940,7 @@ class XmlParsingUtf32LittleEndian(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF32LE not yet supported.")
@@ -944,7 +954,7 @@ class XmlParsingUtf32BigEndian(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF32BE not yet supported.")
@@ -958,7 +968,7 @@ class XmlParsingUtf16LittleEndian(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF16LE not yet supported.")
@@ -972,7 +982,7 @@ class XmlParsingUtf16BigEndian(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF16BE not yet supported.")
@@ -1007,7 +1017,7 @@ class XmlParsingBom(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(6)
         if len(data) < 4:
@@ -1042,7 +1052,7 @@ class XmlParsingBom(XmlParsingState):
             ctx.skip(3)
             ctx._next_state(XmlParsingUtf8)
             return pparse.AGAIN
-        
+
         elif data[:5] == b'<?xml' and chr(data[5]) in XmlParsingBom.WHITESPACE_CHARACTERS:
             # no bom_encoding, assuming Utf8 for XML declaration (if present)
             ctx._next_state(XmlParsingUtf8)
@@ -1053,6 +1063,7 @@ class XmlParsingBom(XmlParsingState):
             # TODO: Consider validating <?xml doesn't show up later.
             ctx._next_state(XmlParsingUtf8)
             return pparse.AGAIN
+
 
 '''
 

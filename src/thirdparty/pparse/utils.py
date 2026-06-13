@@ -5,12 +5,14 @@ import logging
 import pathlib
 from typing import Any, Optional
 
+
 class ListType:
     MIXED: int = 0
     UBYTE: int = 1
     BYTE: int = 2
     INT: int = 3
     FLOAT: int = 4
+
 
 log = logging.getLogger(__name__)
 

@@ -11,8 +11,6 @@
 #         else:
 #             self._el = source
 
-    
-
 
 #     @classmethod
 #     def as_node(cls, source: "str | Element | XmlNode") -> "XmlNode":
@@ -96,18 +94,6 @@
 #         return self._el
 
 
-
-
-
-
-
-
-
-
-
-
-
-
 from __future__ import annotations
 
 import json
@@ -122,8 +108,7 @@ class XmlNode:
         self._obj_inst: Any = None
         self._el: Element = fromstring(source) if isinstance(source, str) else source
         self._parent: Optional[XmlNode] = parent
-        self._children: dict[Element, XmlNode] = \
-            {child: XmlNode(child, parent=self) for child in self._el}
+        self._children: dict[Element, XmlNode] = {child: XmlNode(child, parent=self) for child in self._el}
 
 
     @classmethod
@@ -213,15 +198,13 @@ class XmlNode:
     # Return all children or children with name as list (eager).
     def get_all(self, name: Optional[str] = None) -> list[XmlNode]:
         return list(self.iter_all(name))
-    
+
     # def get_linecol(self):
     #     return f"{self.get_el().sourceline}:{self.get_el().sourcecolumn}"
 
-    
-class XmlEntry:
-    """XmlEntry
-    """
 
+class XmlEntry:
+    """XmlEntry"""
 
     '''
       <extra>
@@ -288,7 +271,6 @@ class XmlEntry:
             return XmlEntry.as_node(node, node_cb=node_cb)
         elif node['type'] in ['int', 'float', 'str', 'json']:
             return XmlEntry.as_value(node)
-            
 
     '''
       <entry type="map" name="schema">
@@ -301,7 +283,9 @@ class XmlEntry:
 
 
     @staticmethod
-    def as_map(node: XmlNode, obj: Optional[dict[str, Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> dict[str, Any]:
+    def as_map(
+        node: XmlNode, obj: Optional[dict[str, Any]] = None, node_cb: Optional[Callable[..., Any]] = None
+    ) -> dict[str, Any]:
         obj = {} if obj is None else obj
         for entry in node.iter_all("entry"):
             if not entry.has_attr("name"):
@@ -309,7 +293,7 @@ class XmlEntry:
             name = entry['name']
             if name in obj:
                 raise KeyError(f"duplicate entry name: {name}")
-            
+
             if not entry.has_attr("type") or entry['type'] == 'str':
                 obj[name] = str(entry).strip()
             elif entry['type'] == 'map':
@@ -326,7 +310,6 @@ class XmlEntry:
                 raise ValueError(f"Unknown entry type in map: {entry['type']}")
         return obj
 
-
     '''
       <entry type="list" name="extensions">
         <entry type="str">.txt</entry>
@@ -338,7 +321,9 @@ class XmlEntry:
 
 
     @staticmethod
-    def as_list(node: XmlNode, obj: Optional[list[Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> list[Any]:
+    def as_list(
+        node: XmlNode, obj: Optional[list[Any]] = None, node_cb: Optional[Callable[..., Any]] = None
+    ) -> list[Any]:
         obj = [] if obj is None else obj
         for entry in node.iter_all("entry"):
             if not entry.has_attr("type") or entry['type'] == 'str':
@@ -350,7 +335,7 @@ class XmlEntry:
             elif entry['type'] == 'node':
                 breakpoint()
                 # ! Error: name undefined.
-                #obj[name] = XmlEntry.as_node(node, node_cb=node_cb)
+                # obj[name] = XmlEntry.as_node(node, node_cb=node_cb)
             elif entry['type'] in ['int', 'float', 'str', 'json']:
                 obj.append(XmlEntry.as_value(entry))
 
@@ -358,8 +343,3 @@ class XmlEntry:
                 breakpoint()
                 raise ValueError(f"Unknown entry type in list: {entry['type']}")
         return obj
-
-
-
-
-

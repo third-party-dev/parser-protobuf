@@ -57,7 +57,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[PyTorchParsingState] = PyTorchParsingZip) -> pparse.Node:
+        def make_root_node(
+            self, parent: Optional[pparse.Node] = None, init_state: Type[PyTorchParsingState] = PyTorchParsingZip
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             # Current path of pending things.
@@ -70,14 +72,14 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             super().__init__(source, id, PyTorchParsingState)
 
 
-        def _traverse_pt(self, node: pparse.Node, state: Any, path_arr: list[str] = [], metrics: dict[str, int] = {'param_cnt': 0}) -> None:
-            if not isinstance(state, dict) or \
-                not ('_modules' in state or '_parameters' in state):
-                #print(f"  - Dead end.")
+        def _traverse_pt(
+            self, node: pparse.Node, state: Any, path_arr: list[str] = [], metrics: dict[str, int] = {'param_cnt': 0}
+        ) -> None:
+            if not isinstance(state, dict) or not ('_modules' in state or '_parameters' in state):
+                # print(f"  - Dead end.")
                 return
 
             if '_parameters' in state and len(state['_parameters'].keys()) > 0:
-
                 metrics['param_cnt'] += len(state['_parameters'].keys())
                 for k in state['_parameters'].keys():
                     param_name = f"{'.'.join(path_arr)}.{k}"
@@ -153,7 +155,6 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             if not decomp_data_obj:
                 raise pparse.UnsupportedFormatException(f"No data found for data_key {tensor._value['data_key']}")
 
-
             # Since we can use the Zip decomp_data's BytesIO object, its sufficient to point
             # our 'data' field at that Node.
             tensor._value['data'] = decomp_data_obj._value['decomp_data']
@@ -161,7 +162,6 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
             # Note: Numpy Array and Python Array conversion isn't really "parsing", its more shaping
             #       and handling, therefore should be handled by the view class.
-
 
             # bytesio_obj = decomp_data_obj._value['decomp_data']._value
             # data_source = pparse.BytesIoData(bytes_io=bytesio_obj)

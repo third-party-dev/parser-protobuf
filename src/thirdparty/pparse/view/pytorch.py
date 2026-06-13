@@ -40,7 +40,7 @@ class Tensor(pparse.Tensor):
 
     # Return raw data as python array of dtype
     def as_array(self) -> Any:
-        #elem_cnt = self._tensor.value['elem_count']
+        # elem_cnt = self._tensor.value['elem_count']
         buffer = self.get_data_bytes().getbuffer()
         dtype = self.get_type()
 
@@ -70,7 +70,9 @@ class PyTorch:
         self._forced_traversal: bool = force_traverse
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None) -> PyTorch:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None
+    ) -> PyTorch:
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
             self._extraction = pparse.BytesExtraction(name=fname, reader=data_range)
@@ -79,9 +81,9 @@ class PyTorch:
             self._extraction.add_result('pt', parser.make_root_node())
             self._extraction._result['pt'].load(recursion=recursion)
 
-            #self._extraction.add_parser('pt', parser)
-            #self._extraction.discover_parsers({"pt": LazyPyTorchParser})
-            #self._extraction._parser['pt']._root.load(recursion=recursion)
+            # self._extraction.add_parser('pt', parser)
+            # self._extraction.discover_parsers({"pt": LazyPyTorchParser})
+            # self._extraction._parser['pt']._root.load(recursion=recursion)
         except pparse.EndOfDataException as e:
             print(e)
             pass
@@ -102,7 +104,9 @@ class PyTorch:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None) -> PyTorch:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None
+    ) -> PyTorch:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 

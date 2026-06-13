@@ -4,6 +4,7 @@ from typing import Optional
 
 import numpy
 
+
 class OnnxDataType:
     UNDEFINED: int = 0
     FLOAT: int = 1
@@ -76,7 +77,7 @@ class OnnxDataType:
         UINT64: numpy.uint64,
         COMPLEX64: numpy.complex64,
         COMPLEX128: numpy.complex128,
-        BFLOAT16: None, #numpy.dtype("bfloat16"),
+        BFLOAT16: None,  # numpy.dtype("bfloat16"),
         FLOAT8E4M3FN: None,
         FLOAT8E4M3FNUZ: None,
         FLOAT8E5M2: None,
@@ -100,7 +101,6 @@ class OnnxDataType:
             return OnnxDataType.NPTYPES[onnx_type]
         else:
             return None
-
 
 
 '''

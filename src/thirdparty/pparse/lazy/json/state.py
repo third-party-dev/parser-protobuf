@@ -63,9 +63,7 @@ class JsonParsingNumber(JsonParsingState):
                 parser.apply_node_value(node, json.loads(b"".join(self.num_bytes)))
             except Exception as e:
                 breakpoint()
-                raise UnsupportedFormatException(
-                    f"Invalid number format in {self.num_bytes}: {e}"
-                )
+                raise UnsupportedFormatException(f"Invalid number format in {self.num_bytes}: {e}")
             finally:
                 self.num_bytes = []
 
@@ -102,9 +100,7 @@ class JsonParsingString(JsonParsingState):
                     encoded_string = json.loads(b"".join(self.str_bytes))
                     parser.apply_node_value(node, encoded_string)
                 except Exception as e:
-                    raise UnsupportedFormatException(
-                        f"Invalid string format in {self.str_bytes}: {e}"
-                    )
+                    raise UnsupportedFormatException(f"Invalid string format in {self.str_bytes}: {e}")
                 finally:
                     self.str_bytes = [b'"']
 
@@ -114,9 +110,7 @@ class JsonParsingString(JsonParsingState):
             elif data[offset : offset + 1] == b"\x5c":
                 if data[offset + 1 : offset + 2] == b"\x75":
                     if len(data) < 6:
-                        raise EndOfDataException(
-                            "Not enough bytes to parse JSON enicode char in string."
-                        )
+                        raise EndOfDataException("Not enough bytes to parse JSON enicode char in string.")
                     self.str_bytes.append(data[offset : offset + 6])
                     offset += 6
                     continue
@@ -139,7 +133,7 @@ class JsonParsingWhitespace(JsonParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(0x400)
         if len(data) < 1:
@@ -169,7 +163,7 @@ class JsonParsingConstant(JsonParsingState):
         data = ctx.peek(5)
         if len(data) < 4:
             raise EndOfDataException("Not enough data to parse JSON encoding.")
-        
+
         log.debug(f"JsonParsingConstant({id(node):x}) off {ctx.tell()} data {data}")
 
         if data[:1] == b"\x66":
@@ -222,9 +216,7 @@ class JsonParsingMeta(JsonParsingState):
             if ctx.json_top:
                 ctx._next_state(JsonParsingComplete)
                 return pparse.ASCEND
-            raise EndOfDataException(
-                f"Not enough data to parse JSON meta. Offset: {ctx.tell()}"
-            )
+            raise EndOfDataException(f"Not enough data to parse JSON meta. Offset: {ctx.tell()}")
 
         log.debug(f"JsonParsingMeta({id(node):x}) off {ctx.tell()} data {data}")
 
@@ -312,15 +304,12 @@ class JsonParsingMeta(JsonParsingState):
 
 
 class JsonParsingStart(JsonParsingState):
-    VALID_BYTES: bytes = (
-        b"\x09\x0a\x0d\x20\x22\x2d\x5b\x5d\x66\x6e\x74\x7b\x7d"
-        b"\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39"
-    )
+    VALID_BYTES: bytes = b"\x09\x0a\x0d\x20\x22\x2d\x5b\x5d\x66\x6e\x74\x7b\x7d\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39"
 
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(2)
         if len(data) < 1:
@@ -332,7 +321,7 @@ class JsonParsingStart(JsonParsingState):
         # to this node in JsonParsingMeta. We can not use parent == None to check
         # for top because this data could be part of a larger tree.
         ctx.json_top = True
-        
+
         # Enter JsonParsingMeta via JsonParsingWhitespace to lstrip()
         # Note: Ignoring whitespace after JSON string.
         ctx._next_state(JsonParsingMeta)

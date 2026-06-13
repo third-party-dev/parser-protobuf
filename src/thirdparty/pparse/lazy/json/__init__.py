@@ -105,10 +105,16 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[JsonParsingState] = JsonParsingStart, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
+        def make_root_node(
+            self,
+            parent: Optional[pparse.Node] = None,
+            init_state: Type[JsonParsingState] = JsonParsingStart,
+            ctx_args: Dict[str, Any] = {},
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             from thirdparty.pparse.lazy.json.node import NodeContext
+
             root = pparse.Node(self._source.open(), self, parent=parent, ctx_class=NodeContext, ctx_args=ctx_args)
             root.ctx()._next_state(init_state)
             return root
@@ -150,18 +156,32 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         def new_array_node(self, parent: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             # TODO: Consider alternative ctx()._state management? Currently set by State object.
             from thirdparty.pparse.lazy.json.node import NodeContext
-            return pparse.Node(parent.ctx().reader(), self, default_value = [], parent = parent, ctx_class = NodeContext, ctx_args = ctx_args)
+
+            return pparse.Node(
+                parent.ctx().reader(), self, default_value=[], parent=parent, ctx_class=NodeContext, ctx_args=ctx_args
+            )
 
 
         def new_map_node(self, parent: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             # TODO: Consider alternative ctx()._state management? Currently set by State object.
             from thirdparty.pparse.lazy.json.node import NodeContext
-            return pparse.Node(parent.ctx().reader(), self, default_value = {}, parent = parent, ctx_class = NodeContext, ctx_args = ctx_args)
+
+            return pparse.Node(
+                parent.ctx().reader(), self, default_value={}, parent=parent, ctx_class=NodeContext, ctx_args=ctx_args
+            )
 
 
         def new_root_node(self, node: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             from thirdparty.pparse.lazy.json.node import NodeContext
-            return pparse.Node(node.ctx().reader(), self, default_value = {}, parent = node.ctx().parent(), ctx_class = NodeContext, ctx_args = ctx_args)
+
+            return pparse.Node(
+                node.ctx().reader(),
+                self,
+                default_value={},
+                parent=node.ctx().parent(),
+                ctx_class=NodeContext,
+                ctx_args=ctx_args,
+            )
 
 
         def _end_container_node(self, node: pparse.Node) -> None:
@@ -180,7 +200,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 # node.clear_ctx()
 
                 # Set current node to parent.
-                #self.current = parent
+                # self.current = parent
             # else:
             #     log.debug("end_container: Backtracking to initial node.")
 

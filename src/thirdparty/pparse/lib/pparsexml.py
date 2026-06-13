@@ -4,9 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Dict, Optional
 
-from thirdparty.pparse.lib import (
-    BytesExtraction
-)
+from thirdparty.pparse.lib import BytesExtraction
 
 if TYPE_CHECKING:
     from thirdparty.pparse.lib.parser import Parser
@@ -95,6 +93,7 @@ class PparseXml:
 
         # TODO: Consider xmlnode.py, xmlentry.py, and shoving this class in _xml.py.
         from thirdparty.pparse._xml import XmlNode
+
         # Ensure our parameters is an XmlNode
         xml = XmlNode.as_node(xml_src)
 
@@ -115,11 +114,8 @@ class PparseXml:
         extraction_cls = globals()[xml.extraction['type']]
         xml.extraction.set_obj_inst(extraction_cls.from_xml(xml.extraction, pparse_xml))
 
-
-
         # Parse the results
         for result_xml in xml.results:
-
             # <result> should only ever have a single <node>
             # Note: <result> exists as a generic referable container for extractions.
             if len(result_xml) <= 0:
@@ -194,7 +190,9 @@ class ContextRef:
     """
 
 
-    def __init__(self, result_ref: ResultRef, context_xml: Optional[Any] = None, parser: Optional[Parser] = None) -> None:
+    def __init__(
+        self, result_ref: ResultRef, context_xml: Optional[Any] = None, parser: Optional[Parser] = None
+    ) -> None:
         self.result_ref = result_ref
         self.context_xml = context_xml
         self.parser = parser

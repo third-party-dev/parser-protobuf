@@ -19,7 +19,9 @@ class Json:
         self._extraction = extraction
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.json", recursion: Optional[pparse.RecursionControl] = None) -> Json:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.json", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Json:
 
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
@@ -49,5 +51,7 @@ class Json:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.json", recursion: Optional[pparse.RecursionControl] = None) -> Json:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.json", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Json:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)

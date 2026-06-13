@@ -34,7 +34,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[PickleParsingState] = PickleParsingPickleStream) -> Node:
+        def make_root_node(
+            self, parent: Optional[pparse.Node] = None, init_state: Type[PickleParsingState] = PickleParsingPickleStream
+        ) -> Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = Node(self._source.open(), self, default_value=[], parent=parent)
@@ -64,9 +66,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             ctx = node.ctx()
             parent = ctx._parent
             if parent:
-                log.debug(
-                    f"end_container (off:{ctx.tell()}): Backtracking to parent {parent}."
-                )
+                log.debug(f"end_container (off:{ctx.tell()}): Backtracking to parent {parent}.")
 
                 # Set the end pointer to advance parent past field.
                 ctx.mark_end(node)

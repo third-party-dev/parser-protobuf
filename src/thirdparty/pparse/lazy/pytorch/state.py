@@ -8,6 +8,7 @@ log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
 
+
 class PyTorchParsingState(object):
 
 
@@ -35,7 +36,7 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
         # TODO: Using the metadata from pickle, generate nodes for tensors.
 
         # We only need the data reference, we seek(tensor_data_start) for each node.
-        #tensor_reader = ctx.reader()
+        # tensor_reader = ctx.reader()
         node._value['tensors'] = {}
 
         # Auto-detect if this is a weights only model or not.
@@ -54,11 +55,11 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
 
         # TODO: Consider adding option to "force_traversal".
         if len(pkl) == 0:
-            #arr = []
+            # arr = []
             parser._traverse_pt(node, pkl.state)
         else:
             for name in pkl:
-                #node._value['tensors'][name] = Tensor(node, pkl[name], name)
+                # node._value['tensors'][name] = Tensor(node, pkl[name], name)
 
                 # ! There is a bug here when processing yolov5su.
 
@@ -76,7 +77,7 @@ class PyTorchParsingPickle(PyTorchParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data_pkl_obj = None
         for fname in node._value['by_fname']:
@@ -87,6 +88,7 @@ class PyTorchParsingPickle(PyTorchParsingState):
             raise pparse.UnsupportedFormatException("No data.pkl in pytorch zip.")
 
         from thirdparty.pparse.lazy.pickle import configure_pparser
+
         bytes_io = data_pkl_obj._value['decomp_data']._value
         pkl_parser = configure_pparser().from_bytesio(bytes_io)
         node._value['pkl'] = pkl_parser.make_root_node(parent=node)
@@ -102,7 +104,7 @@ class PyTorchParsingZipPostProcess(PyTorchParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         node._value['by_fname'] = {}
         for elem in node._value['zip']._value:
@@ -117,9 +119,10 @@ class PyTorchParsingZip(PyTorchParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         from thirdparty.pparse.lazy.zip import configure_pparser
+
         zip_parser = configure_pparser().from_reader(node.ctx().reader())
         node._value['zip'] = zip_parser.make_root_node(parent=node)
         ctx._descendants.append(node._value['zip'])
@@ -127,5 +130,3 @@ class PyTorchParsingZip(PyTorchParsingState):
         # ! Assuming success. TODO: Node should be able to verify zip parse success before continuing.
         ctx._next_state(PyTorchParsingZipPostProcess)
         return pparse.AGAIN
-
-        

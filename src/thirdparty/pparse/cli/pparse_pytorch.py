@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from typing import Any
@@ -8,29 +9,21 @@ from typing import Any
 
 def register_pparse_pytorch(subparsers: Any) -> None:
     pytorch_parser = subparsers.add_parser("pytorch", help="pytorch command")
-    pytorch_subparser = pytorch_parser.add_subparsers(
-        dest="pytorch_command", required=True
-    )
+    pytorch_subparser = pytorch_parser.add_subparsers(dest="pytorch_command", required=True)
 
-    pytorch_view_parser = pytorch_subparser.add_parser(
-        "view", help="pytorch parse command"
-    )
+    pytorch_view_parser = pytorch_subparser.add_parser("view", help="pytorch parse command")
     pytorch_view_parser.add_argument("--force_traverse", action="store_true", default=False)
     pytorch_view_parser.add_argument("--print", action="store_true", help="print to stdout")
     pytorch_view_parser.add_argument("path")
     pytorch_view_parser.set_defaults(func=pytorch_view)
 
-    pytorch_unpickle_parser = pytorch_subparser.add_parser(
-        "unpickle", help="pytorch unpickle command"
-    )
+    pytorch_unpickle_parser = pytorch_subparser.add_parser("unpickle", help="pytorch unpickle command")
     pytorch_unpickle_parser.add_argument("--print", action="store_true", help="print to stdout")
     pytorch_unpickle_parser.add_argument("path")
     pytorch_unpickle_parser.set_defaults(func=pytorch_unpickle)
 
     # Generic "hash" command that implicitly does the "arc hash"
-    pytorch_hash_parser = pytorch_subparser.add_parser(
-        "hash", help="pytorch hash command"
-    )
+    pytorch_hash_parser = pytorch_subparser.add_parser("hash", help="pytorch hash command")
     # debug argument
     pytorch_hash_parser.add_argument(
         "--hashed_data_path",
@@ -50,9 +43,7 @@ def register_pparse_pytorch(subparsers: Any) -> None:
     pytorch_hash_parser.set_defaults(func=pytorch_hash)
 
     # Generic "transform" command that implicitly does the "to safetensors" op
-    pytorch_transform_parser = pytorch_subparser.add_parser(
-        "transform", help="transform pytorch"
-    )
+    pytorch_transform_parser = pytorch_subparser.add_parser("transform", help="transform pytorch")
     pytorch_transform_parser.add_argument(
         "--keep_lm_head",
         dest="keep_lm_head",
@@ -61,9 +52,7 @@ def register_pparse_pytorch(subparsers: Any) -> None:
         default=False,
     )
     pytorch_transform_parser.add_argument("path")
-    pytorch_transform_parser.add_argument(
-        "outpath", default="converted_output.safetensors"
-    )
+    pytorch_transform_parser.add_argument("outpath", default="converted_output.safetensors")
     pytorch_transform_parser.set_defaults(func=pytorch_transform)
 
     pytorch_nn_calls_parser = pytorch_subparser.add_parser(
@@ -75,6 +64,7 @@ def register_pparse_pytorch(subparsers: Any) -> None:
 
 def pytorch_nn_calls(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
 
     from thirdparty.pparse.view.pytorch import PyTorch
@@ -87,11 +77,12 @@ def pytorch_nn_calls(args: Any) -> None:
         pkl_root = obj.root_node()._value['pkl']
         for pkl_stream in pkl_root._value:
             for nc in iter_new_calls(pkl_stream._value):
-                #if nc.module.startswith('torch.nn'):
+                # if nc.module.startswith('torch.nn'):
                 print(f"mod={nc.module}  func={nc.function}")
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -101,8 +92,9 @@ def pytorch_nn_calls(args: Any) -> None:
 
 def pytorch_unpickle(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.view.pytorch import PyTorch
 
     print(f"Parsing pytorch from: {args.path}")
@@ -118,6 +110,7 @@ def pytorch_unpickle(args: Any) -> None:
     except Exception as e:
         print(e)
         import traceback
+
         traceback.print_exc()
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -127,9 +120,10 @@ def pytorch_unpickle(args: Any) -> None:
 
 def pytorch_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
-    #from thirdparty.pparse.utils import pparse_repr
+
+    # from thirdparty.pparse.utils import pparse_repr
     from thirdparty.pparse.view.pytorch import PyTorch
 
     print(f"Parsing pytorch from: {args.path}")
@@ -143,7 +137,6 @@ def pytorch_view(args: Any) -> None:
         if args.print:
             obj.root_node().dump()
 
-
     except Exception as e:
         print(e)
         import traceback
@@ -153,6 +146,7 @@ def pytorch_view(args: Any) -> None:
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
         breakpoint()
+
 
 '''
     topcall = obj._extraction._extractions[0]._result['pkl'].value[0].value[0]
@@ -164,15 +158,13 @@ def pytorch_view(args: Any) -> None:
 def traverse(state: Any, path_arr: list[str], metrics: dict[str, int] = {'param_cnt': 0}) -> None:
     print(f"Traversing into {'.'.join(path_arr)} id: {id(state)}")
 
-    if not isinstance(state, dict) or \
-        not ('_modules' in state or '_parameters' in state):
+    if not isinstance(state, dict) or not ('_modules' in state or '_parameters' in state):
         print("  - Dead end.")
         return
 
     if '_parameters' in state and len(state['_parameters'].keys()) > 0:
         print("  - Parameters found.")
         metrics['param_cnt'] += len(state['_parameters'].keys())
-
 
     if '_modules':
         for mod in state['_modules']:
@@ -181,19 +173,16 @@ def traverse(state: Any, path_arr: list[str], metrics: dict[str, int] = {'param_
 
 def pytorch_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.view.pytorch import PyTorch
 
     print(f"Hashing pytorch from: {args.path} with: arc")
 
     try:
         obj = PyTorch().open_fpath(args.path)
-        print(
-            obj.as_arc_hash(
-                hashed_data_path=args.hashed_data_path, keep_lm_head=args.keep_lm_head
-            )
-        )
+        print(obj.as_arc_hash(hashed_data_path=args.hashed_data_path, keep_lm_head=args.keep_lm_head))
 
     except Exception as e:
         print(e)
@@ -203,14 +192,15 @@ def pytorch_hash(args: Any) -> None:
 
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
-        #traverse(obj._extraction._extractions[0]._result['pkl'].value[0].value[0], ['top'])
+        # traverse(obj._extraction._extractions[0]._result['pkl'].value[0].value[0], ['top'])
         breakpoint()
 
 
 def pytorch_transform(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.view.pytorch import PyTorch
 
     print(f"Transform pytorch from: {args.path} to: {args.outpath}")

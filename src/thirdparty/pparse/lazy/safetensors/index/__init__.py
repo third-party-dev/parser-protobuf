@@ -29,7 +29,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             return False
 
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[SafetensorsIndexParsingState] = SafetensorsIndexParsingIndex) -> pparse.Node:
+        def make_root_node(
+            self,
+            parent: Optional[pparse.Node] = None,
+            init_state: Type[SafetensorsIndexParsingState] = SafetensorsIndexParsingIndex,
+        ) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = pparse.Node(self._source.open(), self, default_value={}, parent=parent)
@@ -41,4 +45,3 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             super().__init__(source, id, SafetensorsIndexParsingState)
 
     return Parser
-

@@ -26,5 +26,3 @@ class NodeContext(pparse.NodeContext):
     def set_key(self, v: Optional[str]) -> NodeContext:
         self._key_reg = v
         return self
-
-

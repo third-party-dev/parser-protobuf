@@ -99,13 +99,12 @@ class ReduceCall(dict):
         res.append(f"{spacer})")
 
         return "".join(res)
-    
+
     # def dump(self, depth=0, step=2, dumper=None):
 
     #     if not dumper:
     #         dumper = Dumper.default()
     #     dumper.dump("ReduceCall", self._value, '', depth=depth, step=step)
-
 
 
 class NewCall(dict):

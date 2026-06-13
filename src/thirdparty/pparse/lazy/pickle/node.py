@@ -76,14 +76,18 @@ class PickleDumper(Dumper):
         super().__init__(dumpers=self.dumpers, cb=cb, dst=dst)
 
 
-    def _dump_newcall_wrapper(self, elem_name: str = "NewCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_newcall_wrapper(
+        self, elem_name: str = "NewCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         spacer = " " * depth
-        attrs = ' '.join([
-            f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
-            f'func="{obj.module_call[1].decode("utf-8").strip()}"',
-        ])
+        attrs = ' '.join(
+            [
+                f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
+                f'func="{obj.module_call[1].decode("utf-8").strip()}"',
+            ]
+        )
         self.cb(self.dst, f'{spacer}<NewCall {attrs}>')
-        
+
         if obj.arg is None or len(obj.arg) == 0:
             self.cb(self.dst, f'{spacer}{" " * step}<args is_empty="y" />')
         else:
@@ -108,14 +112,18 @@ class PickleDumper(Dumper):
         self.cb(self.dst, f'{spacer}</NewCall>')
 
 
-    def _dump_reducecall_wrapper(self, elem_name: str = "ReduceCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_reducecall_wrapper(
+        self, elem_name: str = "ReduceCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         spacer = " " * depth
-        attrs = ' '.join([
-            f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
-            f'func="{obj.module_call[1].decode("utf-8").strip()}"',
-        ])
+        attrs = ' '.join(
+            [
+                f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
+                f'func="{obj.module_call[1].decode("utf-8").strip()}"',
+            ]
+        )
         self.cb(self.dst, f'{spacer}<ReduceCall {attrs}>')
-        
+
         if obj.arg is None or len(obj.arg) == 0:
             self.cb(self.dst, f'{spacer}{" " * step}<args is_empty="y" />')
         else:
@@ -140,15 +148,19 @@ class PickleDumper(Dumper):
         self.cb(self.dst, f'{spacer}</ReduceCall>')
 
 
-    def _dump_persidcall_wrapper(self, elem_name: str = "PersistentCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_persidcall_wrapper(
+        self, elem_name: str = "PersistentCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         spacer = " " * depth
-        attrs = ' '.join([
-            f'id="{obj.id}"',
-        ])
+        attrs = ' '.join(
+            [
+                f'id="{obj.id}"',
+            ]
+        )
         self.cb(self.dst, f'{spacer}<PersistentCall {attrs}>')
-        
+
         self.cb(self.dst, f'{spacer}{" " * step}<args>')
-        #self.cb(self.dst, f'{spacer}{" " * step}{obj.arg}')
+        # self.cb(self.dst, f'{spacer}{" " * step}{obj.arg}')
         self._dump_list(obj.arg, depth + (step * 2))
         self.cb(self.dst, f'{spacer}{" " * step}</args>')
 

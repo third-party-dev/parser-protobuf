@@ -11,10 +11,13 @@ log = logging.getLogger(__name__)
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pickle import configure_pparser
 
+
 class Pickle:
 
 
-    def _parse(self, data_source: Any, fname: str = "unnamed.pkl", recursion: Optional[pparse.RecursionControl] = None) -> Pickle:
+    def _parse(
+        self, data_source: Any, fname: str = "unnamed.pkl", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Pickle:
         self._extraction: Optional[pparse.BytesExtraction]
 
         try:
@@ -25,9 +28,9 @@ class Pickle:
             self._extraction.add_result('pkl', parser.make_root_node())
             self._extraction._result['pkl'].load(recursion=recursion)
 
-            #self._extraction.add_parser('pkl', parser)
-            #self._extraction.discover_parsers({"pkl": LazyPickleParser})
-            #self._extraction._parser['pkl']._root.load(recursion=recursion)
+            # self._extraction.add_parser('pkl', parser)
+            # self._extraction.discover_parsers({"pkl": LazyPickleParser})
+            # self._extraction._parser['pkl']._root.load(recursion=recursion)
 
         except pparse.EndOfDataException as e:
             print(e)
@@ -49,5 +52,7 @@ class Pickle:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.pkl", recursion: Optional[pparse.RecursionControl] = None) -> Pickle:
+    def from_bytesio(
+        self, bytes_io: Any, fname: str = "unnamed.pkl", recursion: Optional[pparse.RecursionControl] = None
+    ) -> Pickle:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)

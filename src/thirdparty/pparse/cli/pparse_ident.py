@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+
 log = logging.getLogger(__name__)
 
 from typing import Any
@@ -24,11 +25,12 @@ def register_pparse_ident(subparsers: Any) -> None:
 
 def ident_list(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.ident.extensions import typedb
 
-    for k,val in typedb.items():
+    for k, val in typedb.items():
         print(f'{k} - {val["name"]}')
 
     if hasattr(args, "breakpoint") and args.breakpoint:
@@ -38,8 +40,9 @@ def ident_list(args: Any) -> None:
 
 def ident_show(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.ident.extensions import typedb
 
     if args.type_name not in typedb:
@@ -67,8 +70,9 @@ def ident_show(args: Any) -> None:
 
 def ident_byext(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
+
     activate_logging(args)
-    
+
     from thirdparty.pparse.ident.extensions import ident_by_extension
 
     print(f'Possible types: {ident_by_extension(args.path)}')

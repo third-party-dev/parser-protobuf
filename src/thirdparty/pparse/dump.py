@@ -46,7 +46,14 @@ class Dumper:
         return cls._default
 
 
-    def __init__(self, dumpers: Optional[list[Any]] = None, cb: Any = _print_cb, dst: Any = sys.stdout, max_array: int = MAX_DEPTH, max_depth: int = MAX_DEPTH) -> None:
+    def __init__(
+        self,
+        dumpers: Optional[list[Any]] = None,
+        cb: Any = _print_cb,
+        dst: Any = sys.stdout,
+        max_array: int = MAX_DEPTH,
+        max_depth: int = MAX_DEPTH,
+    ) -> None:
         import numbers
         from thirdparty.pparse.lib import Node
         from collections.abc import Iterable
@@ -73,12 +80,14 @@ class Dumper:
                 [io.BytesIO, self._dump_bytesio_wrapper],
                 [Iterable, self._dump_iter_wrapper],
             ]
-        
-        self.cb=cb
-        self.dst=dst
+
+        self.cb = cb
+        self.dst = dst
 
 
-    def _dump_node_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_node_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -91,7 +100,9 @@ class Dumper:
         self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_dict_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_dict_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -107,7 +118,9 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_bytes_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_bytes_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -123,7 +136,9 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_str_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_str_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -139,7 +154,9 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_misc_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_misc_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -147,7 +164,9 @@ class Dumper:
         self.cb(self.dst, f'{spacer}<{elem_name} value_is="scalar" {attrs}>{obj}</{elem_name}>')
 
 
-    def _dump_bytesio_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_bytesio_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -155,7 +174,9 @@ class Dumper:
         self.cb(self.dst, f'{spacer}<{elem_name} value_is="BytesIO" {attrs}>{obj}</{elem_name}>')
 
 
-    def _dump_iter_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_iter_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -164,7 +185,6 @@ class Dumper:
             self.cb(self.dst, f'{spacer}<{elem_name} value_is="list" {attrs} empty="y"></{elem_name}>')
 
         elif hasattr(obj, "_pparse_type") and obj._pparse_type != ListType.MIXED:
-
             if obj._pparse_type == ListType.INT:
                 attrs = f'{attrs} type="int" count="{len(obj)}"'
                 self.cb(self.dst, f'{spacer}<{elem_name} value_is="list" encoding="json" {attrs}>')
@@ -179,7 +199,7 @@ class Dumper:
                 attrs = f'{attrs} type="float" count="{len(obj)}"'
                 self.cb(self.dst, f'{spacer}<{elem_name} value_is="list" encoding="json" {attrs}>')
                 ## TODO: I don't like this. I'd rather use hex values, but that isn't JSON compliant. :(
-                #for i in range(0, len(obj), 3):
+                # for i in range(0, len(obj), 3):
                 #    chunk = obj[i:i+3]
                 #    # Note: fp64 - 17, fp32 - 9, fp16 - 6
                 #    line = ' '.join(f'{n:20.9g}{"," if i + j < len(obj) - 1 else ""}' for j, n in enumerate(chunk))
@@ -204,7 +224,7 @@ class Dumper:
             if obj._pparse_type == ListType.BYTE:
                 attrs = f'{attrs} type="byte" count="{len(obj)}"'
                 self.cb(self.dst, f'{spacer}<{elem_name} value_is="list" encoding="json" {attrs}>')
-                #for i in range(0, len(obj), 16):
+                # for i in range(0, len(obj), 16):
                 #    chunk = obj[i:i+16]
                 #    line = ' '.join(f'{n:3d}{"," if i + j < len(obj) - 1 else ""}' for j, n in enumerate(chunk))
                 #    #line = ''.join(f'{n:3d}, ' for n in obj[i:i+16])
@@ -225,7 +245,9 @@ class Dumper:
         self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_else_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
+    def _dump_else_wrapper(
+        self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2
+    ) -> None:
         if depth > self.max_depth:
             return
 
@@ -259,7 +281,7 @@ class Dumper:
         spacer = " " * depth
         if len(obj) <= 16:
             self.cb(self.dst, f'{spacer}{obj}')
-        elif len(obj) >16:
+        elif len(obj) > 16:
             self.cb(self.dst, f'{spacer}{obj[:16]}')
             if len(obj) >= 32:
                 self.cb(self.dst, f'{spacer}... snip ...')
@@ -300,5 +322,3 @@ class Dumper:
                 dumper[1](elem_name=elem_name, obj=obj, attrs=attrs, depth=depth, step=step)
                 return
         self._dump_else_wrapper(elem_name=elem_name, obj=obj, attrs=attrs, depth=depth, step=step)
-
-

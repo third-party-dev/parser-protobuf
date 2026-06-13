@@ -10,6 +10,7 @@ log = logging.getLogger(__name__)
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.om.meta import Partition
 
+
 class OmParsingState(object):
 
 
@@ -29,11 +30,11 @@ class OmParsingPartitionModelDef(OmParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         # Re-position ctx to actual protobuf data, based on some assumptions.
         FILE_HEADER_SIZE = 0x100
-        MODELDEF_HEADER_SIZE= 0x80 #(OR partition table size? 5 * 24 + 8)
+        MODELDEF_HEADER_SIZE = 0x80  # (OR partition table size? 5 * 24 + 8)
         ctx.seek(FILE_HEADER_SIZE + node._value['offset'] + MODELDEF_HEADER_SIZE)
 
         from thirdparty.pparse.lazy.protobuf import configure_pparser
@@ -44,6 +45,7 @@ class OmParsingPartitionModelDef(OmParsingState):
 
         # Fetch protobuf schema.
         from importlib import resources
+
         data_path = resources.files("thirdparty.pparse.data")
         proto = PbImport(data_path / "proto" / "ge_ir.pb")
 
@@ -62,17 +64,17 @@ class OmParsingPartitionEntry(OmParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(24)
         if len(data) < 24:
             raise pparse.EndOfDataException("Not enough data to parse partition table entry")
 
-        #entry = parser._new_nodemap(parser.current, ctx.reader())
+        # entry = parser._new_nodemap(parser.current, ctx.reader())
         edict = node._value
         edict['type'], edict['offset'], edict['size'] = struct.unpack('<QQQ', data[:24])
 
-        #parser.current.value.append(entry)
+        # parser.current.value.append(entry)
         ctx.skip(24)
 
         # Set state of node based on type.
@@ -137,7 +139,7 @@ class OmParsingHeader(OmParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        #parser = ctx.parser()
+        # parser = ctx.parser()
 
         data = ctx.peek(0x100)
         if len(data) < 0x100:
