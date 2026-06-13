@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import json
 import logging
+from typing import List
 
 import thirdparty.pparse.lib as pparse
 
@@ -15,20 +18,20 @@ from thirdparty.pparse.lib import (
 
 
 class JsonParsingState(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class JsonParsingComplete(JsonParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
 class JsonParsingNumber(JsonParsingState):
-    def __init__(self):
-        self.num_bytes = []
+    def __init__(self) -> None:
+        self.num_bytes: List[bytes] = []
 
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
         data = ctx.peek(0x400)
@@ -66,10 +69,10 @@ class JsonParsingNumber(JsonParsingState):
 
 
 class JsonParsingString(JsonParsingState):
-    def __init__(self):
-        self.str_bytes = [b"\x22"]
+    def __init__(self) -> None:
+        self.str_bytes: List[bytes] = [b"\x22"]
 
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
         data = ctx.peek(0x400)
@@ -123,7 +126,7 @@ class JsonParsingString(JsonParsingState):
 
 
 class JsonParsingWhitespace(JsonParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -146,7 +149,7 @@ class JsonParsingWhitespace(JsonParsingState):
 
 
 class JsonParsingConstant(JsonParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -194,8 +197,8 @@ class JsonParsingMeta(JsonParsingState):
     LEFT_CURLY = b"\x7b"
     RIGHT_BRACKET_CURLY = b"\x5d\x7d"
 
-    def parse_data(self, node: pparse.Node):
-        
+    def parse_data(self, node: pparse.Node) -> int:
+
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -295,12 +298,12 @@ class JsonParsingMeta(JsonParsingState):
 
 
 class JsonParsingStart(JsonParsingState):
-    VALID_BYTES = (
+    VALID_BYTES: bytes = (
         b"\x09\x0a\x0d\x20\x22\x2d\x5b\x5d\x66\x6e\x74\x7b\x7d"
         b"\x30\x31\x32\x33\x34\x35\x36\x37\x38\x39"
     )
 
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 

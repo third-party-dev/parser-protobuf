@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import Any, Dict, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -82,7 +85,7 @@ from thirdparty.pparse.lazy.json.state import JsonParsingStart, JsonParsingState
 #         ...
 #     return Parser
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
         # RULE: Parser knows extensions
@@ -97,11 +100,11 @@ def configure_pparser(**kwargs):
 
         # RULE: Parser knows magic
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             return False
 
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = JsonParsingStart, ctx_args={}):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[JsonParsingState] = JsonParsingStart, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             from thirdparty.pparse.lazy.json.node import NodeContext
@@ -110,16 +113,16 @@ def configure_pparser(**kwargs):
             return root
 
 
-        def __init__(self, source: pparse.Extraction, id: str = "json"):
+        def __init__(self, source: pparse.Extraction, id: str = "json") -> None:
             super().__init__(source, id, JsonParsingState)
 
         @staticmethod
-        def from_reader(reader: pparse.Reader):
+        def from_reader(reader: pparse.Reader) -> pparse.Parser:
             extraction = pparse.BytesExtraction(name="data.json", reader=reader.dup())
             return Parser(extraction)
 
 
-        def apply_node_value(self, node, value):
+        def apply_node_value(self, node: pparse.Node, value: Any) -> None:
             ctx = node.ctx()
 
             if ctx.key():
@@ -142,24 +145,24 @@ def configure_pparser(**kwargs):
                 node._value = value
 
 
-        def new_array_node(self, parent, ctx_args={}):
+        def new_array_node(self, parent: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             # TODO: Consider alternative ctx()._state management? Currently set by State object.
             from thirdparty.pparse.lazy.json.node import NodeContext
             return pparse.Node(parent.ctx().reader(), self, default_value = [], parent = parent, ctx_class = NodeContext, ctx_args = ctx_args)
 
 
-        def new_map_node(self, parent, ctx_args={}):
+        def new_map_node(self, parent: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             # TODO: Consider alternative ctx()._state management? Currently set by State object.
             from thirdparty.pparse.lazy.json.node import NodeContext
             return pparse.Node(parent.ctx().reader(), self, default_value = {}, parent = parent, ctx_class = NodeContext, ctx_args = ctx_args)
 
 
-        def new_root_node(self, node, ctx_args={}):
+        def new_root_node(self, node: pparse.Node, ctx_args: Dict[str, Any] = {}) -> pparse.Node:
             from thirdparty.pparse.lazy.json.node import NodeContext
             return pparse.Node(node.ctx().reader(), self, default_value = {}, parent = node.ctx().parent(), ctx_class = NodeContext, ctx_args = ctx_args)
 
 
-        def _end_container_node(self, node):
+        def _end_container_node(self, node: pparse.Node) -> None:
             ctx = node.ctx()
             parent = ctx._parent
             if parent:
