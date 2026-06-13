@@ -219,6 +219,9 @@ class XmlNode:
 
     
 class XmlEntry:
+    """XmlEntry
+    """
+
 
     '''
       <extra>

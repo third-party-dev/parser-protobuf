@@ -181,6 +181,9 @@ class Onnx:
 
 
     def graph_nodes(self) -> tuple[list[dict[str, Any]], dict[int, str]]:
+        """graph_nodes
+        """
+        
         '''
             A list of nodes that describe inputs and outputs in a way that we can use to
             reconstruct the graph. Aside from inputs/outputs, it may also have names,
