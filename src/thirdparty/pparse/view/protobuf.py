@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -10,11 +14,11 @@ from thirdparty.pparse.lazy.protobuf.meta import PbImport
 
 
 class Parser:
-    def __init__(self):
-        self._extraction = None
+    def __init__(self) -> None:
+        self._extraction: Optional[pparse.BytesExtraction] = None
 
-    def _parse(self, data_source, pbpath, msgtype, fname="unnamed.protobuf.bin", recursion=None):
-        
+    def _parse(self, data_source: Any, pbpath: Any, msgtype: str, fname: str = "unnamed.protobuf.bin", recursion: Optional[pparse.RecursionControl] = None) -> Parser:
+
         from importlib import resources
         from pathlib import Path
 
@@ -43,13 +47,13 @@ class Parser:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['protobuf']
 
 
-    def open_fpath(self, fpath, pbpath, msgtype, recursion=None):
+    def open_fpath(self, fpath: str, pbpath: Any, msgtype: str, recursion: Optional[pparse.RecursionControl] = None) -> Parser:
         return self._parse(pparse.FileData(path=fpath), pbpath, msgtype, fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io, pbpath, msgtype, fname="unnamed.protobuf.bin", recursion=None):
+    def from_bytesio(self, bytes_io: Any, pbpath: Any, msgtype: str, fname: str = "unnamed.protobuf.bin", recursion: Optional[pparse.RecursionControl] = None) -> Parser:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), pbpath, msgtype, fname=fname, recursion=recursion)

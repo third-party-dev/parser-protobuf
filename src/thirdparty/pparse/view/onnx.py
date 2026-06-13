@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Iterator, Optional
+
 import logging
 import struct
 import numpy
@@ -19,13 +23,13 @@ from thirdparty.pparse.lazy.onnx.meta import OnnxDataType
 
 class Tensor(pparse.Tensor):
 
-    def __init__(self, onnx_view, init_node, name):
+    def __init__(self, onnx_view: Onnx, init_node: pparse.Node, name: str) -> None:
         self._name = name
         self._view = onnx_view
         self._init_node = init_node
 
 
-    def get_onnx_type(self):
+    def get_onnx_type(self) -> int:
         return self._init_node.value['data_type']
 
 
@@ -35,7 +39,7 @@ class Tensor(pparse.Tensor):
 
 
     # Return (safetensors equivalent) shape
-    def get_shape(self):
+    def get_shape(self) -> list[Any]:
         if 'dims' in self._init_node.value:
             shape = self._init_node.value['dims']
         else:
@@ -46,17 +50,17 @@ class Tensor(pparse.Tensor):
 
 
     # Return raw data as extracted from source
-    def get_data_bytes(self):
+    def get_data_bytes(self) -> Any:
         return self._init_node.value['raw_data'].value
 
 
     # Return raw data as python array of dtype
-    def as_array(self):
+    def as_array(self) -> None:
         raise NotImplementedError()
 
 
     # Return raw data as numpy array of dtype
-    def as_numpy(self):
+    def as_numpy(self) -> Any:
         dtype = OnnxDataType.nptype(self.get_onnx_type())
 
         arr = numpy.frombuffer(self.get_data_bytes(), dtype=dtype)
@@ -67,12 +71,12 @@ class Tensor(pparse.Tensor):
 
 
 class Onnx:
-    def __init__(self):
-        self._extraction = None
-        self._tensor_meta = {}
+    def __init__(self) -> None:
+        self._extraction: Optional[pparse.BytesExtraction] = None
+        self._tensor_meta: dict[str, Tensor] = {}
 
 
-    def _parse(self, data_source, fname="unnamed.onnx", recursion=None):
+    def _parse(self, data_source: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None) -> Onnx:
         # from importlib import resources
         # data_path = resources.files("thirdparty.pparse.data")
         # proto = PbImport(data_path / "proto" / "onnx.pb")
@@ -121,27 +125,27 @@ class Onnx:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['protobuf']
 
 
-    def open_fpath(self, fpath, recursion=None):
+    def open_fpath(self, fpath: str, recursion: Optional[pparse.RecursionControl] = None) -> Onnx:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io, fname="unnamed.onnx", recursion=None):
+    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.onnx", recursion: Optional[pparse.RecursionControl] = None) -> Onnx:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 
-    def tensor_names(self):
+    def tensor_names(self) -> list[str]:
         return list(self._tensor_meta.keys())
 
 
-    def tensor(self, name):
+    def tensor(self, name: str) -> Tensor:
         return self._tensor_meta[name]
 
 
-    def find_node(self, name):
+    def find_node(self, name: str) -> Optional[pparse.Node]:
         for node in self.nodes:
             if node.value["name"] == name:
                 return node
@@ -150,7 +154,7 @@ class Onnx:
 
     # ** ---- New Development Of Graph Interface ----
 
-    def _collect_all_nodes(self, graph):
+    def _collect_all_nodes(self, graph: Any) -> Iterator[Any]:
         for node in graph:
             #breakpoint()
             yield node._value
@@ -164,7 +168,7 @@ class Onnx:
                         for subgraph in attr_node._value['graphs']:
                             yield from self._collect_all_nodes(subgraph)
 
-    def collect_all_nodes(self):
+    def collect_all_nodes(self) -> list[Any]:
         try:
             all_nodes = list(self._collect_all_nodes(self.root_node()._value['graph']._value['node']))
         except Exception as e:
@@ -174,7 +178,7 @@ class Onnx:
             raise
         return all_nodes
 
-    def graph_nodes(self):
+    def graph_nodes(self) -> tuple[list[dict[str, Any]], dict[int, str]]:
         '''
             A list of nodes that describe inputs and outputs in a way that we can use to
             reconstruct the graph. Aside from inputs/outputs, it may also have names,
@@ -193,10 +197,10 @@ class Onnx:
             A graph described with indicies along does not require semantics. We can
             shove all model specific semantics into the attributes. Common attributes
             can be declared and made more canonical: name, op_type.
-            
+
             [ { inputs:[], outputs:[], index: _idx_, attributes: {} } ]
         '''
-        
+
         nodes = self.collect_all_nodes()
         name_to_idx = {}
         idx_counter = 0

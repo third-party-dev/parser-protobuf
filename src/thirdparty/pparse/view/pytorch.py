@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import logging
 import os
 import struct
@@ -15,9 +19,9 @@ from thirdparty.pparse.lazy.pytorch import configure_pparser
 
 
 class Tensor(pparse.Tensor):
-    def __init__(self, name, tensor_node):
-        self._name = name
-        self._tensor = tensor_node
+    def __init__(self, name: str, tensor_node: pparse.Node) -> None:
+        self._name: str = name
+        self._tensor: pparse.Node = tensor_node
 
     # Return (safetensors equivalent) type
     def get_type(self) -> str:
@@ -25,21 +29,21 @@ class Tensor(pparse.Tensor):
 
 
     # Return (safetensors equivalent) shape
-    def get_shape(self):
+    def get_shape(self) -> list[Any]:
         return self._tensor.value['shape']
 
 
     # Return raw data as extracted from source
-    def get_data_bytes(self):
+    def get_data_bytes(self) -> Any:
         return self._tensor.value['data'].value
 
 
     # Return raw data as python array of dtype
-    def as_array(self):
+    def as_array(self) -> Any:
         elem_cnt = self._tensor.value['elem_count']
         buffer = self.get_data_bytes().getbuffer()
         dtype = self.get_type()
-        
+
         struct_type = pparse.Tensor.STTYPE_STRUCT[dtype]
         sttype_size = pparse.Tensor.STTYPE_SIZE[dtype]
         count = int(len(buffer) / sttype_size)
@@ -47,7 +51,7 @@ class Tensor(pparse.Tensor):
 
 
     # Return raw data as numpy array of dtype
-    def as_numpy(self):
+    def as_numpy(self) -> Any:
         elem_cnt = self._tensor.value['elem_count']
         buffer = self.get_data_bytes().getbuffer()
         np_type = pparse.Tensor.STTYPE_NP_MAP[self.get_type()]
@@ -57,14 +61,14 @@ class Tensor(pparse.Tensor):
 
 
 class PyTorch:
-    def __init__(self, extraction=None, force_traverse=False):
+    def __init__(self, extraction: Optional[pparse.BytesExtraction] = None, force_traverse: bool = False) -> None:
         self._extraction = extraction
 
-        self._tensor_meta = {}
-        self._forced_traversal = force_traverse
+        self._tensor_meta: dict[str, Tensor] = {}
+        self._forced_traversal: bool = force_traverse
 
 
-    def _parse(self, data_source, fname="unnamed.pt", recursion=None):
+    def _parse(self, data_source: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None) -> PyTorch:
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
             self._extraction = pparse.BytesExtraction(name=fname, reader=data_range)
@@ -88,20 +92,20 @@ class PyTorch:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['pt']
 
 
-    def open_fpath(self, fpath, recursion=None):
+    def open_fpath(self, fpath: str, recursion: Optional[pparse.RecursionControl] = None) -> PyTorch:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io, fname="unnamed.pt", recursion=None):
+    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.pt", recursion: Optional[pparse.RecursionControl] = None) -> PyTorch:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
 
 
     # ! UNTESTED
-    def as_arc_hash(self, hashed_data_path=None, keep_lm_head=False):
+    def as_arc_hash(self, hashed_data_path: Optional[str] = None, keep_lm_head: bool = False) -> str:
         import hashlib
         import json
         from collections import OrderedDict
@@ -157,10 +161,10 @@ class PyTorch:
     # ! UNTESTED
     def as_safetensors(
         self,
-        out_fpath="converted_output.safetensors",
-        keep_lm_head=False,
-        alignment_boundary=8,
-    ):
+        out_fpath: str = "converted_output.safetensors",
+        keep_lm_head: bool = False,
+        alignment_boundary: int = 8,
+    ) -> None:
         import json
         import struct
         from collections import OrderedDict
@@ -216,13 +220,11 @@ class PyTorch:
             fobj.write(struct.pack("<Q", hdr_len))
 
 
-    def tensor(self, name):
+    def tensor(self, name: str) -> Tensor:
         if name not in self.tensor_names():
             raise KeyError("Tensor name not found.")
         return Tensor(name, self._extraction._result['pt']._value['tensors'][name])
 
 
-    def tensor_names(self):
+    def tensor_names(self) -> list[str]:
         return list(self._extraction._result['pt']._value['tensors'].keys())
-
-

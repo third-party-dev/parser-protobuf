@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -8,10 +12,10 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.flatbuffers import configure_pparser
 
 class MNN:
-    def __init__(self):
-        self._extraction = None
+    def __init__(self) -> None:
+        self._extraction: Optional[pparse.BytesExtraction] = None
 
-    def _parse(self, data_source, fname="unnamed.mnn", recursion=None):
+    def _parse(self, data_source: Any, fname: str = "unnamed.mnn", recursion: Optional[pparse.RecursionControl] = None) -> MNN:
 
         import json
         from importlib import resources
@@ -55,14 +59,13 @@ class MNN:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['flatbuffers']
 
 
-    def open_fpath(self, fpath, recursion=None):
+    def open_fpath(self, fpath: str, recursion: Optional[pparse.RecursionControl] = None) -> MNN:
         return self._parse(pparse.FileData(path=fpath), fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io, fname="unnamed.mnn", recursion=None):
+    def from_bytesio(self, bytes_io: Any, fname: str = "unnamed.mnn", recursion: Optional[pparse.RecursionControl] = None) -> MNN:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), fname=fname, recursion=recursion)
-

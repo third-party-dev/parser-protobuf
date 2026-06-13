@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -9,11 +13,11 @@ from thirdparty.pparse.lazy.flatbuffers import make_flatbuffers_parser
 
 
 class Flatbuffers:
-    def __init__(self):
-        self._extraction = None
+    def __init__(self) -> None:
+        self._extraction: Optional[pparse.BytesExtraction] = None
 
 
-    def _parse(self, data_source, json_schema_path, fname="unnamed.flatbuffers.bin", recursion=None):
+    def _parse(self, data_source: Any, json_schema_path: str, fname: str = "unnamed.flatbuffers.bin", recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
 
         import json
         from pathlib import Path
@@ -46,14 +50,13 @@ class Flatbuffers:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['flatbuffers']
 
 
-    def open_fpath(self, fpath, json_schema_path, recursion=None):
+    def open_fpath(self, fpath: str, json_schema_path: str, recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
         return self._parse(pparse.FileData(path=fpath), json_schema_path, fname=fpath, recursion=recursion)
 
 
-    def from_bytesio(self, bytes_io, json_schema_path, fname="unnamed.flatbuffers.bin", recursion=None):
+    def from_bytesio(self, bytes_io: Any, json_schema_path: str, fname: str = "unnamed.flatbuffers.bin", recursion: Optional[pparse.RecursionControl] = None) -> Flatbuffers:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), json_schema_path, fname=fname, recursion=recursion)
-

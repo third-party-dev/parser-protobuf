@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
+from typing import Any, Optional
+
 import logging
 
 log = logging.getLogger(__name__)
@@ -9,11 +13,11 @@ from thirdparty.pparse.lazy.protobuf.meta import PbImport
 from thirdparty.pparse.lazy.om import configure_pparser
 
 class Om:
-    def __init__(self):
-        self._extraction = None
+    def __init__(self) -> None:
+        self._extraction: Optional[pparse.BytesExtraction] = None
 
 
-    def _parse(self, data_source, recursion=None, header_only=False, fname="unnamed.om"):
+    def _parse(self, data_source: Any, recursion: Optional[pparse.RecursionControl] = None, header_only: bool = False, fname: str = "unnamed.om") -> Om:
         try:
             log.info("Parsing the OM container file.")
             data_range = pparse.Range(data_source.open(), data_source.length)
@@ -37,13 +41,13 @@ class Om:
         return self
 
 
-    def root_node(self):
+    def root_node(self) -> pparse.Node:
         return self._extraction._result['om']
 
 
-    def open_fpath(self, fpath, recursion=None, header_only=False):
+    def open_fpath(self, fpath: str, recursion: Optional[pparse.RecursionControl] = None, header_only: bool = False) -> Om:
         return self._parse(pparse.FileData(path=fpath), recursion=recursion, header_only=header_only, fname=fpath)
 
 
-    def from_bytesio(self, bytes_io, recursion=None, header_only=False, fname="unnamed.om"):
+    def from_bytesio(self, bytes_io: Any, recursion: Optional[pparse.RecursionControl] = None, header_only: bool = False, fname: str = "unnamed.om") -> Om:
         return self._parse(pparse.BytesIoData(bytes_io=bytes_io), recursion=recursion, header_only=header_only, fname=fname)
