@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 
 class Partition:
-    MODELDEF = 0 #ModelDef - model graph definition, operators, attributes (protobuf / ge::proto::ModelDef)
-    WEIGHTDEF = 1 #WeightDefRaw - weight/tensor data
-    TASKDEF = 2 #TaskDefTask - schedule information (operator execution tasks, kernel descriptors)
-    FLOWDEF = 3 #FlowDef - subgraph/flow
+    MODELDEF: int = 0  # ModelDef - model graph definition, operators, attributes (protobuf / ge::proto::ModelDef)
+    WEIGHTDEF: int = 1  # WeightDefRaw - weight/tensor data
+    TASKDEF: int = 2   # TaskDefTask - schedule information (operator execution tasks, kernel descriptors)
+    FLOWDEF: int = 3   # FlowDef - subgraph/flow
 
 
 # class PartitionType(IntEnum):

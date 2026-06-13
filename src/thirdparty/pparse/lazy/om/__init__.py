@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -27,7 +30,7 @@ States:
         - raw_data
 '''
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
         @staticmethod
@@ -40,10 +43,10 @@ def configure_pparser(**kwargs):
             return False
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             return False
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = OmParsingHeader):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[OmParsingState] = OmParsingHeader) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             # Current path of pending things.
@@ -51,13 +54,13 @@ def configure_pparser(**kwargs):
             root.ctx()._next_state(init_state)
             return root
 
-        def __init__(self, source: pparse.Extraction, id: str = "om"):
+        def __init__(self, source: pparse.Extraction, id: str = "om") -> None:
             super().__init__(source, id, OmParsingState)
 
-        def new_map_node(self, node):
+        def new_map_node(self, node: pparse.Node) -> pparse.Node:
             return pparse.Node(node.ctx().reader(), self, parent=node, default_value={})
 
-        def new_array_node(self, node):
+        def new_array_node(self, node: pparse.Node) -> pparse.Node:
             return pparse.Node(node.ctx().reader(), self, parent=node, default_value=[])
 
         # def _new_nodemap(self, parent, reader):
@@ -159,7 +162,7 @@ def configure_pparser(**kwargs):
         #     #     # Kill ctx (hopefully reclaiming memory).
         #     #     ctx.node().clear_ctx()
 
-        def scan_data(self):
+        def scan_data(self) -> pparse.Parser:
             # While not end of data, keep parsing via states.
             try:
                 while True:
