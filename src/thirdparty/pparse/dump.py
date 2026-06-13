@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import io
 import sys
 import json
+from typing import Any, Optional
 
 from thirdparty.pparse.utils import ListType
 
@@ -25,7 +28,7 @@ from thirdparty.pparse.utils import ListType
 
 
 
-def _print_cb(dst=sys.stdout, value=''):
+def _print_cb(dst: Any = sys.stdout, value: str = '') -> None:
     try:
         print(value, file=dst)
     except BrokenPipeError:
@@ -34,28 +37,28 @@ def _print_cb(dst=sys.stdout, value=''):
 
 
 class Dumper:
-    MAX_DEPTH = 9223372036854775807
-    _default = None
+    MAX_DEPTH: int = 9223372036854775807
+    _default: Optional[Dumper] = None
 
     @classmethod
-    def default(cls):
+    def default(cls) -> Dumper:
         if cls._default is None:
             cls._default = cls()
         return cls._default
 
-    def __init__(self, dumpers=None, cb=_print_cb, dst=sys.stdout, max_array=MAX_DEPTH, max_depth=MAX_DEPTH):
+    def __init__(self, dumpers: Optional[list[Any]] = None, cb: Any = _print_cb, dst: Any = sys.stdout, max_array: int = MAX_DEPTH, max_depth: int = MAX_DEPTH) -> None:
         import numbers
         from thirdparty.pparse.lib import Node
         from collections.abc import Iterable
 
-        self.max_array = max_array
+        self.max_array: int = max_array
         if self.max_array < 4:
             # Less than 4 over complicates the snip output.
             self.max_array = 4
 
-        self.max_depth = max_depth
+        self.max_depth: int = max_depth
 
-        self.dumpers = dumpers
+        self.dumpers: list[Any] = dumpers
         if self.dumpers is None:
             self.dumpers = [
                 [Node, self._dump_node_wrapper],
@@ -75,7 +78,7 @@ class Dumper:
         self.dst=dst
 
 
-    def _dump_node_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_node_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -88,7 +91,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_dict_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_dict_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -104,7 +107,7 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_bytes_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_bytes_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -120,7 +123,7 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_str_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_str_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -136,7 +139,7 @@ class Dumper:
             self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_misc_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_misc_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -144,7 +147,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}<{elem_name} value_is="scalar" {attrs}>{obj}</{elem_name}>')
 
 
-    def _dump_bytesio_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_bytesio_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -152,7 +155,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}<{elem_name} value_is="BytesIO" {attrs}>{obj}</{elem_name}>')
 
 
-    def _dump_iter_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_iter_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -222,7 +225,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_else_wrapper(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def _dump_else_wrapper(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -235,7 +238,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}</{elem_name}>{closing_attrs}')
 
 
-    def _dump_str(self, obj, depth=0, step=2):
+    def _dump_str(self, obj: Any, depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -243,7 +246,7 @@ class Dumper:
         self.cb(self.dst, f'{spacer}<string>{obj}</string>')
 
 
-    def _dump_bytes(self, obj, depth=0, step=2):
+    def _dump_bytes(self, obj: Any, depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -267,7 +270,7 @@ class Dumper:
 
     # from thirdparty.pparse.lib import Node
     # print(ppobj.root_node().dump())
-    def _dump_list(self, obj, depth=0, step=2):
+    def _dump_list(self, obj: Any, depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -277,7 +280,7 @@ class Dumper:
             self.dump("entry", entry, ' '.join(entry_attrs), depth=depth, step=step)
 
 
-    def _dump_dict(self, obj, depth=0, step=2):
+    def _dump_dict(self, obj: Any, depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 
@@ -288,7 +291,7 @@ class Dumper:
 
 
     # ** The only public call. **
-    def dump(self, elem_name="entry", obj=None, attrs='', depth=0, step=2):
+    def dump(self, elem_name: str = "entry", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         if depth > self.max_depth:
             return
 

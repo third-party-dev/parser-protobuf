@@ -1,28 +1,31 @@
+from __future__ import annotations
+
 import collections
 import requests
+from typing import Any, Optional, Union
 
 
-LINKED_LIST_THRESHOLD = 1000
+LINKED_LIST_THRESHOLD: int = 1000
 
 
 class DequeLRUCache:
-    def __init__(self, maxsize: int):
-        self._maxsize = maxsize
-        self._cache = {}
-        self._order = collections.deque()
+    def __init__(self, maxsize: int) -> None:
+        self._maxsize: int = maxsize
+        self._cache: dict[Any, Any] = {}
+        self._order: collections.deque[Any] = collections.deque()
 
 
-    def __contains__(self, key) -> bool:
+    def __contains__(self, key: Any) -> bool:
         return key in self._cache
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         self._order.remove(key)
         self._order.append(key)
         return self._cache[key]
 
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any) -> None:
         if key in self._cache:
             self._order.remove(key)
         elif len(self._cache) >= self._maxsize:
@@ -36,48 +39,48 @@ class LRUCacheEntry:
     # Pythonic memory optimization
     __slots__ = ("key", "value", "prev", "next")
 
-    def __init__(self, key, value):
-        self.key = key
-        self.value = value
-        self.prev = None
-        self.next = None
+    def __init__(self, key: Any, value: Any) -> None:
+        self.key: Any = key
+        self.value: Any = value
+        self.prev: Optional[LRUCacheEntry] = None
+        self.next: Optional[LRUCacheEntry] = None
 
 
 
 class LinkedListLRUCache:
-    def __init__(self, maxsize: int):
-        self._maxsize = maxsize
-        self._cache = {}
-        self._head = LRUCacheEntry(None, None)
-        self._tail = LRUCacheEntry(None, None)
+    def __init__(self, maxsize: int) -> None:
+        self._maxsize: int = maxsize
+        self._cache: dict[Any, LRUCacheEntry] = {}
+        self._head: LRUCacheEntry = LRUCacheEntry(None, None)
+        self._tail: LRUCacheEntry = LRUCacheEntry(None, None)
         self._head.next = self._tail
         self._tail.prev = self._head
 
 
-    def _remove(self, node: LRUCacheEntry):
+    def _remove(self, node: LRUCacheEntry) -> None:
         node.prev.next = node.next
         node.next.prev = node.prev
 
 
-    def _push(self, node: LRUCacheEntry):
+    def _push(self, node: LRUCacheEntry) -> None:
         node.prev = self._tail.prev
         node.next = self._tail
         self._tail.prev.next = node
         self._tail.prev = node
 
 
-    def __contains__(self, key) -> bool:
+    def __contains__(self, key: Any) -> bool:
         return key in self._cache
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         node = self._cache[key]
         self._remove(node)
         self._push(node)
         return node.value
 
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any) -> None:
         if key in self._cache:
             node = self._cache[key]
             node.value = value
@@ -94,7 +97,7 @@ class LinkedListLRUCache:
 
 
 
-def _get_cache(maxsize: int):
+def _get_cache(maxsize: int) -> Union[LinkedListLRUCache, DequeLRUCache]:
     if maxsize > LINKED_LIST_THRESHOLD:
         return LinkedListLRUCache(maxsize)
     return DequeLRUCache(maxsize)
@@ -103,21 +106,21 @@ def _get_cache(maxsize: int):
 
 
 class _HttpCachedData:
-    def __init__(self, url: str, chunk_size: int = 4096, chunk_max_count: int = 256, session=None):
-        self._url = url
-        self._chunk_size = chunk_size
-        self._cache = _get_cache(chunk_max_count)
-        self._session = session or requests.Session()
-        self._length = self._load_length()
+    def __init__(self, url: str, chunk_size: int = 4096, chunk_max_count: int = 256, session: Optional[requests.Session] = None) -> None:
+        self._url: str = url
+        self._chunk_size: int = chunk_size
+        self._cache: Union[LinkedListLRUCache, DequeLRUCache] = _get_cache(chunk_max_count)
+        self._session: requests.Session = session or requests.Session()
+        self._length: int = self._load_length()
 
 
-    def _load_length(self):
+    def _load_length(self) -> int:
         response = self._session.head(self._url)
         response.raise_for_status()
         return int(response.headers["Content-Length"])
 
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self._length
 
 
@@ -233,7 +236,7 @@ class _HttpCachedData:
         return bytes(result[:written])
 
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Union[slice, int]) -> bytes:
         if isinstance(key, slice):
             start, stop, step = key.indices(len(self))
             data = self._read(start, stop - start)

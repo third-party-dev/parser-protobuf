@@ -108,22 +108,24 @@
 
 
 
+from __future__ import annotations
+
 import json
 from xml.etree.ElementTree import Element, fromstring
-from typing import Optional, Iterator
+from typing import Any, Callable, Iterator, Optional, Union
 
 
 class XmlNode:
-    def __init__(self, source: "str | Element", parent: Optional["XmlNode"] = None):
-        self._obj_inst = None
-        self._el = fromstring(source) if isinstance(source, str) else source
-        self._parent = parent
-        self._children: dict[Element, "XmlNode"] = \
-            { child: XmlNode(child, parent=self) for child in self._el }
+    def __init__(self, source: Union[str, Element], parent: Optional[XmlNode] = None) -> None:
+        self._obj_inst: Any = None
+        self._el: Element = fromstring(source) if isinstance(source, str) else source
+        self._parent: Optional[XmlNode] = parent
+        self._children: dict[Element, XmlNode] = \
+            {child: XmlNode(child, parent=self) for child in self._el}
 
 
     @classmethod
-    def as_node(cls, source: "str | Element | XmlNode") -> "XmlNode":
+    def as_node(cls, source: Union[str, Element, XmlNode]) -> XmlNode:
         if isinstance(source, cls):
             return source
         else:
@@ -132,7 +134,7 @@ class XmlNode:
 
     # Given: <object><node /><node /><extra /></object>
     # object.node returns XmlNode or list[XmlNode]
-    def __getattr__(self, name: str) -> "XmlNode | list[XmlNode]":
+    def __getattr__(self, name: str) -> Union[XmlNode, list[XmlNode]]:
         children = [node for node in self._children.values() if node._el.tag == name]
         if not children:
             raise AttributeError(f"No child element '{name}'")
@@ -147,7 +149,7 @@ class XmlNode:
 
 
     # `for child in parent`
-    def __iter__(self) -> Iterator["XmlNode"]:
+    def __iter__(self) -> Iterator[XmlNode]:
         return self.iter_all()
 
 
@@ -168,7 +170,7 @@ class XmlNode:
 
 
     # Return parent node.
-    def get_parent(self) -> Optional["XmlNode"]:
+    def get_parent(self) -> Optional[XmlNode]:
         return self._parent
 
 
@@ -177,36 +179,36 @@ class XmlNode:
         return self._el
 
     
-    def has_attr(self, attr) -> bool:
+    def has_attr(self, attr: str) -> bool:
         return attr in self._el.attrib
 
-    def has_tag(self, tag) -> bool:
+    def has_tag(self, tag: str) -> bool:
         return self._el.tag == tag
 
 
-    def set_obj_inst(self, obj):
+    def set_obj_inst(self, obj: Any) -> Any:
         self._obj_inst = obj
         return obj
-    
 
-    def get_obj_inst(self):
+
+    def get_obj_inst(self) -> Any:
         return self._obj_inst
 
 
     # Return first child element of name, or None.
-    def get(self, name: str) -> Optional["XmlNode"]:
+    def get(self, name: str) -> Optional[XmlNode]:
         return next((node for node in self._children.values() if node._el.tag == name), None)
 
 
     # Return all children or children with name as generator (lazy).
-    def iter_all(self, name: Optional[str] = None) -> Iterator["XmlNode"]:
+    def iter_all(self, name: Optional[str] = None) -> Iterator[XmlNode]:
         if name is None:
             return (node for node in self._children.values())
         return (node for node in self._children.values() if node._el.tag == name)
 
 
     # Return all children or children with name as list (eager).
-    def get_all(self, name: Optional[str] = None) -> "list[XmlNode]":
+    def get_all(self, name: Optional[str] = None) -> list[XmlNode]:
         return list(self.iter_all(name))
     
     # def get_linecol(self):
@@ -248,7 +250,7 @@ class XmlEntry:
 
     # Function for calling node callback.
     @staticmethod
-    def as_node(node: XmlNode, node_cb = None):
+    def as_node(node: XmlNode, node_cb: Optional[Callable[..., Any]] = None) -> Any:
         if not node_cb:
             raise Exception("<node /> found, but no handler defined.")
         # accepts <entry type="node /> and returns an instance of pparse.Node
@@ -256,7 +258,7 @@ class XmlEntry:
 
     # Function for simple parsing (not recursion)
     @staticmethod
-    def as_value(node: XmlNode):
+    def as_value(node: XmlNode) -> Any:
         if not node.has_attr("type") or node['type'] == 'str':
             return str(node).strip()
         if node['type'] == 'int':
@@ -268,7 +270,7 @@ class XmlEntry:
 
     # Function for using non-entry tag (e.g. node.value)
     @staticmethod
-    def using(node: XmlNode, node_cb = None): # -> dict | list | int | float | str:
+    def using(node: XmlNode, node_cb: Optional[Callable[..., Any]] = None) -> Any:
         if not node.has_attr('type') or node['type'] == 'map':
             # Implicitly a map.
             return XmlEntry.as_map(node, node_cb=node_cb)
@@ -290,7 +292,7 @@ class XmlEntry:
     '''
 
     @staticmethod
-    def as_map(node, obj = None, node_cb = None):
+    def as_map(node: XmlNode, obj: Optional[dict[str, Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> dict[str, Any]:
         obj = {} if obj is None else obj
         for entry in node.iter_all("entry"):
             if not entry.has_attr("name"):
@@ -326,7 +328,7 @@ class XmlEntry:
     '''
 
     @staticmethod
-    def as_list(node, obj = None, node_cb = None):
+    def as_list(node: XmlNode, obj: Optional[list[Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> list[Any]:
         obj = [] if obj is None else obj
         for entry in node.iter_all("entry"):
             if not entry.has_attr("type") or entry['type'] == 'str':

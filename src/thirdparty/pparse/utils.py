@@ -1,18 +1,21 @@
+from __future__ import annotations
+
 import io
 import sys
 import logging
 import pathlib
+from typing import Any, Optional
 
 class ListType:
-  MIXED = 0
-  UBYTE = 1
-  BYTE = 2
-  INT = 3
-  FLOAT = 4
+    MIXED: int = 0
+    UBYTE: int = 1
+    BYTE: int = 2
+    INT: int = 3
+    FLOAT: int = 4
 
 log = logging.getLogger(__name__)
 
-def activate_logging(args):
+def activate_logging(args: Any) -> None:
     level = {
         0: logging.ERROR,
         1: logging.WARNING,
@@ -27,7 +30,7 @@ def activate_logging(args):
         logging.getLogger(module).setLevel(getattr(logging, level_name.upper()))
 
 
-def has_mmap():
+def has_mmap() -> Any:
     try:
         import mmap
     except:
@@ -45,7 +48,7 @@ def has_mmap():
 mmap = has_mmap()
 
 
-def hexdump(data, length=None):
+def hexdump(data: Any, length: Optional[int] = None) -> None:
     if isinstance(data, io.BytesIO):
         data = data.getvalue()
 
@@ -60,7 +63,7 @@ def hexdump(data, length=None):
         print(f"{i:08x}: {hex_part:<47}  {ascii_part}")
 
 
-def find_project_root(start: pathlib.Path = None) -> pathlib.Path:
+def find_project_root(start: Optional[pathlib.Path] = None) -> pathlib.Path:
     if start is None:
         start = pathlib.Path(__file__).resolve()
     for parent in [start, *start.parents]:
@@ -69,7 +72,7 @@ def find_project_root(start: pathlib.Path = None) -> pathlib.Path:
     raise FileNotFoundError("pyproject.toml not found.")
 
 
-def pparse_repr(obj, depth=0, step="  "):
+def pparse_repr(obj: Any, depth: int = 0, step: str = "  ") -> str:
     res = []
 
     if hasattr(obj, "pparse_repr"):
@@ -108,7 +111,7 @@ def pparse_repr(obj, depth=0, step="  "):
     return "".join(res)
 
 
-def run_test_independently(caller_log, test_calls):
+def run_test_independently(caller_log: Any, test_calls: list[Any]) -> None:
     import argparse
     import sys
 
@@ -127,7 +130,7 @@ def run_test_independently(caller_log, test_calls):
         breakpoint()
 
 
-def decode_utf8_partial(data) -> tuple[str, int]:
+def decode_utf8_partial(data: bytes) -> tuple[str, int]:
     # Easy path
     try:
         return data.decode("utf-8"), len(data)
