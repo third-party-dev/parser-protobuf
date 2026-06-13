@@ -901,9 +901,9 @@ typedb = {
 ext_to_type = {}
 for typ in typedb:
     for ext in typedb[typ]['exts']:
-        if not ext in ext_to_type:
+        if ext not in ext_to_type:
             ext_to_type[ext] = []
-        if not typ in ext_to_type[ext]:
+        if typ not in ext_to_type[ext]:
             ext_to_type[ext].append(typ)
 
 def ident_by_extension(fname):

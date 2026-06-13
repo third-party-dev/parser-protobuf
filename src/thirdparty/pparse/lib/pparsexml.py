@@ -134,7 +134,7 @@ class PparseXml:
             from thirdparty.pparse.lib import Node
 
             # node type defaults to (pparse) Node
-            node_type = node_xml['type'] if node_xml.has_attr('type') else 'Node'
+            node_type = node_xml['type'] if node_xml.has_attr('type') else Node
             if node_type not in locals():
                 raise Exception(f"<node />s type is not in scope: {node_xml}")
 

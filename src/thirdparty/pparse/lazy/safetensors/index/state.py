@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import struct
 
 log = logging.getLogger(__name__)
 
@@ -23,7 +22,7 @@ class SafetensorsIndexParsingComplete(SafetensorsIndexParsingState):
 class SafetensorsIndexParsingTensors(SafetensorsIndexParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         node._value['tensors'] = {}
         for stfname in node._value['stfiles']:
@@ -43,7 +42,7 @@ class SafetensorsIndexParsingTensors(SafetensorsIndexParsingState):
 class SafetensorsIndexParsingShards(SafetensorsIndexParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         from thirdparty.pparse.lazy.safetensors import configure_pparser
 
@@ -66,7 +65,7 @@ class SafetensorsIndexParsingShards(SafetensorsIndexParsingState):
 class SafetensorsIndexParsingIndex(SafetensorsIndexParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         from thirdparty.pparse.lazy.json import configure_pparser
         json_parser = configure_pparser().from_reader(node.ctx().reader())

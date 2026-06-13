@@ -36,6 +36,22 @@ namespaces = true
     "data/fbs/mnn/*.json",
 ]
 
+[tool.ruff]
+exclude = [
+    "docs",
+    "outputs",
+    "scripts",
+    "tests",
+    "src/thirdparty/pparse/data",
+    "src/thirdparty/pparse/external",
+]
+
+[tool.ruff.lint]
+ignore = ["E402"]
+per-file-ignores = {
+    "src/thirdparty/pparse/lib/__init__.py" = ["E402"]
+}
+
 [project.scripts]
 pparse = "thirdparty.pparse.cli:main"
 

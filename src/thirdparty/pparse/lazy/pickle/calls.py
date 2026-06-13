@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 
 
 class StackMark:
@@ -23,7 +23,7 @@ class PersistentCall:
     def pparse_repr(self, depth: int = 0, step: str = " ") -> str:
         from thirdparty.pparse.utils import pparse_repr
 
-        res = [f"PERSID_CALL(  # PERSID_CALL\n"]
+        res = ["PERSID_CALL(  # PERSID_CALL\n"]
         spacer = depth * step
 
         res.append(f"{spacer}{step}id: {self.id}\n")

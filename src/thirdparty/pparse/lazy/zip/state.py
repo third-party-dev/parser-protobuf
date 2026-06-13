@@ -6,7 +6,7 @@ import io
 import logging
 import struct
 import zlib
-from typing import Any, Optional
+from typing import Any
 
 log = logging.getLogger(__name__)
 
@@ -21,8 +21,8 @@ class ZipParsingState(object):
 
 class ZipParsingComplete(ZipParsingState):
     def parse_data(self, node: pparse.Node) -> int:
-        ctx = node.ctx()
-        parser = ctx.parser()
+        #ctx = node.ctx()
+        #parser = ctx.parser()
 
         return pparse.ASCEND
         # TODO: Do we spin?
@@ -44,7 +44,7 @@ class ZipParsingFinishDecompress(ZipParsingState):
 class ZipParsingDataDescFooter(ZipParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(Zip.FOOTER_LEN)
         if len(data) < Zip.FOOTER_LEN:
@@ -126,7 +126,7 @@ class ZipParsingContinueDecompress(ZipParsingState):
         return pparse.AGAIN
 
     def _decompress_data(self, node: pparse.Node, comp_data: bytes) -> tuple[int, int, bool]:
-        eof = False
+        #eof = False
         buffer = node._value
         dedata = self.decompressor.decompress(comp_data)
         buffer.write(dedata)
@@ -158,7 +158,7 @@ class ZipParsingContinueDecompress(ZipParsingState):
                     buffer.write(compressed_data[:whats_left])
                 return (
                     whats_left,
-                    len(compresed_data) - whats_left,
+                    len(compressed_data) - whats_left,
                     buffer.tell() == meta["uncomp_size"],
                 )
 
@@ -187,9 +187,9 @@ class ZipParsingContinueDecompress(ZipParsingState):
                 return (meta["comp_size"], 0, True)
             return self._decompress_data(node, compressed_data)
         elif meta["compression"] == 12:
-            raise Exception(f"BZIP2 Compression not currently supported.")
+            raise Exception("BZIP2 Compression not currently supported.")
         elif meta["compression"] == 14:
-            raise Exception(f"LZMA Compression not currently supported.")
+            raise Exception("LZMA Compression not currently supported.")
         else:
             raise Exception(f"Compression not supported. {meta['compression']}")
 
@@ -217,7 +217,7 @@ class ZipParsingStartDecompress(ZipParsingState):
 class ZipParsingEntryExtra(ZipParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         extra_len = node._value["extra_len"]
         data = ctx.peek(extra_len)
@@ -238,7 +238,7 @@ class ZipParsingEntryExtra(ZipParsingState):
 class ZipParsingEntryFilename(ZipParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         fname_len = node._value["fname_len"]
         data = ctx.peek(fname_len)
@@ -256,7 +256,7 @@ class ZipParsingEntryFilename(ZipParsingState):
 class ZipParsingEntryHeader(ZipParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(Zip.HEADER_LEN)
         if not data or len(data) < Zip.HEADER_LEN:

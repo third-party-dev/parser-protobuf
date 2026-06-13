@@ -8,7 +8,6 @@ from typing import Optional
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
-from thirdparty.pparse.lazy.json.state import JsonParsingStart
 
 
 class NodeContext(pparse.NodeContext):

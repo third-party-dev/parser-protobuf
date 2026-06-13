@@ -338,7 +338,9 @@ class XmlEntry:
             elif entry['type'] == 'list':
                 obj.append(XmlEntry.as_list(entry, [], node_cb=node_cb))
             elif entry['type'] == 'node':
-                obj[name] = XmlEntry.as_node(node, node_cb=node_cb)
+                breakpoint()
+                # ! Error: name undefined.
+                #obj[name] = XmlEntry.as_node(node, node_cb=node_cb)
             elif entry['type'] in ['int', 'float', 'str', 'json']:
                 obj.append(XmlEntry.as_value(entry))
 

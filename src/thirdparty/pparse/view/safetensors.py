@@ -5,7 +5,6 @@ from __future__ import annotations
 from typing import Any, Optional
 
 import logging
-import os
 import struct
 
 import numpy
@@ -68,7 +67,7 @@ class Tensor:
         self._data = self._reader.read(length)
 
         if len(self._data) < length:
-            raise Exception(f"Missing tensor data: {len(data)}/{length} @ {offset[0]}")
+            raise Exception(f"Missing tensor data: {len(self._data)}/{length} @ {offsets[0]}")
 
     def as_array(self) -> Any:
         # TODO: Sanity check input.
@@ -156,7 +155,7 @@ class SafeTensors:
             result[tensor_name]["shape"] = tensor.get_shape()
 
         sane_json = json.dumps(result, indent=None, separators=(",", ":"))
-        if not hashed_data_path is None:
+        if hashed_data_path is not None:
             with open(hashed_data_path, "wb") as fobj:
                 fobj.write(sane_json.encode("utf-8"))
         return hashlib.sha256(sane_json.encode("utf-8")).hexdigest()

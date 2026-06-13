@@ -5,14 +5,12 @@ from __future__ import annotations
 from typing import Any, Iterator, Optional
 
 import logging
-import struct
 import numpy
 
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.protobuf import configure_pparser
-from thirdparty.pparse.lazy.protobuf.meta import PbImport
 from thirdparty.pparse.lazy.onnx.meta import OnnxDataType
 
 """

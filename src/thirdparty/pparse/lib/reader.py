@@ -1,7 +1,7 @@
 """Reader interface and Cursor/Range implementations for binary data access."""
 
 from __future__ import annotations
-from typing import Any, Optional
+from typing import Any
 
 
 # Api for Reader-like objects (Cursor, Range)

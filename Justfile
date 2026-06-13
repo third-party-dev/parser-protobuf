@@ -9,3 +9,6 @@ builddevpkgs TAG="":
 
 test:
     ./scripts/pytest.sh
+
+checks:
+    @ruff check .

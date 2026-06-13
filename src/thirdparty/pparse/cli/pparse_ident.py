@@ -50,11 +50,11 @@ def ident_show(args: Any) -> None:
     print(f'Purpose: {obj["purpose"]}')
     print(f'Maintainer: {obj["maintainer"]}')
     if len(obj['links']) > 0:
-        print(f'Links:')
+        print('Links:')
         for link in obj['links']:
             print(f'- {link}')
     if len(obj['notes']) > 0:
-        print(f'Notes:')
+        print('Notes:')
         for note in obj['notes']:
             print(f'- {note}')
     print(f'Extentions: {obj["exts"]}')
@@ -68,7 +68,7 @@ def ident_byext(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
-    from thirdparty.pparse.ident.extensions import typedb, ident_by_extension
+    from thirdparty.pparse.ident.extensions import ident_by_extension
 
     print(f'Possible types: {ident_by_extension(args.path)}')
 

@@ -19,13 +19,12 @@ class Parser:
 
     def _parse(self, data_source: Any, pbpath: Any, msgtype: str, fname: str = "unnamed.protobuf.bin", recursion: Optional[pparse.RecursionControl] = None) -> Parser:
 
-        from importlib import resources
         from pathlib import Path
 
         try:
             data_range = pparse.Range(data_source.open(), data_source.length)
-            self._extraction = pparse.BytesExtraction(name=fpath, reader=data_range)
-            parser_class = configure_pparser(ext_list=[Path(fpath).suffix], init_msgtype=msgtype, proto=PbImport(pbpath))
+            self._extraction = pparse.BytesExtraction(name=fname, reader=data_range)
+            parser_class = configure_pparser(ext_list=[Path(fname).suffix], init_msgtype=msgtype, proto=PbImport(pbpath))
             parser = parser_class(self._extraction, 'protobuf')
 
             self._extraction.add_result('protobuf', parser.make_root_node())

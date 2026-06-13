@@ -4,7 +4,7 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Type
 from .reader import Reader, Range
-from .constants import AGAIN, ASCEND, NEXT
+from .constants import AGAIN, NEXT
 from .exceptions import (
     EndOfNodeException,
     EndOfDataException,
@@ -317,9 +317,9 @@ class Node:
                     # TODO: we should be able to track failures for retry later.
                     child.load(recursion=recursion)
 
-        except EndOfNodeException as e:
+        except EndOfNodeException:
             pass
-        except EndOfDataException as e:
+        except EndOfDataException:
             raise
         except UnsupportedFormatException:
             raise
@@ -334,9 +334,10 @@ class Node:
 
 
     def unload(self) -> None:
+        global UNLOADED_VALUE
         """Reset this node's value to ``UNLOADED_VALUE`` so it can be re-parsed when needed."""
         # TODO: Do we have context?
-        self.value = pparse.UNLOADED_VALUE
+        self.value = UNLOADED_VALUE
 
 
     def dump(self, depth: int = 0, step: int = 2, dumper: Any = None) -> None:
@@ -382,7 +383,7 @@ class Node:
         if not node_xml.has_tag('node'):
             raise Exception(f"Expected <node />, got: {node_xml}")
 
-        reader = ctx_ref.result_ref.extraction._reader.dup()
+        #reader = ctx_ref.result_ref.extraction._reader.dup()
 
         # offset = None
         # length = None
@@ -403,10 +404,10 @@ class Node:
         
 
         # Get context data here because we init context with Node constructor.
-        ctx_class = NodeContext
-        ctx_args = {}
-        parser_name = None
-        state_name = None
+        #ctx_class = NodeContext
+        #ctx_args = {}
+        #parser_name = None
+        #state_name = None
 
         # ! -----------------------------------------------------------------------------------------------------------
         # ! Ok for development, but this needs to be done at runtime with a user provided allow list.
@@ -436,7 +437,7 @@ class Node:
 
         # If we were provided a parser reference, use it.
         parser_ref = ctx_ref.parser
-        context_state = None
+        #context_state = None
 
         context_xml = node_xml.get("context")
         if context_xml is not None:
@@ -444,11 +445,12 @@ class Node:
             if context_xml.has_attr('type'):
                 raise Exception("custom context types not implemented for import yet")
                 # TODO: Get the actual cls? throw if not in scope?
-                ctx_class = context_xml['type']
+                #ctx_class = context_xml['type']
 
             if context_xml.get("extra"):
-                extra_xml = context_xml.extra
-                ctx_args = XmlEntry.as_map(extra_xml)
+                #extra_xml = context_xml.extra
+                #ctx_args = XmlEntry.as_map(extra_xml)
+                pass
 
             parser_xml = context_xml.get('parser')
             # If we were given a parser descriptor in XML, use it instead.
@@ -472,7 +474,8 @@ class Node:
             
             if context_xml.has_attr('state'):
                 # TODO: Validate state against parser (which would should now have.)
-                context_state = context_xml['state']
+                #context_state = context_xml['state']
+                pass
 
         # Using make_root_node() to create the node, ignorant of parent, state, or context type.
         # TODO: Ensure all parsers support ctx_class and ctx_args if we want to create node with them.

@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import numbers
 from typing import Any, Optional
 
 log = logging.getLogger(__name__)

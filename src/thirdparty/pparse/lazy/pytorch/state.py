@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import struct
 
 log = logging.getLogger(__name__)
 
@@ -30,7 +29,7 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
         # TODO: Using the metadata from pickle, generate nodes for tensors.
 
         # We only need the data reference, we seek(tensor_data_start) for each node.
-        tensor_reader = ctx.reader()
+        #tensor_reader = ctx.reader()
         node._value['tensors'] = {}
 
         # Auto-detect if this is a weights only model or not.
@@ -49,7 +48,7 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
 
         # TODO: Consider adding option to "force_traversal".
         if len(pkl) == 0:
-            arr = []
+            #arr = []
             parser._traverse_pt(node, pkl.state)
         else:
             for name in pkl:
@@ -69,7 +68,7 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
 class PyTorchParsingPickle(PyTorchParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data_pkl_obj = None
         for fname in node._value['by_fname']:
@@ -93,7 +92,7 @@ class PyTorchParsingPickle(PyTorchParsingState):
 class PyTorchParsingZipPostProcess(PyTorchParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         node._value['by_fname'] = {}
         for elem in node._value['zip']._value:
@@ -106,7 +105,7 @@ class PyTorchParsingZipPostProcess(PyTorchParsingState):
 class PyTorchParsingZip(PyTorchParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         from thirdparty.pparse.lazy.zip import configure_pparser
         zip_parser = configure_pparser().from_reader(node.ctx().reader())

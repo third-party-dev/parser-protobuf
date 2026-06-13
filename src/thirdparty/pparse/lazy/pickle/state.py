@@ -6,8 +6,6 @@ import logging
 log = logging.getLogger(__name__)
 
 import struct
-from pprint import pprint
-from typing import Optional
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pickle.meta import PklOp
@@ -23,7 +21,7 @@ class PickleParsingState:
 class PickleParsingReadlineParam(PickleParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         op = ctx.current_op
         data = ctx.peek(0x4000)
@@ -40,7 +38,7 @@ class PickleParsingReadlineParam(PickleParsingState):
                 "Not enough data to find end of readline delimited pickle opcode"
             )
 
-        if op.opcode == PklOp.GLOBAL and op.param != None:
+        if op.opcode == PklOp.GLOBAL and op.param is not None:
             op.param2 = data[0 : offset + 1]
             ctx.skip(offset + 1)
             ctx._next_state(PickleInterpreter)
@@ -58,7 +56,7 @@ class PickleParsingReadlineParam(PickleParsingState):
 class PickleParsingSimpleParam(PickleParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         op = ctx.current_op
         data = ctx.peek(op.pbytes)
@@ -77,7 +75,7 @@ class PickleParsingSimpleParam(PickleParsingState):
 class PickleParsingLengthParam(PickleParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         op = ctx.current_op
         data = ctx.peek(op.byte_len)
@@ -108,7 +106,7 @@ class PickleParsingLengthParam(PickleParsingState):
 class PickleParsingLengthPrefix(PickleParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         op = ctx.current_op
         data = ctx.peek(op.lbytes)
@@ -140,7 +138,7 @@ class PickleInterpreter(PickleParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         from thirdparty.pparse.lazy.pickle.calls import ReduceCall, StackMark, PersistentCall, NewCall
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
         op = ctx.current_op
 
         # Setup for next opcode before we handle current op.
@@ -148,7 +146,7 @@ class PickleInterpreter(PickleParsingState):
 
         if op.opcode == PklOp.PROTO:
             if ctx.proto is not None:
-                raise UnsupportedFormatException(
+                raise pparse.UnsupportedFormatException(
                     "PROTO defined twice in single stream?!"
                 )
             ctx.proto = op.param
@@ -460,7 +458,7 @@ class PickleParsingOpCode(PickleParsingState):
             ctx._next_state(PickleParsingReadlineParam)
             return pparse.AGAIN
         else:
-            raise UnsupportedFormatException(f"Invalid pickle opcode: {hex(data[0])}")
+            raise pparse.UnsupportedFormatException(f"Invalid pickle opcode: {hex(data[0])}")
 
 
 class PickleParsingComplete(PickleParsingState):

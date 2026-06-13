@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 from __future__ import annotations
-
+from typing import Any
 import logging
 import struct
 from collections import OrderedDict
@@ -124,7 +124,7 @@ class FlatbuffersParsingVectorOfStrings(FlatbuffersParsingState):
         ctx = node.ctx()
         parser = ctx.parser()
 
-        type_desc = ctx.type_desc()
+        #type_desc = ctx.type_desc()
 
         # Generate nodes for each string and append to descendants in Post
         elem_count = parser.read_u32(ctx)

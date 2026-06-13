@@ -23,7 +23,7 @@ class OmParsingComplete(OmParsingState):
 class OmParsingPartitionModelDef(OmParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         # Re-position ctx to actual protobuf data, based on some assumptions.
         FILE_HEADER_SIZE = 0x100
@@ -54,7 +54,7 @@ class OmParsingPartitionModelDef(OmParsingState):
 class OmParsingPartitionEntry(OmParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(24)
         if len(data) < 24:
@@ -125,7 +125,7 @@ class OmParsingPartitionTable(OmParsingState):
 class OmParsingHeader(OmParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(0x100)
         if len(data) < 0x100:

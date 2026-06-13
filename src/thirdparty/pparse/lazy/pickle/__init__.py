@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import io
 import logging
-import os
-import sys
 from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
@@ -83,9 +81,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 while True:
                     # While not end of data, keep parsing via states.
                     self.current.ctx().state().parse_data(self, self.current.ctx())
-            except pparse.EndOfNodeException as e:
+            except pparse.EndOfNodeException:
                 pass
-            except pparse.EndOfDataException as e:
+            except pparse.EndOfDataException:
                 pass
             except pparse.UnsupportedFormatException:
                 raise

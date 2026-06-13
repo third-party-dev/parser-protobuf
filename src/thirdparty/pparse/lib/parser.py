@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Optional, Type, Union
 
 from .extraction import (
     Extraction
@@ -140,7 +140,7 @@ class Parser:
 
         if self._base_state_cls:
             if not isinstance(init_state, type):
-                raise Exception(f"init_state parameter is not a class object.")
+                raise Exception("init_state parameter is not a class object.")
             if not issubclass(init_state, self._base_state_cls):
                 raise Exception(f"Given state class ({init_state.__name__}) not a subclass of {self._base_state_cls.__name__}")
 

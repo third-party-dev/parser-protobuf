@@ -24,7 +24,7 @@ def load_entrypoint_plugins(entrypoint_group: str) -> None:
         # Python 3.9
         eps = []
         for ep in entry_points()['pparse_command']:
-            if not ep in eps:
+            if ep not in eps:
                 eps.append(ep)
     else:
         # Python 3.10+

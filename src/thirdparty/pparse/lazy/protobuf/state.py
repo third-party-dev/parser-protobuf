@@ -117,8 +117,8 @@ class ProtobufParsingBytes(ProtobufParsingState):
 class ProtobufParsingWireTypeI32(ProtobufParsingState):
     # TODO: Split based on wire_type
     def parse_data(self, node: pparse.Node) -> int:
-        ctx = node.ctx()
-        parser = ctx.parser()
+        #ctx = node.ctx()
+        #parser = ctx.parser()
         breakpoint()
 
 

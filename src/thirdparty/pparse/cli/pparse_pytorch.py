@@ -128,7 +128,7 @@ def pytorch_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
-    from thirdparty.pparse.utils import pparse_repr
+    #from thirdparty.pparse.utils import pparse_repr
     from thirdparty.pparse.view.pytorch import PyTorch
 
     print(f"Parsing pytorch from: {args.path}")
@@ -164,11 +164,11 @@ def traverse(state: Any, path_arr: list[str], metrics: dict[str, int] = {'param_
 
     if not isinstance(state, dict) or \
         not ('_modules' in state or '_parameters' in state):
-        print(f"  - Dead end.")
+        print("  - Dead end.")
         return
 
     if '_parameters' in state and len(state['_parameters'].keys()) > 0:
-        print(f"  - Parameters found.")
+        print("  - Parameters found.")
         metrics['param_cnt'] += len(state['_parameters'].keys())
 
 

@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
-import sys
 from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
@@ -46,11 +44,10 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         def match_magic(cursor: pparse.Cursor) -> bool:
             return False
 
-        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[OmParsingState] = OmParsingHeader) -> pparse.Node:
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[OmParsingState] = OmParsingHeader, ctx_args: dict[str, Any] = {}) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
-            # Current path of pending things.
-            root = pparse.Node(source.open(), self, default_value={}, parent=parent)
+            root = pparse.Node(self._source.open(), self, parent=parent, ctx_class=pparse.NodeContext, ctx_args=ctx_args)
             root.ctx()._next_state(init_state)
             return root
 
@@ -168,9 +165,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 while True:
                     #                                    (parser, ctx )
                     self.current.ctx().state().parse_data(self, self.current.ctx())
-            except pparse.EndOfNodeException as e:
+            except pparse.EndOfNodeException:
                 pass
-            except pparse.EndOfDataException as e:
+            except pparse.EndOfDataException:
                 pass
             except pparse.UnsupportedFormatException:
                 raise

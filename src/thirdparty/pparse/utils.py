@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import io
-import sys
 import logging
 import pathlib
 from typing import Any, Optional
@@ -33,13 +32,13 @@ def activate_logging(args: Any) -> None:
 def has_mmap() -> Any:
     try:
         import mmap
-    except:
+    except Exception:
         return None
 
     try:
         with mmap.mmap(-1, 1) as m:
             m[0] = b"x"[0]
-    except:
+    except Exception:
         return None
 
     return mmap

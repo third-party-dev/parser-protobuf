@@ -1,8 +1,6 @@
 from __future__ import annotations
 
 import logging
-import os
-import sys
 from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
@@ -77,7 +75,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         # extraction = Extraction.from_xml("<job />")
         @classmethod
         def from_xml(cls, source: Any) -> None:
-            from thirdparty.pparse._xml import XmlNode, XmlEntry
+            from thirdparty.pparse._xml import XmlNode
             xml = XmlNode.as_node(source)
 
             # Do we have the correct node?

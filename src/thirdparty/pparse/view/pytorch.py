@@ -5,14 +5,11 @@ from __future__ import annotations
 from typing import Any, Optional
 
 import logging
-import os
 import struct
 
 import numpy
 
 log = logging.getLogger(__name__)
-
-from pprint import pprint
 
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pytorch import configure_pparser
@@ -40,7 +37,7 @@ class Tensor(pparse.Tensor):
 
     # Return raw data as python array of dtype
     def as_array(self) -> Any:
-        elem_cnt = self._tensor.value['elem_count']
+        #elem_cnt = self._tensor.value['elem_count']
         buffer = self.get_data_bytes().getbuffer()
         dtype = self.get_type()
 
@@ -151,7 +148,7 @@ class PyTorch:
             # result[tensor_name]["key"] = persid.arg[Tensor.DATA_KEY]
 
         sane_json = json.dumps(result, indent=None, separators=(",", ":"))
-        if not hashed_data_path is None:
+        if hashed_data_path is not None:
             with open(hashed_data_path, "wb") as fobj:
                 fobj.write(sane_json.encode("utf-8"))
         print(f"Based on {len(self._tensor_meta.keys())} tensors seen.")

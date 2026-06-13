@@ -2,10 +2,8 @@
 
 from __future__ import annotations
 
-import io
 import logging
-import os
-import sys
+import struct
 from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
@@ -25,8 +23,8 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
     if 'init_msgtype' in kwargs:
         init_msgtype = kwargs['init_msgtype']
 
-    pkg_namespace = None
-    relative_path = None
+    #pkg_namespace = None
+    #relative_path = None
     proto = PbImport()
     if 'pkg_namespace' in kwargs and 'relative_path' in kwargs:
         from importlib import resources
@@ -73,7 +71,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
             # Initial node is a map of type '.onnx.ModelProto'
             # protobuf_type = proto.by_type_name('.onnx.ModelProto')
-            protobuf_type = self.schema.by_type_name(init_msgtype)
+            #protobuf_type = self.schema.by_type_name(init_msgtype)
 
             # TODO: Consider adding hook for booking as the nodes are completed.
             # # def _node_complete_callable(parser, node_ctx, user_arg):
@@ -153,53 +151,53 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<Q", data)[0]
 
-        def _apply_value(self, ctx: pparse.NodeContext, field: Any, value: Any) -> None:
-            if isinstance(self.current, NodeArray):
-                log.debug(
-                    f"apply_value (off:{ctx.tell()}): Inside {self.current}. Append value."
-                )
-                self.current.value.append(value)
-                return
+        # def _apply_value(self, ctx: pparse.NodeContext, field: Any, value: Any) -> None:
+        #     if isinstance(self.current, NodeArray):
+        #         log.debug(
+        #             f"apply_value (off:{ctx.tell()}): Inside {self.current}. Append value."
+        #         )
+        #         self.current.value.append(value)
+        #         return
 
-            elif isinstance(self.current, NodeMap):
-                # TODO: Is this a good place to determine if we Node-ify a value?
+        #     elif isinstance(self.current, NodeMap):
+        #         # TODO: Is this a good place to determine if we Node-ify a value?
 
-                log.debug(
-                    f"apply_value (off:{ctx.tell()}): Inside {self.current}. Set value to key {field.name}."
-                )
-                ctx.just_set_node = isinstance(value, Node)
-                ctx.just_set_field = field
-                self.current.value[field.name] = value
-                return
+        #         log.debug(
+        #             f"apply_value (off:{ctx.tell()}): Inside {self.current}. Set value to key {field.name}."
+        #         )
+        #         ctx.just_set_node = isinstance(value, pparse.Node)
+        #         ctx.just_set_field = field
+        #         self.current.value[field.name] = value
+        #         return
 
-            log.debug(
-                f"UNLIKELY!! apply_value (off:{ctx.tell()}): Create arr as top level object."
-            )
-            breakpoint()
+        #     log.debug(
+        #         f"UNLIKELY!! apply_value (off:{ctx.tell()}): Create arr as top level object."
+        #     )
+        #     breakpoint()
 
-        def _start_map_node(self, ctx: pparse.NodeContext, field: Any) -> None:
-            ctx.mark_field_start()
-            parent = self.current
-            newmap = NodeMap(parent, ctx.reader(), proto.by_type_name(field.type_name))
+        # def _start_map_node(self, ctx: pparse.NodeContext, field: Any) -> None:
+        #     ctx.mark_field_start()
+        #     parent = self.current
+        #     newmap = NodeMap(parent, ctx.reader(), proto.by_type_name(field.type_name))
 
-            if isinstance(self.current, NodeArray):
-                log.debug(
-                    f"start_map (off:{ctx.tell()}): Inside Array. Append new map to current array."
-                )
-                self.current.value.append(newmap)
-                self.current = newmap
-            elif isinstance(self.current, NodeMap):
-                log.debug(
-                    f"start_map (off:{ctx.tell()}): Inside Map. Add new map to current map as {field.name}."
-                )
-                parent.value[field.name] = newmap
-                self.current = parent.value[field.name]
-            else:
-                log.debug(
-                    f"start_map (off:{ctx.tell()}): Create map as top level object."
-                )
-                parent.value = newmap
-                self.current = newmap
+        #     if isinstance(self.current, NodeArray):
+        #         log.debug(
+        #             f"start_map (off:{ctx.tell()}): Inside Array. Append new map to current array."
+        #         )
+        #         self.current.value.append(newmap)
+        #         self.current = newmap
+        #     elif isinstance(self.current, NodeMap):
+        #         log.debug(
+        #             f"start_map (off:{ctx.tell()}): Inside Map. Add new map to current map as {field.name}."
+        #         )
+        #         parent.value[field.name] = newmap
+        #         self.current = parent.value[field.name]
+        #     else:
+        #         log.debug(
+        #             f"start_map (off:{ctx.tell()}): Create map as top level object."
+        #         )
+        #         parent.value = newmap
+        #         self.current = newmap
 
         def _end_container_node(self, ctx: pparse.NodeContext) -> None:
             parent = ctx._parent
@@ -225,9 +223,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 while True:
                     # While not end of data, keep parsing via states.
                     self.current.ctx().state().parse_data(self, self.current.ctx())
-            except pparse.EndOfNodeException as e:
+            except pparse.EndOfNodeException:
                 pass
-            except pparse.EndOfDataException as e:
+            except pparse.EndOfDataException:
                 pass
             except pparse.UnsupportedFormatException:
                 raise

@@ -44,7 +44,7 @@ class OnnxDataType:
         BOOL: "BOOL",
         FLOAT16: "F16",
         DOUBLE: "F64",
-        INT32: "U32",
+        UINT32: "U32",
         UINT64: "U64",
         COMPLEX64: "UNK",
         COMPLEX128: "UNK",

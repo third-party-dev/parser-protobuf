@@ -6,7 +6,6 @@ from typing import TYPE_CHECKING, Any, Dict, Optional
 
 from .reader import (
     Reader,
-    Cursor,
 )
 
 if TYPE_CHECKING:
@@ -251,7 +250,7 @@ class BytesExtraction(Extraction):
                 result references are present but no resolver is provided.
         """
 
-        from thirdparty.pparse._xml import XmlNode, XmlEntry
+        from thirdparty.pparse._xml import XmlNode
         xml = XmlNode.as_node(xml_src)
 
         if not xml.has_attr("name"):
@@ -266,11 +265,6 @@ class BytesExtraction(Extraction):
             breakpoint()
             # Assuming this gets us to source
             parent = xml.get_parent().get_parent()
-
-        # **Importing into locals**
-        from thirdparty.pparse.lib import (
-            FileData,
-        )
 
         # ** Assuming extraction has datasource and datasource has type attribute.
         if xml.datasource['type'] not in locals():
@@ -299,11 +293,13 @@ class BytesExtraction(Extraction):
         # Recurse into child extractions
         for child_extraction in xml.child_extractions:
             if not child_extraction.has_attr("type"):
-                raise Exception(f"extraction must have a type attribute.")
+                raise Exception("extraction must have a type attribute.")
             if child_extraction['type'] not in globals():
                 raise Exception(f"child extraction type not in scope {child_extraction}")
             extraction_cls = globals()[child_extraction['type']]
-            child_extraction.set_obj_inst(extraction_cls.from_xml(child_extraction, xml_root))
+            # ! Error, xml_root not defined.
+            breakpoint()
+            #child_extraction.set_obj_inst(extraction_cls.from_xml(child_extraction, xml_root))
 
         return extraction
 

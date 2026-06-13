@@ -56,7 +56,7 @@ def onnx_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
-    from thirdparty.pparse.utils import pparse_repr
+    #from thirdparty.pparse.utils import pparse_repr
     from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Parsing onnx from: {args.path}")
@@ -83,7 +83,7 @@ def onnx_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
-    from thirdparty.pparse.view.onnx import Onnx
+    #from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Hashing onnx from: {args.path} with: arc")
 
@@ -110,7 +110,7 @@ def onnx_transform(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
-    from thirdparty.pparse.view.onnx import Onnx
+    #from thirdparty.pparse.view.onnx import Onnx
 
     print(f"Transform pytorch from: {args.path} to: {args.outpath}")
 

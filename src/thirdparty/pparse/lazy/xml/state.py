@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 
-import json
 import logging
 
 import thirdparty.pparse.lib as pparse
@@ -9,8 +8,8 @@ log = logging.getLogger(__name__)
 
 from thirdparty.pparse.lib import (
     EndOfDataException,
-    EndOfNodeException,
-    UnsupportedFormatException,
+    #EndOfNodeException,
+    #UnsupportedFormatException,
 )
 
 from thirdparty.pparse.utils import decode_utf8_partial
@@ -57,7 +56,7 @@ class XmlParsingMetaWhitespace(XmlParsingState):
 
         offset = 0
         while offset < len(data):
-            if not data[offset : offset + 1] in XmlParsingMetaWhitespace.WHITESPACE:
+            if data[offset : offset + 1] not in XmlParsingMetaWhitespace.WHITESPACE:
                 break
             offset += 1
         parser.encoded_skip(ctx, data[:offset])
@@ -588,6 +587,8 @@ class XmlParsingContentStart(XmlParsingState):
 class XmlParsingDoctype(XmlParsingState):
     # TODO: Implement me!
     def parse_data(self, node: pparse.Node):
+        ctx = node.ctx()
+        parser = ctx.parser()
         breakpoint()
         parser._end_container_node(node)
         return pparse.ASCEND
@@ -883,7 +884,7 @@ class XmlParsingXmlDeclarationStart(XmlParsingState):
 class XmlParsingUtf32LittleEndian(XmlParsingState):
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF32LE not yet supported.")
@@ -895,7 +896,7 @@ class XmlParsingUtf32LittleEndian(XmlParsingState):
 class XmlParsingUtf32BigEndian(XmlParsingState):
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF32BE not yet supported.")
@@ -907,7 +908,7 @@ class XmlParsingUtf32BigEndian(XmlParsingState):
 class XmlParsingUtf16LittleEndian(XmlParsingState):
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF16LE not yet supported.")
@@ -919,7 +920,7 @@ class XmlParsingUtf16LittleEndian(XmlParsingState):
 class XmlParsingUtf16BigEndian(XmlParsingState):
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         breakpoint()
         raise Exception("UTF16BE not yet supported.")
@@ -951,7 +952,7 @@ class XmlParsingBom(XmlParsingState):
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(6)
         if len(data) < 4:

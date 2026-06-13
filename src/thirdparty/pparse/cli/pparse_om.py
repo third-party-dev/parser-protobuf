@@ -111,9 +111,9 @@ def om_parse(args: Any) -> None:
 
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
-        print(f"Example:")
-        print(f"  print(header.dumps())")
-        print(f"  print(modeldef.dumps())")
+        print("Example:")
+        print("  print(header.dumps())")
+        print("  print(modeldef.dumps())")
         breakpoint()
 
 '''

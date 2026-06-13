@@ -9,7 +9,7 @@ import logging
 log = logging.getLogger(__name__)
 
 import thirdparty.pparse.lib as pparse
-from thirdparty.pparse.lazy.protobuf.meta import PbImport
+#from thirdparty.pparse.lazy.protobuf.meta import PbImport
 from thirdparty.pparse.lazy.om import configure_pparser
 
 class Om:

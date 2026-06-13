@@ -12,7 +12,6 @@ log = logging.getLogger(__name__)
 
 from thirdparty.pparse.lib import (
     EndOfDataException,
-    EndOfNodeException,
     UnsupportedFormatException,
 )
 
@@ -45,7 +44,7 @@ class JsonParsingNumber(JsonParsingState):
         offset = 0
         done = False
         while offset < len(data):
-            if not data[offset : offset + 1] in NUM_BYTES:
+            if data[offset : offset + 1] not in NUM_BYTES:
                 done = True
                 break
             self.num_bytes.append(data[offset : offset + 1])
@@ -128,7 +127,7 @@ class JsonParsingString(JsonParsingState):
 class JsonParsingWhitespace(JsonParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(0x400)
         if len(data) < 1:
@@ -138,7 +137,7 @@ class JsonParsingWhitespace(JsonParsingState):
 
         offset = 0
         while offset < len(data):
-            if not data[offset : offset + 1] in b"\x09\x0a\x0d\x20":
+            if data[offset : offset + 1] not in b"\x09\x0a\x0d\x20":
                 break
             offset += 1
         ctx.skip(offset)
@@ -305,12 +304,12 @@ class JsonParsingStart(JsonParsingState):
 
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(2)
         if len(data) < 1:
             raise EndOfDataException("Not enough data to parse JSON encoding.")
-        if not data[:1] in JsonParsingStart.VALID_BYTES or data[1] == b"\x00":
+        if data[:1] not in JsonParsingStart.VALID_BYTES or data[1] == b"\x00":
             raise UnsupportedFormatException("Not a valid UTF-8 Encoded JSON")
 
         # Marking the top allows us to not throw EndOfDataException when we return

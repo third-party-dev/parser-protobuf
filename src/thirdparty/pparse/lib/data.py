@@ -8,7 +8,6 @@ import stat
 from typing import Any, Optional
 
 from .reader import (
-    Reader,
     Cursor,
 )
 
@@ -240,7 +239,7 @@ class HttpCachedData(Data):
         # ** the space we need in cache!                                     **
 
         # Detect the above scenario by fetching length and first chunk.
-        self._session = session or requests.Session()
+        self._session = session
         response = self._session.head(url)
         response.raise_for_status()
         self.length = int(response.headers["Content-Length"])
@@ -266,7 +265,7 @@ class HttpCachedData(Data):
         return self.httpdata._read(cursor.tell(), length)
 
 
-
+'''
 class HttpRangeData(Data):
     """``Data`` backend that issues a fresh HTTP Range request for every read.
 
@@ -286,6 +285,7 @@ class HttpRangeData(Data):
         if not url:
             raise ValueError("url must be a string that points to a valid url")
         self._url = url
+        # ! requests undefined
         self._session = requests.Session()
         #self._session.verify = "/path/to/ca-bundle.crt"
         #self._session.verify = False
@@ -372,7 +372,7 @@ class HttpRangeData(Data):
             Up to ``length`` bytes of data.
         """
         return self.peek(cursor, length)
-
+'''
 
 '''
   TODO: Consider an architecture that allows stacking Data objects?
@@ -541,6 +541,8 @@ class FileMmapData(Data):
     """
 
     def __init__(self, path: Optional[str] = None) -> None:
+        from thirdparty.pparse.utils import mmap, has_mmap
+
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
         self._path = path

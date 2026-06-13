@@ -1,6 +1,4 @@
 import logging
-import os
-import sys
 
 log = logging.getLogger(__name__)
 
@@ -94,7 +92,7 @@ def configure_pparser(**kwargs):
         # extraction = Extraction.from_xml("<job />")
         @classmethod
         def from_xml(cls, source):
-            from thirdparty.pparse._xml import XmlNode, XmlEntry
+            from thirdparty.pparse._xml import XmlNode
             xml = XmlNode.as_node(source)
 
             # Do we have the correct node?

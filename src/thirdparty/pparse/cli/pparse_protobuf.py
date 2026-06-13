@@ -39,10 +39,10 @@ def protobuf_view(args: Any) -> None:
 
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
-        print(f"Example:")
-        print(f"  root.value['graph'].value['initializer'][4].value")
-        print(f"Pattern:")
-        print(f"  root.value[_field1_].value[_field2_].value[_field3_].value ...")
+        print("Example:")
+        print("  root.value['graph'].value['initializer'][4].value")
+        print("Pattern:")
+        print("  root.value[_field1_].value[_field2_].value[_field3_].value ...")
         breakpoint()
 
 

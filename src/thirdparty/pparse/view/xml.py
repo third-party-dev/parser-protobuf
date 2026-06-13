@@ -97,7 +97,7 @@ class Element:
                     if len(parent.value['content'].value) > index+1 and \
                         isinstance(parent.value['content'].value[index+1].value, str):
                         self.tail = parent.value['content'].value[index+1].value
-                except:
+                except Exception:
                     breakpoint()
 
         # Get attribute dictionary

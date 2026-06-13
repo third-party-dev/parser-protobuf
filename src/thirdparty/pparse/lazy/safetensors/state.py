@@ -40,7 +40,7 @@ class SafetensorsParsingComplete(SafetensorsParsingState):
 class SafetensorsParsingTensorNode(SafetensorsParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         node._value = ctx.read(ctx.left())
 
@@ -77,7 +77,7 @@ class SafetensorsParsingTensorsMeta(SafetensorsParsingState):
 class SafetensorsParsingHeaderSetup(SafetensorsParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         #breakpoint()
         from thirdparty.pparse.lazy.json import configure_pparser
@@ -96,11 +96,11 @@ class SafetensorsParsingHeaderSetup(SafetensorsParsingState):
 class SafetensorsParsingLength(SafetensorsParsingState):
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
-        parser = ctx.parser()
+        #parser = ctx.parser()
 
         data = ctx.peek(8)
         if len(data) < 8:
-            raise EndOfDataException(
+            raise pparse.EndOfDataException(
                 "Not enough data to parse Safetensors Header Length"
             )
 
