@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -10,13 +13,13 @@ from thirdparty.pparse.lazy.zip.state import ZipParsingMagic
 
 from thirdparty.pparse.lazy.zip.state import ZipParsingState
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
 
 
         @staticmethod
-        def match_extension(fname: str):
+        def match_extension(fname: str) -> bool:
             if not fname:
                 return False
             for ext in [".zip"]:
@@ -26,13 +29,13 @@ def configure_pparser(**kwargs):
 
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             if cursor.peek(len(Zip.SIGNATURE)) == Zip.SIGNATURE:
                 return True
             return False
 
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = ZipParsingMagic):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[ZipParsingState] = ZipParsingMagic) -> pparse.Node:
 
             init_state = self._init_state_as_cls(init_state)
 
@@ -41,25 +44,25 @@ def configure_pparser(**kwargs):
             return root
 
 
-        def __init__(self, source: pparse.Extraction, id: str = "zip"):
+        def __init__(self, source: pparse.Extraction, id: str = "zip") -> None:
             super().__init__(source, id, ZipParsingState)
 
 
         @staticmethod
-        def from_reader(reader: pparse.Reader):
+        def from_reader(reader: pparse.Reader) -> pparse.Parser:
             extraction = pparse.BytesExtraction(name="data.zip", reader=reader.dup())
             return Parser(extraction)
 
 
-        def new_map_node(self, parent):
+        def new_map_node(self, parent: pparse.Node) -> pparse.Node:
             return pparse.Node(parent.ctx().reader(), self, default_value = {}, parent = parent)
 
 
-        def new_data_node(self, parent):
+        def new_data_node(self, parent: pparse.Node) -> pparse.Node:
             return pparse.Node(parent.ctx().reader(), self, parent = parent)
 
 
-        def _end_container_node(self, node: pparse.Node):
+        def _end_container_node(self, node: pparse.Node) -> None:
             ctx = node.ctx()
             parent = ctx.parent()
             if parent:
@@ -73,7 +76,7 @@ def configure_pparser(**kwargs):
 
         # extraction = Extraction.from_xml("<job />")
         @classmethod
-        def from_xml(cls, source):
+        def from_xml(cls, source: Any) -> None:
             from thirdparty.pparse._xml import XmlNode, XmlEntry
             xml = XmlNode.as_node(source)
 

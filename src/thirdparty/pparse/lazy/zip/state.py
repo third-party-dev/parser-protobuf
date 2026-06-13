@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import io
 import logging
 import struct
 import zlib
+from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
@@ -12,12 +15,12 @@ from thirdparty.pparse.lazy.zip.meta import Zip
 
 
 class ZipParsingState(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class ZipParsingComplete(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -28,7 +31,7 @@ class ZipParsingComplete(ZipParsingState):
 
 
 class ZipParsingFinishDecompress(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         #breakpoint()
         ctx = node.ctx()
         parser = ctx.parser()
@@ -39,7 +42,7 @@ class ZipParsingFinishDecompress(ZipParsingState):
 
 # ! UNTESTED
 class ZipParsingDataDescFooter(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -64,17 +67,17 @@ class ZipParsingDataDescFooter(ZipParsingState):
 
 
 class ZipParsingContinueDecompress(ZipParsingState):
-    def __init__(self):
-        self.decompressor = zlib.decompressobj(-zlib.MAX_WBITS)
-        self._has_desc = False
+    def __init__(self) -> None:
+        self.decompressor: Any = zlib.decompressobj(-zlib.MAX_WBITS)
+        self._has_desc: bool = False
 
-    def _found_desc(self, ctx):
+    def _found_desc(self, ctx: pparse.NodeContext) -> bool:
         return ctx.peek(4).find(Zip.DATA_DESC_SIG) != -1
 
-    def _compare_crc32(self, given, data):
+    def _compare_crc32(self, given: int, data: bytes) -> bool:
         return zlib.crc32(data) & 0xFFFFFFFF == given
 
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -122,7 +125,7 @@ class ZipParsingContinueDecompress(ZipParsingState):
 
         return pparse.AGAIN
 
-    def _decompress_data(self, node: pparse.Node, comp_data):
+    def _decompress_data(self, node: pparse.Node, comp_data: bytes) -> tuple[int, int, bool]:
         eof = False
         buffer = node._value
         dedata = self.decompressor.decompress(comp_data)
@@ -131,7 +134,7 @@ class ZipParsingContinueDecompress(ZipParsingState):
         used = len(comp_data) - unused
         return (used, unused, self.decompressor.eof)
 
-    def decompress_data(self, node: pparse.Node, compressed_data):
+    def decompress_data(self, node: pparse.Node, compressed_data: bytes) -> tuple[int, int, bool]:
         ctx = node.ctx()
         meta = ctx.parent()._value
         buffer = node._value
@@ -194,7 +197,7 @@ class ZipParsingContinueDecompress(ZipParsingState):
 
 
 class ZipParsingStartDecompress(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -212,7 +215,7 @@ class ZipParsingStartDecompress(ZipParsingState):
 
 
 class ZipParsingEntryExtra(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -233,7 +236,7 @@ class ZipParsingEntryExtra(ZipParsingState):
 
 
 class ZipParsingEntryFilename(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -251,7 +254,7 @@ class ZipParsingEntryFilename(ZipParsingState):
 
 
 class ZipParsingEntryHeader(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -279,7 +282,7 @@ class ZipParsingEntryHeader(ZipParsingState):
 
 
 class ZipParsingMagic(ZipParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
