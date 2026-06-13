@@ -1,11 +1,14 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
+from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
 
-def ins_def(alias, lbytes=0, pbytes=0, fmt="", cast=None):
+def ins_def(alias: str, lbytes: int = 0, pbytes: int = 0, fmt: str = "", cast: Any = None) -> dict[str, Any]:
     return {
         "alias": alias,
         "lbytes": lbytes,
@@ -93,7 +96,7 @@ class PklOp:
     NEXT_BUFFER = 151
     READONLY_BUFFER = 152
 
-    _mapping_dict = {
+    _mapping_dict: dict[int, dict[str, Any]] = {
         # alias
         # lbytes - size of length prefix
         # pbytes - size of parameter
@@ -173,7 +176,7 @@ class PklOp:
         0x96: ins_def("BYTEARRAY8", lbytes=8, fmt="<q"),
     }
 
-    _zero_byte_params = [
+    _zero_byte_params: list[int] = [
         0x28,
         0x29,
         0x2E,
@@ -210,7 +213,7 @@ class PklOp:
         0x98,
     ]
 
-    _readline_params = [
+    _readline_params: list[int] = [
         0x46,
         0x49,
         0x4C,
@@ -223,7 +226,7 @@ class PklOp:
         0x70,
     ]
 
-    _simple_params = [
+    _simple_params: list[int] = [
         0x47,
         0x4A,
         0x4B,
@@ -240,7 +243,7 @@ class PklOp:
         0x95,
     ]
 
-    _length_params = [
+    _length_params: list[int] = [
         0x42,
         0x43,
         0x54,
@@ -254,48 +257,48 @@ class PklOp:
     ]
 
     @staticmethod
-    def alias(val):
+    def alias(val: int) -> str:
         return PklOp._mapping_dict[val]["alias"]
 
     @staticmethod
-    def pbytes(val):
+    def pbytes(val: int) -> int:
         return PklOp._mapping_dict[val]["pbytes"]
 
     @staticmethod
-    def lbytes(val):
+    def lbytes(val: int) -> int:
         return PklOp._mapping_dict[val]["lbytes"]
 
     @staticmethod
-    def fmt(val):
+    def fmt(val: int) -> str:
         return PklOp._mapping_dict[val]["fmt"]
 
     @staticmethod
-    def is_readline(val):
+    def is_readline(val: int) -> bool:
         return val in PklOp._readline_params
 
     @staticmethod
-    def no_params(val):
+    def no_params(val: int) -> bool:
         return val in PklOp._zero_byte_params
 
     @staticmethod
-    def is_simple(val):
+    def is_simple(val: int) -> bool:
         return val in PklOp._simple_params
 
     @staticmethod
-    def has_length(val):
+    def has_length(val: int) -> bool:
         return val in PklOp._length_params
 
-    def __init__(self, opcode, param=None, byte_len=0, byte_offset=None):
-        self.opcode = opcode
-        self.alias = PklOp.alias(opcode)
-        self.pbytes = PklOp.pbytes(opcode)
-        self.lbytes = PklOp.lbytes(opcode)
-        self.fmt = PklOp.fmt(opcode)
-        self.byte_len = 0
-        self.param = param
-        self.param2 = None  # for GLOBAL
+    def __init__(self, opcode: int, param: Any = None, byte_len: int = 0, byte_offset: Optional[int] = None) -> None:
+        self.opcode: int = opcode
+        self.alias: str = PklOp.alias(opcode)
+        self.pbytes: int = PklOp.pbytes(opcode)
+        self.lbytes: int = PklOp.lbytes(opcode)
+        self.fmt: str = PklOp.fmt(opcode)
+        self.byte_len: int = 0
+        self.param: Any = param
+        self.param2: Any = None  # for GLOBAL
 
-        self.byte_offset = byte_offset
+        self.byte_offset: Optional[int] = byte_offset
 
     def __repr__(self) -> str:
         if self.param is not None and self.param2 is not None:

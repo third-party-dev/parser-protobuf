@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
+from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
@@ -13,26 +16,26 @@ from thirdparty.pparse.dump import Dumper, _print_cb
 
 
 class NodeVmContext(pparse.NodeContext):
-    def __init__(self, parent: "Node", reader: pparse.Range, parser: pparse.Parser):
+    def __init__(self, parent: Optional[pparse.Node], reader: pparse.Range, parser: pparse.Parser) -> None:
         if type(reader).__name__ != "Range":
             raise Exception("protobuf NodeContext reader must be a pparse.Range")
         super().__init__(parent, reader, parser)
 
-        self.proto = None
-        self.current_op = None
-        self.stack = []
-        self.memo = {}
-        self.next_memo = 0
+        self.proto: Any = None
+        self.current_op: Any = None
+        self.stack: list[Any] = []
+        self.memo: dict[int, Any] = {}
+        self.next_memo: int = 0
 
         # Note: Save the history to the node, forever allocating that memory.
-        self.history = []
+        self.history: list[Any] = []
 
-    def vmstate(self):
+    def vmstate(self) -> Any:
         return self._vmstate
 
 
 class Node(pparse.Node):
-    def dump(self, depth=0, step=2, dumper=None):
+    def dump(self, depth: int = 0, step: int = 2, dumper: Optional[PickleDumper] = None) -> None:
         if not dumper:
             dumper = PickleDumper()
         # TODO: Consider the ReduceCall dict AND _value.
@@ -40,7 +43,7 @@ class Node(pparse.Node):
 
 
 class PickleDumper(Dumper):
-    def __init__(self, dumpers=None, cb=_print_cb, dst=sys.stdout):
+    def __init__(self, dumpers: Optional[list[Any]] = None, cb: Any = _print_cb, dst: Any = sys.stdout) -> None:
         import numbers
         from thirdparty.pparse.lib import Node
         from collections.abc import Iterable
@@ -66,7 +69,7 @@ class PickleDumper(Dumper):
         super().__init__(dumpers=self.dumpers, cb=cb, dst=dst)
 
 
-    def _dump_newcall_wrapper(self, elem_name="NewCall", obj=None, attrs='', depth=0, step=2):
+    def _dump_newcall_wrapper(self, elem_name: str = "NewCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         spacer = " " * depth
         attrs = ' '.join([
             f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
@@ -98,7 +101,7 @@ class PickleDumper(Dumper):
         self.cb(self.dst, f'{spacer}</NewCall>')
 
 
-    def _dump_reducecall_wrapper(self, elem_name="ReduceCall", obj=None, attrs='', depth=0, step=2):
+    def _dump_reducecall_wrapper(self, elem_name: str = "ReduceCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         spacer = " " * depth
         attrs = ' '.join([
             f'mod="{obj.module_call[0].decode("utf-8").strip()}"',
@@ -129,7 +132,7 @@ class PickleDumper(Dumper):
 
         self.cb(self.dst, f'{spacer}</ReduceCall>')
     
-    def _dump_persidcall_wrapper(self, elem_name="PersistentCall", obj=None, attrs='', depth=0, step=2):
+    def _dump_persidcall_wrapper(self, elem_name: str = "PersistentCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         spacer = " " * depth
         attrs = ' '.join([
             f'id="{obj.id}"',

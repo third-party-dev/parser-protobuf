@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import io
 import logging
 import os
 import sys
-from typing import Optional
+from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -12,11 +14,11 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pickle.state import PickleParsingPickleStream, PickleParsingState
 from thirdparty.pparse.lazy.pickle.node import Node
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
         @staticmethod
-        def match_extension(fname: str):
+        def match_extension(fname: str) -> bool:
             if not fname:
                 return False
             # for ext in ['.onnx']:
@@ -26,11 +28,11 @@ def configure_pparser(**kwargs):
             return False
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             return False
 
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = PickleParsingPickleStream):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[PickleParsingState] = PickleParsingPickleStream) -> Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = Node(self._source.open(), self, default_value=[], parent=parent)
@@ -38,24 +40,24 @@ def configure_pparser(**kwargs):
             return root
 
 
-        def __init__(self, source: pparse.Extraction, id: str = "pkl"):
+        def __init__(self, source: pparse.Extraction, id: str = "pkl") -> None:
             super().__init__(source, id, PickleParsingState)
 
         @staticmethod
-        def from_reader(reader: pparse.Reader):
+        def from_reader(reader: pparse.Reader) -> pparse.Parser:
             extraction = pparse.BytesExtraction(name="data.zip", reader=reader.dup())
             return Parser(extraction)
 
 
         @staticmethod
-        def from_bytesio(bytes_io):
+        def from_bytesio(bytes_io: io.BytesIO) -> pparse.Parser:
             data_source = pparse.BytesIoData(bytes_io=bytes_io)
             data_range = pparse.Range(data_source.open(), data_source.length)
             extraction = pparse.BytesExtraction(name="data.pkl", reader=data_range)
             return Parser(extraction)
 
 
-        def _end_container_node(self, node: pparse.Node):
+        def _end_container_node(self, node: pparse.Node) -> None:
             ctx = node.ctx()
             parent = ctx._parent
             if parent:
@@ -75,7 +77,7 @@ def configure_pparser(**kwargs):
                 # # Set current node to parent.
                 # self.current = parent
 
-        def scan_data(self):
+        def scan_data(self) -> pparse.Parser:
             # Do the opcodes first.
             try:
                 while True:

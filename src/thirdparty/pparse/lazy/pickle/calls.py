@@ -1,21 +1,26 @@
-class StackMark:
-    def __init__(self, opcode):
-        self.opcode = opcode
+from __future__ import annotations
 
-    def __repr__(self):
+from typing import Any, Optional
+
+
+class StackMark:
+    def __init__(self, opcode: Any) -> None:
+        self.opcode: Any = opcode
+
+    def __repr__(self) -> str:
         return "**MARK**"
 
 
 class PersistentCall:
-    def __init__(self, id, arg, opcode):
-        self.id = id
-        self.arg = arg
-        self.opcode = opcode
+    def __init__(self, id: Any, arg: Any, opcode: Any) -> None:
+        self.id: Any = id
+        self.arg: Any = arg
+        self.opcode: Any = opcode
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"PERSID_CALL(\n  arg={self.arg}\n)"
 
-    def pparse_repr(self, depth=0, step=" "):
+    def pparse_repr(self, depth: int = 0, step: str = " ") -> str:
         from thirdparty.pparse.utils import pparse_repr
 
         res = [f"PERSID_CALL(  # PERSID_CALL\n"]
@@ -30,7 +35,7 @@ class PersistentCall:
         return "".join(res)
 
 
-def try_decode_and_strip(val):
+def try_decode_and_strip(val: Any) -> str:
     newval = val
     if isinstance(val, bytes):
         newval = val.decode("utf-8")
@@ -38,17 +43,17 @@ def try_decode_and_strip(val):
 
 
 class ReduceCall(dict):
-    def __init__(self, module_call, arg, opcode):
+    def __init__(self, module_call: tuple[bytes, bytes], arg: Any, opcode: Any) -> None:
         super().__init__()
 
-        self.module_call = module_call
-        self.module = try_decode_and_strip(self.module_call[0])
-        self.function = try_decode_and_strip(self.module_call[1])
-        self.arg = arg
-        self.opcode = opcode
-        self.state = None
+        self.module_call: tuple[bytes, bytes] = module_call
+        self.module: str = try_decode_and_strip(self.module_call[0])
+        self.function: str = try_decode_and_strip(self.module_call[1])
+        self.arg: Any = arg
+        self.opcode: Any = opcode
+        self.state: Any = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"REDUCE_CALL(\n"
             f"  mod={self.module_call[0]},\n"
@@ -58,7 +63,7 @@ class ReduceCall(dict):
             ")"
         )
 
-    def pparse_repr(self, depth=0, step="  "):
+    def pparse_repr(self, depth: int = 0, step: str = "  ") -> str:
         from thirdparty.pparse.utils import pparse_repr
 
         spacer = depth * step
@@ -93,17 +98,17 @@ class ReduceCall(dict):
 
 
 class NewCall(dict):
-    def __init__(self, module_call, arg, opcode):
+    def __init__(self, module_call: tuple[bytes, bytes], arg: Any, opcode: Any) -> None:
         super().__init__()
 
-        self.module_call = module_call
-        self.module = self.module_call[0].decode("utf-8").strip()
-        self.function = self.module_call[1].decode("utf-8").strip()
-        self.arg = arg
-        self.opcode = opcode
-        self.state = None
+        self.module_call: tuple[bytes, bytes] = module_call
+        self.module: str = self.module_call[0].decode("utf-8").strip()
+        self.function: str = self.module_call[1].decode("utf-8").strip()
+        self.arg: Any = arg
+        self.opcode: Any = opcode
+        self.state: Any = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             f"NEW_CALL(\n"
             f"  mod={self.module_call[0]},\n"
@@ -113,7 +118,7 @@ class NewCall(dict):
             ")"
         )
 
-    def pparse_repr(self, depth=0, step="  "):
+    def pparse_repr(self, depth: int = 0, step: str = "  ") -> str:
         from thirdparty.pparse.utils import pparse_repr
 
         spacer = depth * step
