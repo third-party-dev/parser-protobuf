@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import io
 import logging
 import os
 import sys
-from typing import Optional
+from typing import Any, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -13,7 +15,7 @@ from thirdparty.pparse.lazy.protobuf.meta import Protobuf, PbImport
 from thirdparty.pparse.lazy.protobuf.node import NodeContext
 from thirdparty.pparse.lazy.protobuf.state import ProtobufParsingTag, ProtobufParsingState
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     ext_list = []
     if 'ext_list' in kwargs:
@@ -34,7 +36,7 @@ def configure_pparser(**kwargs):
 
     class Parser(pparse.Parser):
         @staticmethod
-        def match_extension(fname: str):
+        def match_extension(fname: str) -> bool:
             if not fname:
                 return False
             # for ext in ['.onnx']:
@@ -44,17 +46,17 @@ def configure_pparser(**kwargs):
             return False
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             return False
 
 
         @staticmethod
-        def from_reader(reader: pparse.Reader, parent: pparse.Node = None):
+        def from_reader(reader: pparse.Reader, parent: Optional[pparse.Node] = None) -> pparse.Parser:
             extraction = pparse.BytesExtraction(name="data.pb", reader=reader.dup())
             return Parser(extraction, parent=parent)
 
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = ProtobufParsingTag):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[ProtobufParsingState] = ProtobufParsingTag) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             root = pparse.Node(self._source.open(), self, default_value={}, parent=parent, ctx_class=NodeContext)
@@ -64,7 +66,7 @@ def configure_pparser(**kwargs):
             return root
 
 
-        def __init__(self, source: pparse.Extraction, id: str = "protobuf"):
+        def __init__(self, source: pparse.Extraction, id: str = "protobuf") -> None:
             super().__init__(source, id, ProtobufParsingState)
 
             self.schema = proto
@@ -78,7 +80,7 @@ def configure_pparser(**kwargs):
             # self._node_complete_callable = None
             # self._node_complete_arg = None
 
-        def _parse_varint(self, ctx, peek=False):
+        def _parse_varint(self, ctx: pparse.NodeContext, peek: bool = False) -> tuple[int, int]:
             value = 0
             shift = 0
             start = ctx.tell()
@@ -99,13 +101,13 @@ def configure_pparser(**kwargs):
                 ctx.seek(start)
             return value, end - start
 
-        def parse_varint(self, ctx):
+        def parse_varint(self, ctx: pparse.NodeContext) -> int:
             return self._parse_varint(ctx, False)[0]
 
-        def peek_varint(self, ctx):
+        def peek_varint(self, ctx: pparse.NodeContext) -> tuple[int, int]:
             return self._parse_varint(ctx, True)
 
-        def peek_varint_key(self, ctx):
+        def peek_varint_key(self, ctx: pparse.NodeContext) -> tuple[int, int, int, Optional[int]]:
             # Note: Key varints (by spec) ar always 32 bits (fields are 29 bits)
             current_pos = ctx.tell()
             value, key_length = self._parse_varint(ctx)
@@ -121,11 +123,11 @@ def configure_pparser(**kwargs):
 
             return wire_type, field_num, meta_length, value_length
 
-        def parse_varint_key(self, ctx):
+        def parse_varint_key(self, ctx: pparse.NodeContext) -> tuple[int, int]:
             value = self.parse_varint(ctx)
             return (value & 0x7), (value >> 3)
 
-        def parse_i32(self, ctx, peek=False):
+        def parse_i32(self, ctx: pparse.NodeContext, peek: bool = False) -> int:
             data = None
             if peek:
                 data = ctx.peek(4)
@@ -138,7 +140,7 @@ def configure_pparser(**kwargs):
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<I", data)[0]
 
-        def parse_i64(self, ctx, peek=False):
+        def parse_i64(self, ctx: pparse.NodeContext, peek: bool = False) -> int:
             data = None
             if peek:
                 data = ctx.peek(8)
@@ -151,7 +153,7 @@ def configure_pparser(**kwargs):
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<Q", data)[0]
 
-        def _apply_value(self, ctx, field, value):
+        def _apply_value(self, ctx: pparse.NodeContext, field: Any, value: Any) -> None:
             if isinstance(self.current, NodeArray):
                 log.debug(
                     f"apply_value (off:{ctx.tell()}): Inside {self.current}. Append value."
@@ -175,7 +177,7 @@ def configure_pparser(**kwargs):
             )
             breakpoint()
 
-        def _start_map_node(self, ctx, field):
+        def _start_map_node(self, ctx: pparse.NodeContext, field: Any) -> None:
             ctx.mark_field_start()
             parent = self.current
             newmap = NodeMap(parent, ctx.reader(), proto.by_type_name(field.type_name))
@@ -199,7 +201,7 @@ def configure_pparser(**kwargs):
                 parent.value = newmap
                 self.current = newmap
 
-        def _end_container_node(self, ctx):
+        def _end_container_node(self, ctx: pparse.NodeContext) -> None:
             parent = ctx._parent
             if parent:
                 log.debug(
@@ -218,7 +220,7 @@ def configure_pparser(**kwargs):
                 # Set current node to parent.
                 self.current = parent
 
-        def scan_data(self):
+        def scan_data(self) -> pparse.Parser:
             try:
                 while True:
                     # While not end of data, keep parsing via states.

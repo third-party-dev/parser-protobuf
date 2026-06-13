@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
 import struct
 
@@ -10,25 +12,25 @@ from thirdparty.pparse.lazy.protobuf.meta import Field, Protobuf
 # from thirdparty.pparse.lazy.protobuf.node import Node, NodeArray, NodeContext, NodeMap
 from thirdparty.pparse.lazy.protobuf.node import NodeContext
 
-def unzigzag(v):
+def unzigzag(v: int) -> int:
     return (v >> 1) ^ -(v & 1)
 
 
-def zigzag_i32(n):
+def zigzag_i32(n: int) -> int:
     return (n << 1) ^ (n >> 31)
 
 
-def zigzag_i64(n):
+def zigzag_i64(n: int) -> int:
     return (n << 1) ^ (n >> 63)
 
 
 class ProtobufParsingState(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class ProtobufParsingComplete(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
@@ -47,7 +49,7 @@ parser._root._value['graph']._value['node'][0]._value['attribute'][0]._value['t'
 '''
 
 class ProtobufParsingSimplePacked(ProtobufParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -62,7 +64,7 @@ class ProtobufParsingSimplePacked(ProtobufParsingState):
 
 
 class ProtobufParsingWireTypeLen(ProtobufParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -104,7 +106,7 @@ class ProtobufParsingWireTypeLen(ProtobufParsingState):
 
 
 class ProtobufParsingBytes(ProtobufParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         node._value = ctx.read(ctx.left())
         # We're done.
@@ -114,7 +116,7 @@ class ProtobufParsingBytes(ProtobufParsingState):
 
 class ProtobufParsingWireTypeI32(ProtobufParsingState):
     # TODO: Split based on wire_type
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
         breakpoint()
@@ -122,7 +124,7 @@ class ProtobufParsingWireTypeI32(ProtobufParsingState):
 
 class ProtobufParsingTag(ProtobufParsingState):
     # TODO: Split based on wire_type
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
