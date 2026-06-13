@@ -1,34 +1,37 @@
+from __future__ import annotations
+
+from typing import Optional
 
 import numpy
 
 class OnnxDataType:
-    UNDEFINED = 0
-    FLOAT = 1
-    UINT8 = 2
-    INT8 = 3
-    UINT16 = 4
-    INT16 = 5
-    INT32 = 6
-    INT64 = 7
-    STRING = 8
-    BOOL = 9
-    FLOAT16 = 10
-    DOUBLE = 11
-    UINT32 = 12
-    UINT64 = 13
-    COMPLEX64 = 14
-    COMPLEX128 = 15
-    BFLOAT16 = 16
-    FLOAT8E4M3FN = 17
-    FLOAT8E4M3FNUZ = 18
-    FLOAT8E5M2 = 19
-    FLOAT8E5M2FNUZ = 20
-    UINT4 = 21
-    INT4 = 22
-    FLOAT4E2M1 = 23
-    FLOAT8E8M0 = 24
+    UNDEFINED: int = 0
+    FLOAT: int = 1
+    UINT8: int = 2
+    INT8: int = 3
+    UINT16: int = 4
+    INT16: int = 5
+    INT32: int = 6
+    INT64: int = 7
+    STRING: int = 8
+    BOOL: int = 9
+    FLOAT16: int = 10
+    DOUBLE: int = 11
+    UINT32: int = 12
+    UINT64: int = 13
+    COMPLEX64: int = 14
+    COMPLEX128: int = 15
+    BFLOAT16: int = 16
+    FLOAT8E4M3FN: int = 17
+    FLOAT8E4M3FNUZ: int = 18
+    FLOAT8E5M2: int = 19
+    FLOAT8E5M2FNUZ: int = 20
+    UINT4: int = 21
+    INT4: int = 22
+    FLOAT4E2M1: int = 23
+    FLOAT8E8M0: int = 24
 
-    STTYPES = {
+    STTYPES: dict[int, str] = {
         UNDEFINED: "UNK",
         FLOAT: "F32",
         UINT8: "U8",
@@ -56,7 +59,7 @@ class OnnxDataType:
         FLOAT8E8M0: "UNK",
     }
 
-    NPTYPES = {
+    NPTYPES: dict[int, Optional[type]] = {
         UNDEFINED: None,
         FLOAT: numpy.float32,
         UINT8: numpy.uint8,
@@ -84,13 +87,13 @@ class OnnxDataType:
         FLOAT8E8M0: None,
     }
 
-    def sttype(onnx_type):
+    def sttype(onnx_type: int) -> str:
         if onnx_type in OnnxDataType.STTYPES:
             return OnnxDataType.STTYPES[onnx_type]
         else:
             return "UNK"
-    
-    def nptype(onnx_type):
+
+    def nptype(onnx_type: int) -> Optional[type]:
         if onnx_type in OnnxDataType.NPTYPES:
             return OnnxDataType.NPTYPES[onnx_type]
         else:
