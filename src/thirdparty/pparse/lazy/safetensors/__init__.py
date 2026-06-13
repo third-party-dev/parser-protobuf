@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import Any, Dict, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -8,12 +11,12 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.safetensors.state import SafetensorsParsingLength, SafetensorsParsingTensorNode, SafetensorsParsingState
 
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
 
         @staticmethod
-        def match_extension(fname: str):
+        def match_extension(fname: str) -> bool:
             if not fname:
                 return False
             for ext in [".safetensors"]:
@@ -23,11 +26,11 @@ def configure_pparser(**kwargs):
 
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             # TODO: 8 bytes of offset til '}', then '{'.
             return False
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = SafetensorsParsingLength):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[SafetensorsParsingState] = SafetensorsParsingLength) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             # Current path of pending things.
@@ -35,20 +38,20 @@ def configure_pparser(**kwargs):
             root.ctx()._next_state(init_state)
             return root
 
-        def __init__(self, source: pparse.Extraction, id: str = "safetensors"):
+        def __init__(self, source: pparse.Extraction, id: str = "safetensors") -> None:
             super().__init__(source, id, SafetensorsParsingState)
 
 
 
         @staticmethod
-        def from_fpath(fpath):
+        def from_fpath(fpath: str) -> pparse.Parser:
             data_source = pparse.FileData(path=fpath)
             data_range = pparse.Range(data_source.open(), data_source.length)
             extraction = pparse.BytesExtraction(name=fpath, reader=data_range)
             return Parser(extraction)
 
 
-        def tensor_node_from(self, tensor_reader: pparse.Reader, node: pparse.Node, header_key: str, header_node: pparse.Node):
+        def tensor_node_from(self, tensor_reader: pparse.Reader, node: pparse.Node, header_key: str, header_node: pparse.Node) -> pparse.Node:
 
             # TODO: I don't like this.
             header_length = node.value['header_length']

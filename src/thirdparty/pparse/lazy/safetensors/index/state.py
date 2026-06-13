@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
 import struct
 
@@ -9,17 +11,17 @@ import thirdparty.pparse.lib as pparse
 
 
 class SafetensorsIndexParsingState(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class SafetensorsIndexParsingComplete(SafetensorsIndexParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
 class SafetensorsIndexParsingTensors(SafetensorsIndexParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -39,7 +41,7 @@ class SafetensorsIndexParsingTensors(SafetensorsIndexParsingState):
 
 
 class SafetensorsIndexParsingShards(SafetensorsIndexParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -62,7 +64,7 @@ class SafetensorsIndexParsingShards(SafetensorsIndexParsingState):
 
 
 class SafetensorsIndexParsingIndex(SafetensorsIndexParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
