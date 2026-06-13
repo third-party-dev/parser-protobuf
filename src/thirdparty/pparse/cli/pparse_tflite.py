@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_tflite(subparsers):
+from typing import Any
+
+def register_pparse_tflite(subparsers: Any) -> None:
     tflite_parser = subparsers.add_parser("tflite", help="tflite command")
     tflite_subparser = tflite_parser.add_subparsers(dest="tflite_command", required=True)
 
@@ -13,7 +16,7 @@ def register_pparse_tflite(subparsers):
     tflite_view_parser.set_defaults(func=tflite_view)
 
 
-def tflite_view(args):
+def tflite_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

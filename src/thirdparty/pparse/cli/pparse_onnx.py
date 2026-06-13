@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_onnx(subparsers):
+from typing import Any
+
+def register_pparse_onnx(subparsers: Any) -> None:
     onnx_parser = subparsers.add_parser("onnx", help="onnx command")
     onnx_subparser = onnx_parser.add_subparsers(dest="onnx_command", required=True)
 
@@ -49,7 +52,7 @@ def register_pparse_onnx(subparsers):
     onnx_transform_parser.set_defaults(func=onnx_transform)
 
 
-def onnx_view(args):
+def onnx_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -76,7 +79,7 @@ def onnx_view(args):
         breakpoint()
 
 
-def onnx_hash(args):
+def onnx_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -103,7 +106,7 @@ def onnx_hash(args):
     #     breakpoint()
 
 
-def onnx_transform(args):
+def onnx_transform(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

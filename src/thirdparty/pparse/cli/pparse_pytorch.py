@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_pytorch(subparsers):
+from typing import Any
+
+def register_pparse_pytorch(subparsers: Any) -> None:
     pytorch_parser = subparsers.add_parser("pytorch", help="pytorch command")
     pytorch_subparser = pytorch_parser.add_subparsers(
         dest="pytorch_command", required=True
@@ -69,7 +72,7 @@ def register_pparse_pytorch(subparsers):
     pytorch_nn_calls_parser.set_defaults(func=pytorch_nn_calls)
 
 
-def pytorch_nn_calls(args):
+def pytorch_nn_calls(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
 
@@ -95,7 +98,7 @@ def pytorch_nn_calls(args):
         breakpoint()
 
 
-def pytorch_unpickle(args):
+def pytorch_unpickle(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -121,7 +124,7 @@ def pytorch_unpickle(args):
         breakpoint()
 
 
-def pytorch_view(args):
+def pytorch_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -156,7 +159,7 @@ def pytorch_view(args):
     traverse(topcall.state, ['top'], metrics)
 '''
 
-def traverse(state, path_arr, metrics={ 'param_cnt': 0 }):
+def traverse(state: Any, path_arr: list[str], metrics: dict[str, int] = {'param_cnt': 0}) -> None:
     print(f"Traversing into {'.'.join(path_arr)} id: {id(state)}")
 
     if not isinstance(state, dict) or \
@@ -174,7 +177,7 @@ def traverse(state, path_arr, metrics={ 'param_cnt': 0 }):
             traverse(state['_modules'][mod].state, [*path_arr, mod], metrics)
 
 
-def pytorch_hash(args):
+def pytorch_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -202,7 +205,7 @@ def pytorch_hash(args):
         breakpoint()
 
 
-def pytorch_transform(args):
+def pytorch_transform(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_ident(subparsers):
+from typing import Any
+
+def register_pparse_ident(subparsers: Any) -> None:
     ident_parser = subparsers.add_parser("ident", help="ident command")
     ident_subparser = ident_parser.add_subparsers(dest="ident_command", required=True)
 
@@ -18,7 +21,7 @@ def register_pparse_ident(subparsers):
     ident_byext_parser.set_defaults(func=ident_byext)
 
 
-def ident_list(args):
+def ident_list(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -32,7 +35,7 @@ def ident_list(args):
         breakpoint()
 
 
-def ident_show(args):
+def ident_show(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -61,7 +64,7 @@ def ident_show(args):
         breakpoint()
 
 
-def ident_byext(args):
+def ident_byext(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

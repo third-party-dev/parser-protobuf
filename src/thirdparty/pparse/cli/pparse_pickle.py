@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_pickle(subparsers):
+from typing import Any
+
+def register_pparse_pickle(subparsers: Any) -> None:
     pickle_parser = subparsers.add_parser("pickle", help="pickle command")
     pickle_subparser = pickle_parser.add_subparsers(
         dest="pickle_command", required=True
@@ -16,7 +19,7 @@ def register_pparse_pickle(subparsers):
     pickle_parse_parser.set_defaults(func=pickle_view)
 
 
-def pickle_view(args):
+def pickle_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

@@ -1,12 +1,14 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
 import traceback
 from pprint import pprint
+from typing import Any
 
 
-def register_pparse_safetensors(subparsers):
+def register_pparse_safetensors(subparsers: Any) -> None:
     safetensors_parser = subparsers.add_parser(
         "safetensors", help="safetensors command"
     )
@@ -54,7 +56,7 @@ def register_pparse_safetensors(subparsers):
     safetensors_hash_parser.set_defaults(func=safetensors_hash)
 
 
-def safetensors_index_view(args):
+def safetensors_index_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -74,7 +76,7 @@ def safetensors_index_view(args):
         breakpoint()
 
 
-def safetensors_view(args):
+def safetensors_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -94,7 +96,7 @@ def safetensors_view(args):
         breakpoint()
 
 
-def raw_header(args):
+def raw_header(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -113,7 +115,7 @@ def raw_header(args):
         breakpoint()
 
 
-def pparse_pheader(args):
+def pparse_pheader(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -130,7 +132,7 @@ def pparse_pheader(args):
         breakpoint()
 
 
-def safetensors_hash(args):
+def safetensors_hash(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

@@ -1,23 +1,24 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
 from importlib.metadata import entry_points
-from typing import Callable, Dict
+from typing import Any, Callable
 
-CommandRegistrar = Callable[[object], None]
+CommandRegistrar = Callable[[Any], None]
 
-_COMMANDS: Dict[str, CommandRegistrar] = {}
+_COMMANDS: dict[str, CommandRegistrar] = {}
 
-def register_command(name: str, registrar: CommandRegistrar):
+def register_command(name: str, registrar: CommandRegistrar) -> None:
     if name in _COMMANDS and _COMMANDS[name] != registrar:
         raise ValueError(f"Command '{name}' already registered")
     _COMMANDS[name] = registrar
 
-def get_commands():
+def get_commands() -> Any:
     return _COMMANDS.values()
 
-def load_entrypoint_plugins(entrypoint_group):
+def load_entrypoint_plugins(entrypoint_group: str) -> None:
 
     if isinstance(entry_points(), dict):
         # Python 3.9

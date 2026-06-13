@@ -1,11 +1,14 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
+from typing import Any
+
 from thirdparty.pparse.cli.registry import get_commands, load_entrypoint_plugins
 
 
-def register_pparse(subparsers):
+def register_pparse(subparsers: Any) -> None:
     pparse_parser = subparsers.add_parser("pparse", help="pparse command")
     
     pparse_parser.add_argument("--breakpoint",
@@ -37,5 +40,5 @@ def register_pparse(subparsers):
         registrar(pparse_subparser)
 
 
-def run(args):
+def run(args: Any) -> None:
     print("Running safetensors_parser command")

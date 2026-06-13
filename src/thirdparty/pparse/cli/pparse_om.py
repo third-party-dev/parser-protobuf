@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_om(subparsers):
+from typing import Any
+
+def register_pparse_om(subparsers: Any) -> None:
     om_parser = subparsers.add_parser("om", help="om command")
     om_subparser = om_parser.add_subparsers(dest="om_command", required=True)
 
@@ -57,7 +60,7 @@ def register_pparse_om(subparsers):
     # om_transform_parser.set_defaults(func=om_transform)
 
 
-def om_header(args):
+def om_header(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
@@ -79,7 +82,7 @@ def om_header(args):
         print(f"Locals: {list(locals().keys())}")
         breakpoint()
 
-def om_parse(args):
+def om_parse(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

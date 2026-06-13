@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_zip(subparsers):
+from typing import Any
+
+def register_pparse_zip(subparsers: Any) -> None:
     zip_parser = subparsers.add_parser("zip", help="zip command")
     zip_subparser = zip_parser.add_subparsers(dest="zip_command", required=True)
 
@@ -13,7 +16,7 @@ def register_pparse_zip(subparsers):
     zip_view_parser.set_defaults(func=zip_view)
 
 
-def zip_view(args):
+def zip_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

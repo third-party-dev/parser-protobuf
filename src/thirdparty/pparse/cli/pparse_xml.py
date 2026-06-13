@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_xml(subparsers):
+from typing import Any
+
+def register_pparse_xml(subparsers: Any) -> None:
     xml_parser = subparsers.add_parser("xml", help="xml command")
     xml_subparser = xml_parser.add_subparsers(dest="xml_command", required=True)
 
@@ -12,7 +15,7 @@ def register_pparse_xml(subparsers):
     xml_view_parser.set_defaults(func=xml_view)
 
 
-def xml_view(args):
+def xml_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

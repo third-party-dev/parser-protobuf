@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_mnn(subparsers):
+from typing import Any
+
+def register_pparse_mnn(subparsers: Any) -> None:
     mnn_parser = subparsers.add_parser("mnn", help="mnn command")
     mnn_subparser = mnn_parser.add_subparsers(dest="mnn_command", required=True)
 
@@ -13,7 +16,7 @@ def register_pparse_mnn(subparsers):
     mnn_view_parser.set_defaults(func=mnn_view)
 
 
-def mnn_view(args):
+def mnn_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

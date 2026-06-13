@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_flatbuffers(subparsers):
+from typing import Any
+
+def register_pparse_flatbuffers(subparsers: Any) -> None:
     flatbuffers_parser = subparsers.add_parser("flatbuffers", help="flatbuffers command")
     flatbuffers_subparser = flatbuffers_parser.add_subparsers(dest="flatbuffers_command", required=True)
 
@@ -15,7 +18,7 @@ def register_pparse_flatbuffers(subparsers):
     flatbuffers_view_parser.set_defaults(func=flatbuffers_view)
 
 
-def flatbuffers_view(args):
+def flatbuffers_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     

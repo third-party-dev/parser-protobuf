@@ -1,8 +1,11 @@
+from __future__ import annotations
 
 import logging
 log = logging.getLogger(__name__)
 
-def register_pparse_json(subparsers):
+from typing import Any
+
+def register_pparse_json(subparsers: Any) -> None:
     json_parser = subparsers.add_parser("json", help="json command")
     json_subparser = json_parser.add_subparsers(dest="json_command", required=True)
 
@@ -13,7 +16,7 @@ def register_pparse_json(subparsers):
     json_view_parser.set_defaults(func=json_view)
 
 
-def json_view(args):
+def json_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging
     activate_logging(args)
     
