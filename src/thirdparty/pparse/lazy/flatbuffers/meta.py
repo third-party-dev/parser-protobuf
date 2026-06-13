@@ -1,26 +1,30 @@
+from __future__ import annotations
+
+from typing import Any
+
 
 class FlatbuffersSchema():
 
-    def __init__(self, schema_obj={}):
+    def __init__(self, schema_obj: dict[str, Any] = {}) -> None:
         # TODO: Consider default should have all references below (but empty)?
-        self._schema = schema_obj
+        self._schema: dict[str, Any] = schema_obj
 
-        self.root_table_name = self._schema['root_table']['name']
+        self.root_table_name: str = self._schema['root_table']['name']
 
         #self.enums = {e['name']: e for e in self._schema.get('enums', [])}
-        self.enums = self._schema.get('enums', [])
-        self.objects = {o['name']: o for o in self._schema.get('objects', [])}
-                
-        self.objects_by_index = {}
+        self.enums: list[Any] = self._schema.get('enums', [])
+        self.objects: dict[str, Any] = {o['name']: o for o in self._schema.get('objects', [])}
+
+        self.objects_by_index: dict[int, Any] = {}
         for idx, obj in enumerate(self._schema.get('objects', [])):
             self.objects_by_index[idx] = obj
 
-        self.enums_by_index = {}
+        self.enums_by_index: dict[int, Any] = {}
         for idx, enum in enumerate(self._schema.get('enums', [])):
             self.enums_by_index[idx] = enum
 
         # Type format strings for struct.unpack - using base_type string names
-        self.TYPE_FORMATS = {
+        self.TYPE_FORMATS: dict[str, str] = {
             'Bool': '<?',
             'Byte': '<b',
             'UByte': '<B',
@@ -35,7 +39,7 @@ class FlatbuffersSchema():
         }
         
         # Type sizes in bytes
-        self.TYPE_SIZES = {
+        self.TYPE_SIZES: dict[str, int] = {
             'Bool': 1,
             'Byte': 1,
             'UByte': 1,

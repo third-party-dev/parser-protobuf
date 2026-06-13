@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
 import struct
 from collections import OrderedDict
@@ -14,17 +16,17 @@ from thirdparty.pparse.lazy.flatbuffers.node import NodeContext
 
 
 class FlatbuffersParsingState(object):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class FlatBuffersParsingComplete(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
 class FlatbuffersParsingVectorOfTables(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -57,7 +59,7 @@ class FlatbuffersParsingVectorOfTables(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingVectorOfScalars(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -66,11 +68,11 @@ class FlatbuffersParsingVectorOfScalars(FlatbuffersParsingState):
         elem_size = type_desc['type']['element_size']
 
         class BytesWrapper(bytes):
-            def __new__(cls, data):
+            def __new__(cls, data: bytes) -> BytesWrapper:
                 return super().__new__(cls, data)
-        
+
         class TupleWrapper(tuple):
-            def __new__(cls, data):
+            def __new__(cls, data: Any) -> TupleWrapper:
                 return super().__new__(cls, data)
 
         if type_desc['type']['element'].lower() == 'ubyte':
@@ -108,7 +110,7 @@ class FlatbuffersParsingVectorOfScalars(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingString(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -118,7 +120,7 @@ class FlatbuffersParsingString(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingVectorOfStrings(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -150,7 +152,7 @@ class FlatbuffersParsingVectorOfStrings(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingUnion(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
         type_desc = ctx.type_desc()
@@ -172,7 +174,7 @@ class FlatbuffersParsingUnion(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingTableField(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -222,7 +224,7 @@ class FlatbuffersParsingTableField(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingTable(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -322,7 +324,7 @@ class FlatbuffersParsingTable(FlatbuffersParsingState):
 
 
 class FlatbuffersParsingVTable(FlatbuffersParsingState):
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 
@@ -352,7 +354,7 @@ class FlatbuffersParsingVTable(FlatbuffersParsingState):
 
 class FlatbuffersParsingRootTableOffset(FlatbuffersParsingState):
 
-    def parse_data(self, node: pparse.Node):
+    def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
 

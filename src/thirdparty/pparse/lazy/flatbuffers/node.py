@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 
+from __future__ import annotations
+
 import logging
 import numbers
+from typing import Any, Optional
 
 log = logging.getLogger(__name__)
 
@@ -10,13 +13,13 @@ import thirdparty.pparse.lib as pparse
 
 
 class NodeContext(pparse.NodeContext):
-    def __init__(self, parent: pparse.Node, reader: pparse.Reader, parser: pparse.Parser):
+    def __init__(self, parent: Optional[pparse.Node], reader: pparse.Reader, parser: pparse.Parser) -> None:
         super().__init__(parent, reader, parser)
 
-        self._type_desc = None
-        self._abs_off = None
+        self._type_desc: Any = None
+        self._abs_off: Optional[int] = None
 
-        self._fields_created = False
+        self._fields_created: bool = False
 
-    def type_desc(self):
+    def type_desc(self) -> Any:
         return self._type_desc
