@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_pytorch(subparsers: Any) -> None:
     pytorch_parser = subparsers.add_parser("pytorch", help="pytorch command")
     pytorch_subparser = pytorch_parser.add_subparsers(
@@ -158,6 +159,7 @@ def pytorch_view(args: Any) -> None:
     metrics = { 'param_cnt': 0 }
     traverse(topcall.state, ['top'], metrics)
 '''
+
 
 def traverse(state: Any, path_arr: list[str], metrics: dict[str, int] = {'param_cnt': 0}) -> None:
     print(f"Traversing into {'.'.join(path_arr)} id: {id(state)}")

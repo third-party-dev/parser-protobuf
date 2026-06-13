@@ -26,11 +26,13 @@ class PparseXml:
             document being imported.
     """
 
+
     def __init__(self, xml: Any) -> None:
         self.xml = xml
 
         # Table for reference matching
         self._result_ref_to_extraction: Dict[int, BytesExtraction] = {}
+
 
     def add_result_ref(self, result_ref_id: int, extraction: BytesExtraction) -> None:
         """Register map between result ID and ``Extraction``.
@@ -41,6 +43,7 @@ class PparseXml:
             extraction: The ``BytesExtraction`` that owns the result.
         """
         self._result_ref_to_extraction[result_ref_id] = extraction
+
 
     def has_extraction(self, result_ref_id: int) -> bool:
         """Return whether a result ID has a registered extraction.
@@ -53,6 +56,7 @@ class PparseXml:
         """
         return result_ref_id in self._result_ref_to_extraction
 
+
     def get_extraction(self, result_ref_id: int) -> BytesExtraction:
         """Return the extraction registered for a result ID.
 
@@ -63,6 +67,7 @@ class PparseXml:
             The ``BytesExtraction`` associated with ``result_ref_id``.
         """
         return self._result_ref_to_extraction[result_ref_id]
+
 
     # pparse xmls use pparse as the root element, but it is wrong to assume <pparse />
     # is the root of the xml we're working with. Instead, we assume its the top of the
@@ -163,6 +168,7 @@ class ResultRef:
         result_xml: The ``<result />`` XmlNode being processed.
     """
 
+
     def __init__(self, pparse_xml: PparseXml, result_xml: Any) -> None:
         self.pparse_xml = pparse_xml
         self.result_xml = result_xml
@@ -186,6 +192,7 @@ class ContextRef:
         context_xml: The ``<context />`` XmlNode for this node, if present.
         parser: The ``Parser`` to use when rebuilding the node, if known.
     """
+
 
     def __init__(self, result_ref: ResultRef, context_xml: Optional[Any] = None, parser: Optional[Parser] = None) -> None:
         self.result_ref = result_ref

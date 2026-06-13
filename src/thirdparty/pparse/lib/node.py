@@ -24,6 +24,7 @@ class UnloadedValue:
     A single module-level instance ``UNLOADED_VALUE`` is used everywhere.
     """
 
+
     def __repr__(self) -> str:
         return "<UNLOADED_VALUE />"
 
@@ -50,6 +51,7 @@ class RecursionControl:
 
     MAX_DEPTH = 9223372036854775807
 
+
     def __init__(self, min_depth: int = 0, max_depth: int = MAX_DEPTH, callback: Optional[Callable[[Node], bool]] = None) -> None:
         self.cur_depth = 0
 
@@ -58,6 +60,7 @@ class RecursionControl:
         self.min_depth = min_depth
         self.max_depth = max_depth
         self.cb = callback
+
 
     def stopped(self, node: Node) -> bool:
         """Return whether recursion should halt at ``node``.
@@ -77,7 +80,8 @@ class RecursionControl:
         
         if self.cb is not None:
             return self.cb(node)
-    
+
+
     def increase_depth(self, amount: int = 1) -> None:
         """Increment the current recursion depth and update the high-water mark.
 
@@ -88,6 +92,7 @@ class RecursionControl:
         if self.cur_depth > self.max_seen_depth:
             self.max_seen_depth = self.cur_depth
 
+
     def decrease_depth(self, amount: int = 1) -> None:
         """Decrement the current recursion depth.
 
@@ -96,6 +101,7 @@ class RecursionControl:
         """
         self.cur_depth -= amount
 
+
     def current_depth(self) -> int:
         """Return the current recursion depth.
 
@@ -103,6 +109,7 @@ class RecursionControl:
             The number of ``load`` calls currently on the call stack.
         """
         return self.cur_depth
+
 
     def deepest_depth(self) -> int:
         """Return the maximum recursion depth seen since this instance was created.
@@ -150,6 +157,7 @@ class Node:
         ctx_args: Extra keyword arguments forwarded to ``ctx_class``.
     """
 
+
     def __init__(self, reader: Reader, parser: Parser, default_value: Any = UNLOADED_VALUE, parent: Optional[Node] = None, ctx_class: Optional[Type[NodeContext]] = None, ctx_args: Dict[str, Any] = {}) -> None:
 
         # Reference to the start of data for parsing node.
@@ -171,6 +179,7 @@ class Node:
         # Reference to the value(s) of node (e.g. dict, list, scalars, or Node)
         self._value = default_value
 
+
     @property
     def value(self) -> Any:
         """Return the parsed value, triggering ``load()`` if not yet parsed.
@@ -183,6 +192,7 @@ class Node:
             self.load()
         return self._value
 
+
     def ctx(self) -> NodeContext:
         """Return the ``NodeContext`` for this node.
 
@@ -190,6 +200,7 @@ class Node:
             The ``NodeContext`` holding the parser state for this node.
         """
         return self._ctx
+
 
     def clear_ctx(self) -> Node:
         """Release the ``NodeContext`` to free memory.
@@ -205,6 +216,7 @@ class Node:
         self._ctx = None
         return self
 
+
     def tell(self) -> int:
         """Return the absolute byte offset of the start of this node's data.
 
@@ -212,6 +224,7 @@ class Node:
             The node's start position within the data source.
         """
         return self._reader.tell()
+
 
     def set_length(self, length: int) -> Node:
         """Replace the internal reader with a ``Range`` of ``length`` bytes.
@@ -225,6 +238,7 @@ class Node:
         self._reader = Range(self._reader.dup(), length)
         return self
 
+
     def length(self) -> int:
         """Return the byte length of this node's data region.
 
@@ -233,6 +247,7 @@ class Node:
         """
         # TODO: Check for range?
         return self._reader.length()
+
 
     def load(self, recursion: Optional[RecursionControl] = None) -> Optional[Node]:
         """Parse this node's data region and populate ``_value``.
@@ -502,8 +517,11 @@ class Node:
             node._value = UNLOADED_VALUE
             return
 
+
         # Note: We pass a node_cb so that _xml.py doesn't get caught up in import races.
         def process_node_entry(ctx):
+
+
             def _process_node_entry(entry):
                 if len(entry) != 1 or not entry.get("node"):
                     raise Exception("Expecting only <node /> in <entry type=\"node\" />.")

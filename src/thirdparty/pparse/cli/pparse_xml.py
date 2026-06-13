@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_xml(subparsers: Any) -> None:
     xml_parser = subparsers.add_parser("xml", help="xml command")
     xml_subparser = xml_parser.add_subparsers(dest="xml_command", required=True)

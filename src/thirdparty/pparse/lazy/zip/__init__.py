@@ -11,6 +11,7 @@ from thirdparty.pparse.lazy.zip.state import ZipParsingMagic
 
 from thirdparty.pparse.lazy.zip.state import ZipParsingState
 
+
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
@@ -71,6 +72,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
                 # Fast forward past the bit we just parsed.
                 parent.ctx().seek(ctx._end)
+
 
         # extraction = Extraction.from_xml("<job />")
         @classmethod

@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_onnx(subparsers: Any) -> None:
     onnx_parser = subparsers.add_parser("onnx", help="onnx command")
     onnx_subparser = onnx_parser.add_subparsers(dest="onnx_command", required=True)

@@ -11,8 +11,11 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.xml import configure_pparser
 
 class Xml:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
+
 
     def _parse(self, data_source: Any, fname: str = "unnamed.xml", recursion: Optional[pparse.RecursionControl] = None) -> Xml:
 
@@ -56,6 +59,8 @@ class Xml:
 # ! In real ElementTree, attribute name namespaces are expanded.
 
 class Element:
+
+
     def __init__(self) -> None:
         self.clear()
 
@@ -113,7 +118,6 @@ class Element:
 
 
     # ---- Attributes Methods ----
-
     def get(self, attr: str, default: Any) -> Any:
         return self.attrib.get(attr, default)
 
@@ -132,7 +136,6 @@ class Element:
 
 
     # ---- Children Methods ----
-
     def append(self, element: Element) -> None:
         self._children.append(element)
 
@@ -220,6 +223,8 @@ class Element:
 
 
 class ElementTree:
+
+
     def __init__(self) -> None:
         self._root: Optional[Element] = None
 
@@ -232,26 +237,34 @@ class ElementTree:
     def _setroot(self, element: Element) -> None:
         self._root = element
 
+
     def find(self, match: str, namespaces: Optional[Any] = None) -> Optional[Element]:
         return self.getroot().find(match, namespaces=namespaces)
+
 
     def findall(self, match: str, namespaces: Optional[Any] = None) -> list[Element]:
         return self.getroot().findall(match, namespaces=namespaces)
 
+
     def findtext(self, match: str, default: Optional[Any] = None, namespaces: Optional[Any] = None) -> Optional[str]:
         return self.getroot().findtext(match, default=default, namespaces=namespaces)
+
 
     def getroot(self) -> Element:
         return self._root
 
+
     def iter(self, tag: Optional[str] = None) -> Iterator[Element]:
         return self.getroot().iter(tag)
+
 
     def iterfind(self, match: str, namespaces: Optional[Any] = None) -> None:
         self.getroot().iterfind(match, namespace=namespaces)
 
+
     def parse(source: Any, parser: Any = None) -> None:
         raise NotImplementedError("ElementTree.parse not implemented in pparse xml")
+
 
     def write(*args: Any, **kwargs: Any) -> None:
         raise NotImplementedError("ElementTree.write not implemented in pparse xml")

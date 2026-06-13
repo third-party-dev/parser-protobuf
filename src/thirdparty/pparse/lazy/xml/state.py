@@ -18,11 +18,15 @@ from thirdparty.pparse.utils import decode_utf8_partial
 # ---- Generic ----
 
 class XmlParsingState(object):
+
+
     def parse_data(self, node: pparse.Node):
         raise NotImplementedError()
 
 
 class XmlParsingComplete(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -37,6 +41,7 @@ class XmlParsingComplete(XmlParsingState):
 class XmlParsingMetaWhitespace(XmlParsingState):
     CHUNK_SIZE = 0x100
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -68,6 +73,7 @@ class XmlParsingMetaWhitespace(XmlParsingState):
 class XmlParsingEqualSeparator(XmlParsingState):
     WHITESPACE_CHARACTERS = ['\u0009', '\u000a', '\u000d', '\u0020'] # tab, nl, cr, sp
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -87,6 +93,7 @@ class XmlParsingEqualSeparator(XmlParsingState):
 class XmlParsingElementAttrValue(XmlParsingState):
     DELIMITERS = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003d']
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -138,6 +145,7 @@ class XmlParsingElementAttrName(XmlParsingState):
     DELIMITERS = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003d']
     CHUNK_SIZE = 0x100
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -163,6 +171,8 @@ class XmlParsingElementAttrName(XmlParsingState):
 
 
 class XmlParsingElementClosingTagEnd(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -181,6 +191,7 @@ class XmlParsingElementClosingTagEnd(XmlParsingState):
 class XmlParsingElementClosingTag(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003e'] # tab, nl, cr, sp, >
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -202,6 +213,7 @@ class XmlParsingElementClosingTag(XmlParsingState):
 
 class XmlParsingTextNode(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -229,6 +241,8 @@ class XmlParsingTextNode(XmlParsingState):
 
 
 class XmlParsingElement(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -272,6 +286,7 @@ class XmlParsingElementTag(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u002f', '\u003e'] # tab, nl, cr, sp, /, >
     CHUNK_SIZE = 0x100
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -294,6 +309,8 @@ class XmlParsingElementTag(XmlParsingState):
 
 
 class XmlParsingElementStart(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -319,6 +336,8 @@ class XmlParsingElementStart(XmlParsingState):
 
 
 class XmlParsingCDataStart(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -347,6 +366,8 @@ class XmlParsingCDataStart(XmlParsingState):
 
 class XmlParsingCData(XmlParsingState):
     CHUNK_SIZE = 0x100
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -373,6 +394,7 @@ class XmlParsingCData(XmlParsingState):
 
 class XmlParsingCommentStart(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -402,6 +424,8 @@ class XmlParsingCommentStart(XmlParsingState):
 
 class XmlParsingComment(XmlParsingState):
     CHUNK_SIZE = 0x100
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -429,6 +453,7 @@ class XmlParsingComment(XmlParsingState):
 
 class XmlParsingProcessorInstructionStart(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -460,6 +485,8 @@ class XmlParsingProcessorInstructionStart(XmlParsingState):
 class XmlParsingProcessorInstructionTarget(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003f'] # tab, nl, cr, sp, ?
     CHUNK_SIZE = 0x100
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -483,6 +510,8 @@ class XmlParsingProcessorInstructionTarget(XmlParsingState):
 
 class XmlParsingProcessorInstruction(XmlParsingState):
     CHUNK_SIZE = 0x100
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -508,6 +537,7 @@ class XmlParsingProcessorInstruction(XmlParsingState):
 # We just saw a '<' in document phase, what do we do?
 class XmlParsingContent(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -562,6 +592,7 @@ class XmlParsingContent(XmlParsingState):
 # If XML Decl exists, continue parsing, otherwise move onto prolog.
 class XmlParsingContentStart(XmlParsingState):
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -585,6 +616,8 @@ class XmlParsingContentStart(XmlParsingState):
 
 
 class XmlParsingDoctype(XmlParsingState):
+
+
     # TODO: Implement me!
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -600,6 +633,7 @@ class XmlParsingDoctype(XmlParsingState):
 # We just saw a '<' in document phase, what do we do?
 class XmlParsingEpilog(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -642,12 +676,13 @@ class XmlParsingEpilog(XmlParsingState):
 
 
 class XmlParsingEpilogStart(XmlParsingState):
+
+
     # def parse_data(self, node: pparse.Node):
     #     breakpoint()
     #     print("In epilog")
     #     parser._end_container_node(node)
     #     return pparse.ASCEND
-    
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -664,6 +699,8 @@ class XmlParsingEpilogStart(XmlParsingState):
 
 
 class XmlParsingPrologFinish(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -677,6 +714,7 @@ class XmlParsingPrologFinish(XmlParsingState):
 # We just saw a '<' in document phase, what do we do?
 class XmlParsingProlog(XmlParsingState):
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -720,6 +758,7 @@ class XmlParsingProlog(XmlParsingState):
 class XmlParsingPrologStart(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -739,6 +778,7 @@ class XmlParsingPrologStart(XmlParsingState):
 class XmlParsingDeclAttributeName(XmlParsingState):
     DELIMITERS = ['\u0009', '\u000a', '\u000d', '\u0020', '\u003d'] # tab, nl, cr, sp, =
     CHUNK_SIZE = 0x100
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
@@ -773,6 +813,8 @@ class XmlParsingDeclAttributeName(XmlParsingState):
 
 
 class XmlParsingDeclAttributeValue(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -824,6 +866,7 @@ class XmlParsingDeclAttributeValue(XmlParsingState):
 class XmlParsingXmlDeclaration(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -858,6 +901,7 @@ class XmlParsingXmlDeclaration(XmlParsingState):
 class XmlParsingXmlDeclarationStart(XmlParsingState):
     WHITESPACE = ['\u0009', '\u000a', '\u000d', '\u0020']
 
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -882,6 +926,8 @@ class XmlParsingXmlDeclarationStart(XmlParsingState):
 
 
 class XmlParsingUtf32LittleEndian(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -894,6 +940,8 @@ class XmlParsingUtf32LittleEndian(XmlParsingState):
 
 
 class XmlParsingUtf32BigEndian(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -906,6 +954,8 @@ class XmlParsingUtf32BigEndian(XmlParsingState):
 
 
 class XmlParsingUtf16LittleEndian(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -918,6 +968,8 @@ class XmlParsingUtf16LittleEndian(XmlParsingState):
 
 
 class XmlParsingUtf16BigEndian(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -930,6 +982,8 @@ class XmlParsingUtf16BigEndian(XmlParsingState):
 
 
 class XmlParsingUtf8(XmlParsingState):
+
+
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()
         parser = ctx.parser()
@@ -949,6 +1003,7 @@ class XmlParsingBom(XmlParsingState):
     UTF16LE = b'\xff\xfe'
     UTF16BE = b'\xfe\xff'
     UTF8 = b'\xef\xbb\xbf'
+
 
     def parse_data(self, node: pparse.Node):
         ctx = node.ctx()

@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_om(subparsers: Any) -> None:
     om_parser = subparsers.add_parser("om", help="om command")
     om_subparser = om_parser.add_subparsers(dest="om_command", required=True)
@@ -81,6 +82,7 @@ def om_header(args: Any) -> None:
     if hasattr(args, "breakpoint") and args.breakpoint:
         print(f"Locals: {list(locals().keys())}")
         breakpoint()
+
 
 def om_parse(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging

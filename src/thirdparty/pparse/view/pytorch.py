@@ -16,9 +16,12 @@ from thirdparty.pparse.lazy.pytorch import configure_pparser
 
 
 class Tensor(pparse.Tensor):
+
+
     def __init__(self, name: str, tensor_node: pparse.Node) -> None:
         self._name: str = name
         self._tensor: pparse.Node = tensor_node
+
 
     # Return (safetensors equivalent) type
     def get_type(self) -> str:
@@ -58,6 +61,8 @@ class Tensor(pparse.Tensor):
 
 
 class PyTorch:
+
+
     def __init__(self, extraction: Optional[pparse.BytesExtraction] = None, force_traverse: bool = False) -> None:
         self._extraction = extraction
 

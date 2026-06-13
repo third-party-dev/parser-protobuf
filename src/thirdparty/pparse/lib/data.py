@@ -36,6 +36,7 @@ class Data:
     ``Cursor`` is not unlike a user-space defined file descriptor.
     """
 
+
     def open(self, offset: int = 0) -> Cursor:
         """Return a new ``Cursor`` into this data source at ``offset``.
 
@@ -46,6 +47,7 @@ class Data:
             A ``Cursor`` positioned at ``offset``.
         """
         return Cursor(self, offset)
+
 
     def peek(self, cursor: Cursor, length: int) -> bytes:
         """Read ``length`` bytes at the cursor's position without advancing offset.
@@ -62,6 +64,7 @@ class Data:
         """
         raise NotImplementedError()
 
+
     def seek(self, cursor: Cursor) -> int:
         """Update the underlying file descriptor or upstream libraries internal offset.
 
@@ -76,6 +79,7 @@ class Data:
             The cursor's current byte offset.
         """
         return cursor.tell()
+
 
     def read(self, cursor: Cursor, length: int) -> bytes:
         """Read ``length`` bytes.
@@ -228,6 +232,7 @@ class HttpCachedData(Data):
     CHUNK_SIZE = 4096*256
     # Max Chunks
     MAX_CHUNKS = 1024
+
 
     def __init__(self, url: str, chunk_size: int = CHUNK_SIZE, chunk_max_count: int = MAX_CHUNKS, session: Optional[Any] = None) -> None:
 
@@ -422,6 +427,7 @@ class FileData(Data):
         ValueError: If ``path`` is empty, ``None``, or does not exist.
     """
 
+
     def __init__(self, path: Optional[str] = None) -> None:
         if not path or not os.path.exists(path):
             raise ValueError("path must be a string that points to a valid file path")
@@ -434,6 +440,7 @@ class FileData(Data):
         st = os.fstat(fd)
         if stat.S_ISREG(st.st_mode):
             self.length = st.st_size
+
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
@@ -449,6 +456,7 @@ class FileData(Data):
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return self._fobj.read(length)
 
+
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
         """Update file descriptor to the cursor's byte offset.
@@ -461,6 +469,7 @@ class FileData(Data):
         """
         self._fobj.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
+
 
     # Read the data.
     def read(self, cursor: Cursor, length: int) -> bytes:
@@ -475,6 +484,7 @@ class FileData(Data):
         """
         self.seek(cursor)
         return self._fobj.read(length)
+
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
@@ -517,6 +527,7 @@ class FileData(Data):
 
         return data
 
+
     # extraction.to_xml() -> "<job />"
     def to_xml(self) -> str:
         raise NotImplementedError("to_xml not implemented")
@@ -540,6 +551,7 @@ class FileMmapData(Data):
         Exception: If ``mmap`` is not available on the platform.
     """
 
+
     def __init__(self, path: Optional[str] = None) -> None:
         from thirdparty.pparse.utils import mmap, has_mmap
 
@@ -558,6 +570,7 @@ class FileMmapData(Data):
         self._mmap = mmap.mmap(self._fobj.fileno(), 0, access=mmap.ACCESS_READ)
         self._mem = memoryview(self._mmap)
 
+
     def _load_length(self) -> None:
         """Populate ``self.length`` from the file's ``stat`` size.
 
@@ -570,6 +583,7 @@ class FileMmapData(Data):
 
         if stat.S_ISREG(st.st_mode):
             self.length = st.st_size
+
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> memoryview:
@@ -585,6 +599,7 @@ class FileMmapData(Data):
         off = cursor.tell()
         return self._mem[off : off + length]
 
+
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
         """No-op seek — mmap access is always random, so no pointer sync is needed.
@@ -597,6 +612,7 @@ class FileMmapData(Data):
         """
         # Noop for mmap.
         return cursor.tell()
+
 
     # Read the data.
     def read(self, cursor: Cursor, length: int, mode: Any = None) -> memoryview:
@@ -634,6 +650,7 @@ class BytesIoData(Data):
         ValueError: If ``bytes_io`` is ``None`` or is not a ``BytesIO`` instance.
     """
 
+
     def __init__(self, bytes_io: Optional[io.BytesIO] = None) -> None:
         if not bytes_io or not isinstance(bytes_io, io.BytesIO):
             raise ValueError("bytes_io must be io.BytesIO and not be None")
@@ -641,9 +658,11 @@ class BytesIoData(Data):
         self._bytes_io = bytes_io
         self.length = len(self._bytes_io.getbuffer())
 
+
     def _load_length(self) -> None:
         """``BytesIO`` length is read eagerly in ``__init__``."""
         pass
+
 
     # Create a cursor, like a logical file descriptor.
     def open(self, offset: int = 0) -> Cursor:
@@ -656,6 +675,7 @@ class BytesIoData(Data):
             A ``Cursor`` positioned at ``offset``.
         """
         return Cursor(self, offset)
+
 
     # Read data ahead without progressing cursor.
     def peek(self, cursor: Cursor, length: int) -> bytes:
@@ -671,6 +691,7 @@ class BytesIoData(Data):
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return self._bytes_io.read(length)
 
+
     # Progress cursor without reading (no copy).
     def seek(self, cursor: Cursor) -> int:
         """Update ``BytesIO`` internal position to the cursor's byte offset.
@@ -683,6 +704,7 @@ class BytesIoData(Data):
         """
         self._bytes_io.seek(cursor.tell(), os.SEEK_SET)
         return cursor.tell()
+
 
     # Read the data.
     def read(self, cursor: Cursor, length: int) -> bytes:

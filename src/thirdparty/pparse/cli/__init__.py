@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 from thirdparty.pparse.cli.registry import get_commands, load_entrypoint_plugins
 
+
 def main() -> None:
     # Create parent parser
     parser = argparse.ArgumentParser(prog="pparse")

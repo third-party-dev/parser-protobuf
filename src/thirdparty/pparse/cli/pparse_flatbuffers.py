@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_flatbuffers(subparsers: Any) -> None:
     flatbuffers_parser = subparsers.add_parser("flatbuffers", help="flatbuffers command")
     flatbuffers_subparser = flatbuffers_parser.add_subparsers(dest="flatbuffers_command", required=True)

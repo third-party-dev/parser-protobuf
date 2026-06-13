@@ -43,19 +43,24 @@ class Tensor:
         "F64": 8,
     }
 
+
     def __init__(self, safetensors: SafeTensors, node_map: pparse.Node) -> None:
         self._safetensors = safetensors
         self._reader = self._safetensors._extraction.open()
         self._node_map = node_map
 
+
     def get_type(self) -> str:
         return self._node_map.value["dtype"].upper()
+
 
     def get_shape(self) -> Any:
         return self._node_map.value["shape"].value
 
+
     def get_offsets(self) -> Any:
         return self._node_map.value["data_offsets"].value
+
 
     def get_data_bytes(self) -> None:
         # TODO: Sanity check input.
@@ -69,6 +74,7 @@ class Tensor:
         if len(self._data) < length:
             raise Exception(f"Missing tensor data: {len(self._data)}/{length} @ {offsets[0]}")
 
+
     def as_array(self) -> Any:
         # TODO: Sanity check input.
         self.get_data_bytes()
@@ -77,6 +83,7 @@ class Tensor:
         sttype_size = Tensor.STTYPE_SIZE[dtype]
         count = int(len(self._data) / sttype_size)
         return struct.unpack(f"<{struct_type * count}", self._data)
+
 
     def as_numpy(self) -> Any:
         self.get_data_bytes()
@@ -89,6 +96,7 @@ class Tensor:
 
 
 class SafeTensors:
+
 
     def __init__(self, extraction: Optional[pparse.BytesExtraction] = None) -> None:
         self._extraction = extraction
@@ -226,6 +234,7 @@ class SafeTensorsIndexTensor(pparse.Tensor):
         "F64": 8,
     }
 
+
     def __init__(self, name: str, tensor_node: dict[str, Any]) -> None:
         self._name = name
         self._tensor_node = tensor_node
@@ -261,28 +270,28 @@ class SafeTensorsIndexTensor(pparse.Tensor):
 # ! UNTESTED
 class SafeTensorsIndex:
 
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
         self._safetensors_files: dict[str, Any] = {}
 
+
     # def safetensors_names(self):
     #     return self._safetensors_files.keys()
-
     # def safetensors(self, name):
     #     return self._safetensors_files[name]
-
     # def metadata(self):
     #     if not self._extraction:
     #         raise Exception("No parsed extraction found.")
-
     #     return self._extraction._result["safetensors_index"].value.value["metadata"]
-
     def tensor(self, name: str) -> SafeTensorsIndexTensor:
         tensor_node = self._extraction._result['safetensors_index'].value['tensors'][name]
         return SafeTensorsIndexTensor(name, tensor_node)
 
+
     def tensor_names(self) -> list[str]:
         return list(self._extraction._result['safetensors_index'].value['tensors'].keys())
+
 
     # fpath - Index file.
     def _parse(self, idx_data: Any, fname: str = "unnamed.index.json", recursion: Optional[pparse.RecursionControl] = None) -> SafeTensorsIndex:

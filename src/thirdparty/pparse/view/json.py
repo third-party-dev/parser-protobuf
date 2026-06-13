@@ -13,8 +13,11 @@ from thirdparty.pparse.lazy.json import configure_pparser
 
 
 class Json:
+
+
     def __init__(self, extraction: Optional[pparse.BytesExtraction] = None) -> None:
         self._extraction = extraction
+
 
     def _parse(self, data_source: Any, fname: str = "unnamed.json", recursion: Optional[pparse.RecursionControl] = None) -> Json:
 

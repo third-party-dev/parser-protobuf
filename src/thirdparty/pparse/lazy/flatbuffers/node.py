@@ -12,6 +12,8 @@ import thirdparty.pparse.lib as pparse
 
 
 class NodeContext(pparse.NodeContext):
+
+
     def __init__(self, parent: Optional[pparse.Node], reader: pparse.Reader, parser: pparse.Parser) -> None:
         super().__init__(parent, reader, parser)
 
@@ -19,6 +21,7 @@ class NodeContext(pparse.NodeContext):
         self._abs_off: Optional[int] = None
 
         self._fields_created: bool = False
+
 
     def type_desc(self) -> Any:
         return self._type_desc

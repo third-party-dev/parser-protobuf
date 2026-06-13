@@ -14,8 +14,11 @@ from thirdparty.pparse.lazy.protobuf.meta import PbImport
 
 
 class Parser:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
+
 
     def _parse(self, data_source: Any, pbpath: Any, msgtype: str, fname: str = "unnamed.protobuf.bin", recursion: Optional[pparse.RecursionControl] = None) -> Parser:
 

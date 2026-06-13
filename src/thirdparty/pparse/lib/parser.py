@@ -88,6 +88,7 @@ class Parser:
         TypeError: If ``source`` is not an ``Extraction`` instance.
     """
 
+
     def __init__(self, source: Extraction, id: str, base_state_cls: Optional[Type[Any]] = None) -> None:
         if not isinstance(source, Extraction):
             raise TypeError("source must be an Extraction")
@@ -108,6 +109,8 @@ class Parser:
         self._base_state_cls = None
         if base_state_cls:
             self._base_state_cls = base_state_cls
+
+
             def all_subclasses(base_cls):
                 return base_cls.__subclasses__() + [s for sub in base_cls.__subclasses__() for s in all_subclasses(sub)]
             state_classes = all_subclasses(base_state_cls)
@@ -155,6 +158,7 @@ class Parser:
         """
         return self._source
 
+
     # This processes all data at once.
     # TODO: What is the interface that only parses what we need to?
     def scan_data(self) -> None:
@@ -166,6 +170,7 @@ class Parser:
             NotImplementedError: Must be implemented by each concrete subclass.
         """
         raise NotImplementedError()
+
 
     @staticmethod
     def match_extension(fname: str) -> bool:
@@ -179,6 +184,7 @@ class Parser:
             The base implementation always returns ``False``.
         """
         return False
+
 
     @staticmethod
     def match_magic(cursor: Any) -> bool:

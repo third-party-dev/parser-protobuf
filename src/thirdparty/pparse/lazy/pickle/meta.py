@@ -256,37 +256,46 @@ class PklOp:
         0x96,
     ]
 
+
     @staticmethod
     def alias(val: int) -> str:
         return PklOp._mapping_dict[val]["alias"]
+
 
     @staticmethod
     def pbytes(val: int) -> int:
         return PklOp._mapping_dict[val]["pbytes"]
 
+
     @staticmethod
     def lbytes(val: int) -> int:
         return PklOp._mapping_dict[val]["lbytes"]
+
 
     @staticmethod
     def fmt(val: int) -> str:
         return PklOp._mapping_dict[val]["fmt"]
 
+
     @staticmethod
     def is_readline(val: int) -> bool:
         return val in PklOp._readline_params
+
 
     @staticmethod
     def no_params(val: int) -> bool:
         return val in PklOp._zero_byte_params
 
+
     @staticmethod
     def is_simple(val: int) -> bool:
         return val in PklOp._simple_params
 
+
     @staticmethod
     def has_length(val: int) -> bool:
         return val in PklOp._length_params
+
 
     def __init__(self, opcode: int, param: Any = None, byte_len: int = 0, byte_offset: Optional[int] = None) -> None:
         self.opcode: int = opcode
@@ -299,6 +308,7 @@ class PklOp:
         self.param2: Any = None  # for GLOBAL
 
         self.byte_offset: Optional[int] = byte_offset
+
 
     def __repr__(self) -> str:
         if self.param is not None and self.param2 is not None:

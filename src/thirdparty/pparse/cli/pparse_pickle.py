@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_pickle(subparsers: Any) -> None:
     pickle_parser = subparsers.add_parser("pickle", help="pickle command")
     pickle_subparser = pickle_parser.add_subparsers(

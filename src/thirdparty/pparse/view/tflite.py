@@ -46,9 +46,11 @@ class Tensor(pparse.Tensor):
         FLOAT64: "F64",
     }
 
+
     def __init__(self, entry: Any, buffer: Any) -> None:
         self._entry = entry
         self._buffer = buffer
+
 
     def get_type(self) -> str:
         # Type defaults to FLOAT32 when not defined.
@@ -57,16 +59,20 @@ class Tensor(pparse.Tensor):
             _type = struct.unpack('B', self._entry['type'])[0]
         return Tensor.TF_TO_ST_TYPE[_type]
 
+
     def get_shape(self) -> list[Any]:
         return list(self._entry['shape'].value)
+
 
     def get_data_bytes(self) -> Any:
         if 'data' not in self._buffer:
             return b''
         return self._buffer['data'].value
 
+
     def as_array(self) -> None:
         raise NotImplementedError()
+
 
     def as_numpy(self) -> Any:
         # In tflite, if DataLength() is 0, DataAsNumpy returns 0.
@@ -79,9 +85,12 @@ class Tensor(pparse.Tensor):
 
 
 class TFLite:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
         self._tensors: dict[str, Tensor] = {}
+
 
     def _parse(self, data_source: Any, fname: str = "unnamed.tflite", recursion: Optional[pparse.RecursionControl] = None) -> TFLite:
 

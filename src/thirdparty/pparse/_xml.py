@@ -116,6 +116,8 @@ from typing import Any, Callable, Iterator, Optional, Union
 
 
 class XmlNode:
+
+
     def __init__(self, source: Union[str, Element], parent: Optional[XmlNode] = None) -> None:
         self._obj_inst: Any = None
         self._el: Element = fromstring(source) if isinstance(source, str) else source
@@ -178,9 +180,10 @@ class XmlNode:
     def get_el(self) -> Element:
         return self._el
 
-    
+
     def has_attr(self, attr: str) -> bool:
         return attr in self._el.attrib
+
 
     def has_tag(self, tag: str) -> bool:
         return self._el.tag == tag
@@ -246,8 +249,8 @@ class XmlEntry:
         }
     '''
 
-    # Note: We pass a node_cb so that _xml.py doesn't get caught up in import races.
 
+    # Note: We pass a node_cb so that _xml.py doesn't get caught up in import races.
     # Function for calling node callback.
     @staticmethod
     def as_node(node: XmlNode, node_cb: Optional[Callable[..., Any]] = None) -> Any:
@@ -255,6 +258,7 @@ class XmlEntry:
             raise Exception("<node /> found, but no handler defined.")
         # accepts <entry type="node /> and returns an instance of pparse.Node
         return node_cb(node)
+
 
     # Function for simple parsing (not recursion)
     @staticmethod
@@ -267,6 +271,7 @@ class XmlEntry:
             return float(str(node).strip())
         elif node['type'] == 'json':
             return json.loads(str(node).strip())
+
 
     # Function for using non-entry tag (e.g. node.value)
     @staticmethod
@@ -290,6 +295,7 @@ class XmlEntry:
 
       explicitly becomes map: { "namespace": "data", "path": "schema.json" }
     '''
+
 
     @staticmethod
     def as_map(node: XmlNode, obj: Optional[dict[str, Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> dict[str, Any]:
@@ -326,6 +332,7 @@ class XmlEntry:
 
       explicitly becomes list: [ '.txt', '.json' ]
     '''
+
 
     @staticmethod
     def as_list(node: XmlNode, obj: Optional[list[Any]] = None, node_cb: Optional[Callable[..., Any]] = None) -> list[Any]:

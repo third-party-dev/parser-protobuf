@@ -25,6 +25,7 @@ class Extraction:
         source: The parent this ``Extraction`` was derived from, if any.
     """
 
+
     def __init__(self, name: Optional[str] = None, source: Optional[Extraction] = None) -> None:
         # The extraction we came from. Detect parser via source.
         self._source: Optional[Extraction] = source
@@ -33,6 +34,7 @@ class Extraction:
         self._result: Dict[Any, Optional[Node]] = {}  # results by parser id
         self._extractions: list = []   # child extractions
 
+
     def name(self) -> Optional[str]:
         """Return the name of this extraction.
 
@@ -40,6 +42,7 @@ class Extraction:
             The extraction name, or ``None`` if not set.
         """
         return self._name
+
 
     def set_name(self, name: str) -> Extraction:
         """Set the name of this extraction.
@@ -56,7 +59,6 @@ class Extraction:
 
     # ! adding parser to an extraction is the old way of thinking. Now, we want to add a new
     # ! potential result tree.
-
     # At this point, caller has identified a parser for the extraction. The system now
     # needs to create a result slot that will contain the root node of the result and
     # the root node will hold the initial parser instance (which gets copied to all
@@ -71,8 +73,8 @@ class Extraction:
         """
         self._result[id] = root_node
 
-    # TODO: Create passthrough load() for result or results
 
+    # TODO: Create passthrough load() for result or results
     def add_parser(self, id: str, parser: Optional[Parser]) -> None:
         """Register a parser under a string identifier.
 
@@ -81,6 +83,7 @@ class Extraction:
             parser: The ``Parser`` instance to register.
         """
         self._parser[id] = parser
+
 
     def has_parser(self, parser_id: str) -> bool:
         """Return whether a parser with the given ID has been registered.
@@ -92,6 +95,7 @@ class Extraction:
             ``True`` if a parser with that ID exists, ``False`` otherwise.
         """
         return parser_id in self._parser
+
 
     def discover_parsers(self, parser_registry: Dict[str, Any]) -> Extraction:
         """Auto-detect applicable parsers from a registry and register them.
@@ -118,6 +122,7 @@ class Extraction:
 
         return self
 
+
     def open(self) -> Reader:
         """Return a fresh ``Reader`` positioned at the start of the ``Extraction``'s data.
 
@@ -128,6 +133,7 @@ class Extraction:
             NotImplementedError: Must be implemented by subclasses.
         """
         raise NotImplementedError()
+
 
     # Process all data at once.
     # TODO: Parse data lazily.
@@ -143,6 +149,7 @@ class Extraction:
         for parser in self._parser.values():
             parser.scan_data()
         return self
+
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
@@ -160,6 +167,7 @@ class Extraction:
             NotImplementedError: Must be implemented by subclasses.
         """
         raise NotImplementedError("from_xml not implemented")
+
 
     # extraction.to_xml() -> "<job />"
     def to_xml(self) -> str:
@@ -193,6 +201,7 @@ class BytesExtraction(Extraction):
         ValueError: If both or neither of ``source`` and ``reader`` are provided.
     """
 
+
     def __init__(
         self,
         name: Optional[str] = None,
@@ -212,6 +221,7 @@ class BytesExtraction(Extraction):
         # self._reader cursor is only used for dup() and tell()
         self._reader = reader
 
+
     def open(self) -> Reader:
         """Return ``Reader`` positioned at the start of the data.
 
@@ -220,6 +230,7 @@ class BytesExtraction(Extraction):
         """
         return self._reader.dup()
 
+
     def tell(self) -> int:
         """Return the current byte offset of the internal reader.
 
@@ -227,6 +238,7 @@ class BytesExtraction(Extraction):
             The current read position.
         """
         return self._reader.tell()
+
 
     # extraction = Extraction.from_xml("<job />")
     @classmethod
@@ -302,6 +314,7 @@ class BytesExtraction(Extraction):
             #child_extraction.set_obj_inst(extraction_cls.from_xml(child_extraction, xml_root))
 
         return extraction
+
 
     # extraction.to_xml() -> "<job />"
     def to_xml(self) -> str:

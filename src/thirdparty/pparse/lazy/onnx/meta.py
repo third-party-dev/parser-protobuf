@@ -87,11 +87,13 @@ class OnnxDataType:
         FLOAT8E8M0: None,
     }
 
+
     def sttype(onnx_type: int) -> str:
         if onnx_type in OnnxDataType.STTYPES:
             return OnnxDataType.STTYPES[onnx_type]
         else:
             return "UNK"
+
 
     def nptype(onnx_type: int) -> Optional[type]:
         if onnx_type in OnnxDataType.NPTYPES:

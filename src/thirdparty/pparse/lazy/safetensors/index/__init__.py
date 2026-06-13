@@ -8,9 +8,12 @@ log = logging.getLogger(__name__)
 import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.safetensors.index.state import SafetensorsIndexParsingIndex, SafetensorsIndexParsingState
 
+
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
+
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:

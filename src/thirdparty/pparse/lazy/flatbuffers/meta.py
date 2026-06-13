@@ -5,6 +5,7 @@ from typing import Any
 
 class FlatbuffersSchema():
 
+
     def __init__(self, schema_obj: dict[str, Any] = {}) -> None:
         # TODO: Consider default should have all references below (but empty)?
         self._schema: dict[str, Any] = schema_obj

@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_ident(subparsers: Any) -> None:
     ident_parser = subparsers.add_parser("ident", help="ident command")
     ident_subparser = ident_parser.add_subparsers(dest="ident_command", required=True)

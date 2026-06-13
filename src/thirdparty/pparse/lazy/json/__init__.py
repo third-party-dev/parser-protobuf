@@ -77,15 +77,17 @@ from thirdparty.pparse.lazy.json.state import JsonParsingStart, JsonParsingState
     Nodes have states: scanning -> shelf -> parsing -> loaded -> shelf -> ...
 """
 
+
 # Consider:
 # def make_json_parser():
 #     class Parser(pparse.Parser):
 #         ...
 #     return Parser
-
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
+
+
         # RULE: Parser knows extensions
         @staticmethod
         def match_extension(fname: str) -> bool:
@@ -95,6 +97,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 if fname.endswith(ext):
                     return True
             return False
+
 
         # RULE: Parser knows magic
         @staticmethod
@@ -113,6 +116,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
         def __init__(self, source: pparse.Extraction, id: str = "json") -> None:
             super().__init__(source, id, JsonParsingState)
+
 
         @staticmethod
         def from_reader(reader: pparse.Reader) -> pparse.Parser:

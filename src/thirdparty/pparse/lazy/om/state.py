@@ -11,16 +11,22 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.om.meta import Partition
 
 class OmParsingState(object):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class OmParsingComplete(OmParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
 class OmParsingPartitionModelDef(OmParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -52,6 +58,8 @@ class OmParsingPartitionModelDef(OmParsingState):
 
 
 class OmParsingPartitionEntry(OmParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -82,6 +90,8 @@ class OmParsingPartitionEntry(OmParsingState):
 
 
 class OmParsingPartitionTable(OmParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
@@ -123,6 +133,8 @@ class OmParsingPartitionTable(OmParsingState):
 
 
 class OmParsingHeader(OmParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()

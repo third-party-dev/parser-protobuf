@@ -4,21 +4,28 @@ from typing import Any
 
 
 class StackMark:
+
+
     def __init__(self, opcode: Any) -> None:
         self.opcode: Any = opcode
+
 
     def __repr__(self) -> str:
         return "**MARK**"
 
 
 class PersistentCall:
+
+
     def __init__(self, id: Any, arg: Any, opcode: Any) -> None:
         self.id: Any = id
         self.arg: Any = arg
         self.opcode: Any = opcode
 
+
     def __repr__(self) -> str:
         return f"PERSID_CALL(\n  arg={self.arg}\n)"
+
 
     def pparse_repr(self, depth: int = 0, step: str = " ") -> str:
         from thirdparty.pparse.utils import pparse_repr
@@ -43,6 +50,8 @@ def try_decode_and_strip(val: Any) -> str:
 
 
 class ReduceCall(dict):
+
+
     def __init__(self, module_call: tuple[bytes, bytes], arg: Any, opcode: Any) -> None:
         super().__init__()
 
@@ -53,6 +62,7 @@ class ReduceCall(dict):
         self.opcode: Any = opcode
         self.state: Any = None
 
+
     def __repr__(self) -> str:
         return (
             f"REDUCE_CALL(\n"
@@ -62,6 +72,7 @@ class ReduceCall(dict):
             f"  state={self.state}\n"
             ")"
         )
+
 
     def pparse_repr(self, depth: int = 0, step: str = "  ") -> str:
         from thirdparty.pparse.utils import pparse_repr
@@ -98,6 +109,8 @@ class ReduceCall(dict):
 
 
 class NewCall(dict):
+
+
     def __init__(self, module_call: tuple[bytes, bytes], arg: Any, opcode: Any) -> None:
         super().__init__()
 
@@ -108,6 +121,7 @@ class NewCall(dict):
         self.opcode: Any = opcode
         self.state: Any = None
 
+
     def __repr__(self) -> str:
         return (
             f"NEW_CALL(\n"
@@ -117,6 +131,7 @@ class NewCall(dict):
             f"  state={self.state}\n"
             ")"
         )
+
 
     def pparse_repr(self, depth: int = 0, step: str = "  ") -> str:
         from thirdparty.pparse.utils import pparse_repr

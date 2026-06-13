@@ -13,6 +13,8 @@ from thirdparty.pparse.lazy.flatbuffers import make_flatbuffers_parser
 
 
 class Flatbuffers:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
 

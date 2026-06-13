@@ -39,6 +39,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
 
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:
@@ -47,6 +48,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 if fname.endswith(ext):
                     return True
             return False
+
 
         @staticmethod
         def match_magic(cursor: pparse.Cursor) -> bool:

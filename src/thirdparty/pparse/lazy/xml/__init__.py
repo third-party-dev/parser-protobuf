@@ -8,9 +8,11 @@ from thirdparty.pparse.lazy.xml.state import (
     XmlParsingState,
 )
 
+
 def configure_pparser(**kwargs):
 
     class Parser(pparse.Parser):
+
 
         @staticmethod
         def match_extension(fname: str):
@@ -66,8 +68,10 @@ def configure_pparser(**kwargs):
             # TODO: This feels wrong.
             return len(unicode_str.encode(self.encoding))
 
+
         def new_list_node(self, parent):
             return pparse.Node(parent.ctx().reader(), self, default_value = [], parent = parent)
+
 
         def new_map_node(self, parent):
             return pparse.Node(parent.ctx().reader(), self, default_value = {}, parent = parent)
@@ -88,6 +92,7 @@ def configure_pparser(**kwargs):
 
                 # Fast forward past the bit we just parsed.
                 parent.ctx().seek(ctx._end)
+
 
         # extraction = Extraction.from_xml("<job />")
         @classmethod

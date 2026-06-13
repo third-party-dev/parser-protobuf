@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_json(subparsers: Any) -> None:
     json_parser = subparsers.add_parser("json", help="json command")
     json_subparser = json_parser.add_subparsers(dest="json_command", required=True)

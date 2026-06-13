@@ -12,8 +12,11 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.flatbuffers import configure_pparser
 
 class MNN:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
+
 
     def _parse(self, data_source: Any, fname: str = "unnamed.mnn", recursion: Optional[pparse.RecursionControl] = None) -> MNN:
 

@@ -26,8 +26,6 @@ from thirdparty.pparse.utils import ListType
 '''
 
 
-
-
 def _print_cb(dst: Any = sys.stdout, value: str = '') -> None:
     try:
         print(value, file=dst)
@@ -40,11 +38,13 @@ class Dumper:
     MAX_DEPTH: int = 9223372036854775807
     _default: Optional[Dumper] = None
 
+
     @classmethod
     def default(cls) -> Dumper:
         if cls._default is None:
             cls._default = cls()
         return cls._default
+
 
     def __init__(self, dumpers: Optional[list[Any]] = None, cb: Any = _print_cb, dst: Any = sys.stdout, max_array: int = MAX_DEPTH, max_depth: int = MAX_DEPTH) -> None:
         import numbers

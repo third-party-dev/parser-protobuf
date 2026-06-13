@@ -13,6 +13,7 @@ from thirdparty.pparse.lazy.protobuf.meta import Protobuf, PbImport
 from thirdparty.pparse.lazy.protobuf.node import NodeContext
 from thirdparty.pparse.lazy.protobuf.state import ProtobufParsingTag, ProtobufParsingState
 
+
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     ext_list = []
@@ -33,6 +34,8 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #proto = kwargs['proto']
 
     class Parser(pparse.Parser):
+
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:
@@ -42,6 +45,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 if fname.endswith(ext):
                     return True
             return False
+
 
         @staticmethod
         def match_magic(cursor: pparse.Cursor) -> bool:
@@ -78,6 +82,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             # self._node_complete_callable = None
             # self._node_complete_arg = None
 
+
         def _parse_varint(self, ctx: pparse.NodeContext, peek: bool = False) -> tuple[int, int]:
             value = 0
             shift = 0
@@ -99,11 +104,14 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 ctx.seek(start)
             return value, end - start
 
+
         def parse_varint(self, ctx: pparse.NodeContext) -> int:
             return self._parse_varint(ctx, False)[0]
 
+
         def peek_varint(self, ctx: pparse.NodeContext) -> tuple[int, int]:
             return self._parse_varint(ctx, True)
+
 
         def peek_varint_key(self, ctx: pparse.NodeContext) -> tuple[int, int, int, Optional[int]]:
             # Note: Key varints (by spec) ar always 32 bits (fields are 29 bits)
@@ -121,9 +129,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
             return wire_type, field_num, meta_length, value_length
 
+
         def parse_varint_key(self, ctx: pparse.NodeContext) -> tuple[int, int]:
             value = self.parse_varint(ctx)
             return (value & 0x7), (value >> 3)
+
 
         def parse_i32(self, ctx: pparse.NodeContext, peek: bool = False) -> int:
             data = None
@@ -138,6 +148,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<I", data)[0]
 
+
         def parse_i64(self, ctx: pparse.NodeContext, peek: bool = False) -> int:
             data = None
             if peek:
@@ -151,6 +162,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 raise pparse.EndOfDataException(msg)
             return struct.unpack("<Q", data)[0]
 
+
         # def _apply_value(self, ctx: pparse.NodeContext, field: Any, value: Any) -> None:
         #     if isinstance(self.current, NodeArray):
         #         log.debug(
@@ -158,10 +170,8 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #         )
         #         self.current.value.append(value)
         #         return
-
         #     elif isinstance(self.current, NodeMap):
         #         # TODO: Is this a good place to determine if we Node-ify a value?
-
         #         log.debug(
         #             f"apply_value (off:{ctx.tell()}): Inside {self.current}. Set value to key {field.name}."
         #         )
@@ -169,17 +179,14 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #         ctx.just_set_field = field
         #         self.current.value[field.name] = value
         #         return
-
         #     log.debug(
         #         f"UNLIKELY!! apply_value (off:{ctx.tell()}): Create arr as top level object."
         #     )
         #     breakpoint()
-
         # def _start_map_node(self, ctx: pparse.NodeContext, field: Any) -> None:
         #     ctx.mark_field_start()
         #     parent = self.current
         #     newmap = NodeMap(parent, ctx.reader(), proto.by_type_name(field.type_name))
-
         #     if isinstance(self.current, NodeArray):
         #         log.debug(
         #             f"start_map (off:{ctx.tell()}): Inside Array. Append new map to current array."
@@ -198,7 +205,6 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #         )
         #         parent.value = newmap
         #         self.current = newmap
-
         def _end_container_node(self, ctx: pparse.NodeContext) -> None:
             parent = ctx._parent
             if parent:
@@ -217,6 +223,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
                 # Set current node to parent.
                 self.current = parent
+
 
         def scan_data(self) -> pparse.Parser:
             try:

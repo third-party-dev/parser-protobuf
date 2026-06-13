@@ -28,16 +28,22 @@ import thirdparty.pparse.lib as pparse
 
 
 class SafetensorsParsingState(object):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class SafetensorsParsingComplete(SafetensorsParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 
 class SafetensorsParsingTensorNode(SafetensorsParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -49,6 +55,8 @@ class SafetensorsParsingTensorNode(SafetensorsParsingState):
 
 
 class SafetensorsParsingTensorsMeta(SafetensorsParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
@@ -75,6 +83,8 @@ class SafetensorsParsingTensorsMeta(SafetensorsParsingState):
 
 
 class SafetensorsParsingHeaderSetup(SafetensorsParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -94,6 +104,8 @@ class SafetensorsParsingHeaderSetup(SafetensorsParsingState):
 
 
 class SafetensorsParsingLength(SafetensorsParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()

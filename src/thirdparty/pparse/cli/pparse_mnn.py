@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_mnn(subparsers: Any) -> None:
     mnn_parser = subparsers.add_parser("mnn", help="mnn command")
     mnn_subparser = mnn_parser.add_subparsers(dest="mnn_command", required=True)

@@ -12,8 +12,11 @@ from thirdparty.pparse.lazy.zip import configure_pparser
 
 
 class Zip:
+
+
     def __init__(self, extraction: Optional[pparse.BytesExtraction] = None) -> None:
         self._extraction = extraction
+
 
     def _parse(self, data_source: Any, fname: str = "unnamed.zip", recursion: Optional[pparse.RecursionControl] = None) -> Zip:
 

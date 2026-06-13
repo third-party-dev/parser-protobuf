@@ -56,6 +56,7 @@ class Tensor:
         "BOOL": numpy.bool_,
     }
 
+
     # Return (safetensors equivalent) type
     def get_type(self) -> str:
         """Return the safetensors-compatible dtype string for this tensor.
@@ -64,6 +65,7 @@ class Tensor:
             A dtype string such as ``"F32"``, ``"I64"``, etc.
         """
         raise NotImplementedError()
+
 
     # Return (safetensors equivalent) shape
     def get_shape(self) -> List[int]:
@@ -74,6 +76,7 @@ class Tensor:
         """
         raise NotImplementedError()
 
+
     # Return raw data as extracted from source
     def get_data_bytes(self) -> bytes:
         """Return the raw tensor data exactly as it appears in the source.
@@ -83,6 +86,7 @@ class Tensor:
         """
         raise NotImplementedError()
 
+
     # Return raw data as python array of dtype
     def as_array(self) -> Any:
         """Return the tensor data as a Python array typed to the tensor's dtype.
@@ -91,6 +95,7 @@ class Tensor:
             A Python sequence or array object representing the tensor values.
         """
         raise NotImplementedError()
+
 
     # Return raw data as numpy array of dtype
     def as_numpy(self) -> numpy.ndarray:

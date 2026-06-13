@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_protobuf(subparsers: Any) -> None:
     protobuf_parser = subparsers.add_parser("protobuf", help="protobuf command")
     protobuf_subparser = protobuf_parser.add_subparsers(dest="protobuf_command", required=True)
@@ -16,6 +17,7 @@ def register_pparse_protobuf(subparsers: Any) -> None:
     protobuf_view_parser.add_argument("msgtype")
     protobuf_view_parser.add_argument("path")
     protobuf_view_parser.set_defaults(func=protobuf_view)
+
 
 def protobuf_view(args: Any) -> None:
     from thirdparty.pparse.utils import activate_logging

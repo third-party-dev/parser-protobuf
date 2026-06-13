@@ -16,6 +16,8 @@ from thirdparty.pparse.dump import Dumper, _print_cb
 
 
 class NodeVmContext(pparse.NodeContext):
+
+
     def __init__(self, parent: Optional[pparse.Node], reader: pparse.Range, parser: pparse.Parser) -> None:
         if type(reader).__name__ != "Range":
             raise Exception("protobuf NodeContext reader must be a pparse.Range")
@@ -30,11 +32,14 @@ class NodeVmContext(pparse.NodeContext):
         # Note: Save the history to the node, forever allocating that memory.
         self.history: list[Any] = []
 
+
     def vmstate(self) -> Any:
         return self._vmstate
 
 
 class Node(pparse.Node):
+
+
     def dump(self, depth: int = 0, step: int = 2, dumper: Optional[PickleDumper] = None) -> None:
         if not dumper:
             dumper = PickleDumper()
@@ -43,6 +48,8 @@ class Node(pparse.Node):
 
 
 class PickleDumper(Dumper):
+
+
     def __init__(self, dumpers: Optional[list[Any]] = None, cb: Any = _print_cb, dst: Any = sys.stdout) -> None:
         import numbers
         from thirdparty.pparse.lib import Node
@@ -131,7 +138,8 @@ class PickleDumper(Dumper):
             self.cb(self.dst, f'{spacer}{" " * step}</dict>')
 
         self.cb(self.dst, f'{spacer}</ReduceCall>')
-    
+
+
     def _dump_persidcall_wrapper(self, elem_name: str = "PersistentCall", obj: Any = None, attrs: str = '', depth: int = 0, step: int = 2) -> None:
         spacer = " " * depth
         attrs = ' '.join([

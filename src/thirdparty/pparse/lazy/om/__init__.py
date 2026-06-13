@@ -28,9 +28,12 @@ States:
         - raw_data
 '''
 
+
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
+
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:
@@ -40,9 +43,11 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                     return True
             return False
 
+
         @staticmethod
         def match_magic(cursor: pparse.Cursor) -> bool:
             return False
+
 
         def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[OmParsingState] = OmParsingHeader, ctx_args: dict[str, Any] = {}) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
@@ -51,21 +56,23 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             root.ctx()._next_state(init_state)
             return root
 
+
         def __init__(self, source: pparse.Extraction, id: str = "om") -> None:
             super().__init__(source, id, OmParsingState)
+
 
         def new_map_node(self, node: pparse.Node) -> pparse.Node:
             return pparse.Node(node.ctx().reader(), self, parent=node, default_value={})
 
+
         def new_array_node(self, node: pparse.Node) -> pparse.Node:
             return pparse.Node(node.ctx().reader(), self, parent=node, default_value=[])
 
+
         # def _new_nodemap(self, parent, reader):
         #     return NodeMap(parent, reader)
-        
         # def _new_nodearray(self, parent, reader):
         #     return NodeArray(parent, reader)
-
         # def _apply_value(self, ctx, field, value):
         #     if isinstance(self.current, NodeArray):
         #         log.debug(
@@ -73,28 +80,23 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #         )
         #         self.current.value.append(value)
         #         return
-
         #     elif isinstance(self.current, NodeMap):
         #         # TODO: Is this a good place to determine if we Node-ify a value?
-
         #         log.debug(
         #             f"apply_value (off:{ctx.tell()}): Inside {self.current}. Set value to key {field.name}."
         #         )
         #         self.current.value[field] = value
         #         return
-
         #     log.debug(
         #         f"UNLIKELY!! apply_value (off:{ctx.tell()}): Create arr as top level object."
         #     )
         #     breakpoint()
-
         # def _start_map_node(self, ctx):
         #     parent = self.current
         #     # BUG: When we get a cursor, we're getting a duplicate of the cursor and its _current_ offset.
         #     # BUG: When we get a range, we're getting a duplicate of the range with the original offset?!
         #     newmap = NodeMap(parent, ctx.reader())
         #     newmap.ctx().skip(1)
-
         #     if ctx.key():
         #         log.debug(
         #             f"start_map (off:{ctx.tell()}): Found key, assuming in Map. Add new map to current map."
@@ -112,11 +114,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #         log.debug(f"start_map (off:{ctx.tell()}): Create map as top level object.")
         #         parent.value = newmap
         #         self.current = newmap
-
         # def _start_array_node(self, ctx):
         #     newarr = NodeArray(self.current, ctx.reader())
         #     newarr.ctx().skip(1)
-
         #     if ctx.key():
         #         log.debug(
         #             f"start_arr (off:{ctx.tell()}): Found key, assuming in Map. Add new arr to current map."
@@ -133,32 +133,24 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
         #     else:
         #         log.debug(f"start_arr (off:{ctx.tell()}): Create arr as top level object.")
         #         self.current = newarr
-
         # def _end_container_node(self, ctx):
         #     parent = ctx._parent
         #     if parent:
         #         log.debug(f"end_container (off:{ctx.tell()}): Backtracking to parent.")
-
         #         # Set the end pointer to advance parent past field.
         #         ctx.mark_end()
-
         #         # Fast forward past the bit we just parsed.
         #         parent.ctx().seek(ctx._end)
-
         #         # Kill ctx (hopefully reclaiming memory).
         #         ctx.node().clear_ctx()
-
         #         # Set current node to parent.
         #         self.current = parent
         #     # else:
         #     #     log.debug("end_container: Backtracking to initial node.")
-
         #     #     # Set the end pointer to advance parent past field.
         #     #     ctx.mark_end()
-
         #     #     # Kill ctx (hopefully reclaiming memory).
         #     #     ctx.node().clear_ctx()
-
         def scan_data(self) -> pparse.Parser:
             # While not end of data, keep parsing via states.
             try:

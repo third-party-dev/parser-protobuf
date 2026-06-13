@@ -12,9 +12,12 @@ import thirdparty.pparse.lib as pparse
 from thirdparty.pparse.lazy.pickle.state import PickleParsingPickleStream, PickleParsingState
 from thirdparty.pparse.lazy.pickle.node import Node
 
+
 def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
+
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:
@@ -24,6 +27,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
                 if fname.endswith(ext):
                     return True
             return False
+
 
         @staticmethod
         def match_magic(cursor: pparse.Cursor) -> bool:
@@ -40,6 +44,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
         def __init__(self, source: pparse.Extraction, id: str = "pkl") -> None:
             super().__init__(source, id, PickleParsingState)
+
 
         @staticmethod
         def from_reader(reader: pparse.Reader) -> pparse.Parser:
@@ -74,6 +79,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
                 # # Set current node to parent.
                 # self.current = parent
+
 
         def scan_data(self) -> pparse.Parser:
             # Do the opcodes first.

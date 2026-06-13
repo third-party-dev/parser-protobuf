@@ -14,6 +14,7 @@ class ListType:
 
 log = logging.getLogger(__name__)
 
+
 def activate_logging(args: Any) -> None:
     level = {
         0: logging.ERROR,

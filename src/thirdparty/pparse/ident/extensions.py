@@ -906,6 +906,7 @@ for typ in typedb:
         if typ not in ext_to_type[ext]:
             ext_to_type[ext].append(typ)
 
+
 def ident_by_extension(fname):
     candidates_by_ext = []
     for ext in ext_to_type:

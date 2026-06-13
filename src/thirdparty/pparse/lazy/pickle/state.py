@@ -14,11 +14,15 @@ from thirdparty.pparse.lazy.pickle.node import NodeVmContext, Node
 
 
 class PickleParsingState:
+
+
     def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class PickleParsingReadlineParam(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -54,6 +58,8 @@ class PickleParsingReadlineParam(PickleParsingState):
 
 
 class PickleParsingSimpleParam(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -73,6 +79,8 @@ class PickleParsingSimpleParam(PickleParsingState):
 
 
 class PickleParsingLengthParam(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -104,6 +112,8 @@ class PickleParsingLengthParam(PickleParsingState):
 
 
 class PickleParsingLengthPrefix(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -134,6 +144,7 @@ class PickleInterpreter(PickleParsingState):
         PklOp.LONG1,  # signed
         PklOp.LONG4,  # signed
     ]
+
 
     def parse_data(self, node: pparse.Node) -> int:
         from thirdparty.pparse.lazy.pickle.calls import ReduceCall, StackMark, PersistentCall, NewCall
@@ -422,6 +433,8 @@ class PickleInterpreter(PickleParsingState):
 
 
 class PickleParsingOpCode(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
@@ -462,11 +475,15 @@ class PickleParsingOpCode(PickleParsingState):
 
 
 class PickleParsingComplete(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         return pparse.ASCEND
 
 # State where we switch pickle streams, delimited by STOP.
 class PickleParsingPickleStream(PickleParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()

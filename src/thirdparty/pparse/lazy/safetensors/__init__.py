@@ -13,6 +13,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
 
+
         @staticmethod
         def match_extension(fname: str) -> bool:
             if not fname:
@@ -28,6 +29,7 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             # TODO: 8 bytes of offset til '}', then '{'.
             return False
 
+
         def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[SafetensorsParsingState] = SafetensorsParsingLength) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
@@ -36,9 +38,9 @@ def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
             root.ctx()._next_state(init_state)
             return root
 
+
         def __init__(self, source: pparse.Extraction, id: str = "safetensors") -> None:
             super().__init__(source, id, SafetensorsParsingState)
-
 
 
         @staticmethod

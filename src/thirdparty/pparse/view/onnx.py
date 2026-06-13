@@ -21,6 +21,7 @@ from thirdparty.pparse.lazy.onnx.meta import OnnxDataType
 
 class Tensor(pparse.Tensor):
 
+
     def __init__(self, onnx_view: Onnx, init_node: pparse.Node, name: str) -> None:
         self._name = name
         self._view = onnx_view
@@ -69,6 +70,8 @@ class Tensor(pparse.Tensor):
 
 
 class Onnx:
+
+
     def __init__(self) -> None:
         self._extraction: Optional[pparse.BytesExtraction] = None
         self._tensor_meta: dict[str, Tensor] = {}
@@ -151,7 +154,6 @@ class Onnx:
 
 
     # ** ---- New Development Of Graph Interface ----
-
     def _collect_all_nodes(self, graph: Any) -> Iterator[Any]:
         for node in graph:
             #breakpoint()
@@ -166,6 +168,7 @@ class Onnx:
                         for subgraph in attr_node._value['graphs']:
                             yield from self._collect_all_nodes(subgraph)
 
+
     def collect_all_nodes(self) -> list[Any]:
         try:
             all_nodes = list(self._collect_all_nodes(self.root_node()._value['graph']._value['node']))
@@ -175,6 +178,7 @@ class Onnx:
             print(e)
             raise
         return all_nodes
+
 
     def graph_nodes(self) -> tuple[list[dict[str, Any]], dict[int, str]]:
         '''
@@ -202,6 +206,7 @@ class Onnx:
         nodes = self.collect_all_nodes()
         name_to_idx = {}
         idx_counter = 0
+
 
         def get_idx(name):
             nonlocal idx_counter

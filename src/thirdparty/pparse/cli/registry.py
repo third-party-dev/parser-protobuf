@@ -10,13 +10,16 @@ CommandRegistrar = Callable[[Any], None]
 
 _COMMANDS: dict[str, CommandRegistrar] = {}
 
+
 def register_command(name: str, registrar: CommandRegistrar) -> None:
     if name in _COMMANDS and _COMMANDS[name] != registrar:
         raise ValueError(f"Command '{name}' already registered")
     _COMMANDS[name] = registrar
 
+
 def get_commands() -> Any:
     return _COMMANDS.values()
+
 
 def load_entrypoint_plugins(entrypoint_group: str) -> None:
 

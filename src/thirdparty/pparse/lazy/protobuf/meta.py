@@ -62,6 +62,7 @@ class Field:
         3: "LABEL_REPEATED",
     }
 
+
     def __init__(self, pbfield: Any) -> None:
         self._pbfield: Any = pbfield
         self.name: str = pbfield.name
@@ -70,11 +71,14 @@ class Field:
         self.type_name: str = pbfield.type_name
         self.label: int = pbfield.label
 
+
     def type_str(self) -> str:
         return Field.types[self.type]
 
+
     def is_repeated(self) -> bool:
         return self._pbfield.label == Field.LABEL_REPEATED
+
 
     def __repr__(self) -> str:
         return (
@@ -113,6 +117,8 @@ class Protobuf:
 
 
 class Msg:
+
+
     def __init__(self, pbmsg: Any, prefix: str) -> None:
         self.pbmsg: Any = pbmsg
         self.name: str = pbmsg.name
@@ -120,19 +126,24 @@ class Msg:
         self._by_id: dict[int, Field] = {}
         self._by_name: dict[str, Field] = {}
 
+
     def type_name(self) -> str:
         return self._type_name
+
 
     def add_field(self, pbfield: Any) -> None:
         field = Field(pbfield)
         self._by_name[field.name] = field
         self._by_id[field.number] = field
 
+
     def by_name(self, name: str) -> Field:
         return self._by_name[name]
 
+
     def by_id(self, id: int) -> Field:
         return self._by_id[id]
+
 
     def __repr__(self) -> str:
         out = [f"MsgType: {self._type_name}"]
@@ -142,10 +153,13 @@ class Msg:
 
 
 class PbImport:
+
+
     def __init__(self, pbpath: Optional[Any] = None) -> None:
         self.pbpath: Optional[Any] = pbpath
         self.db: dict[str, Msg] = {}
         self.process_pb2()
+
 
     def process_descriptor_proto(self, pbmsgtypes: Any, prefix: str) -> None:
         if self.pbpath is None:
@@ -158,6 +172,7 @@ class PbImport:
             for field in pbmsg.field:
                 msg.add_field(field)
             self.process_descriptor_proto(pbmsg.nested_type, msg.type_name())
+
 
     def process_pb2(self) -> None:
         if self.pbpath is None:
@@ -174,6 +189,7 @@ class PbImport:
         prefix = f".{pbset.file[0].package}"
         pbmsgtypes = pbset.file[0].message_type
         self.process_descriptor_proto(pbmsgtypes, prefix)
+
 
     def by_type_name(self, type_name: str) -> Msg:
         if self.pbpath is None:

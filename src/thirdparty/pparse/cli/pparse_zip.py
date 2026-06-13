@@ -5,6 +5,7 @@ log = logging.getLogger(__name__)
 
 from typing import Any
 
+
 def register_pparse_zip(subparsers: Any) -> None:
     zip_parser = subparsers.add_parser("zip", help="zip command")
     zip_subparser = zip_parser.add_subparsers(dest="zip_command", required=True)

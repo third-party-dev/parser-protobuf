@@ -9,17 +9,23 @@ log = logging.getLogger(__name__)
 import thirdparty.pparse.lib as pparse
 
 class PyTorchParsingState(object):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         raise NotImplementedError()
 
 
 class PyTorchParsingComplete(PyTorchParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         breakpoint()
         return pparse.ASCEND
 
 
 class PyTorchParsingTensorsMeta(PyTorchParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         parser = ctx.parser()
@@ -66,6 +72,8 @@ class PyTorchParsingTensorsMeta(PyTorchParsingState):
 
 
 class PyTorchParsingPickle(PyTorchParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -90,6 +98,8 @@ class PyTorchParsingPickle(PyTorchParsingState):
 
 
 class PyTorchParsingZipPostProcess(PyTorchParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()
@@ -103,6 +113,8 @@ class PyTorchParsingZipPostProcess(PyTorchParsingState):
 
 
 class PyTorchParsingZip(PyTorchParsingState):
+
+
     def parse_data(self, node: pparse.Node) -> int:
         ctx = node.ctx()
         #parser = ctx.parser()

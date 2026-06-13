@@ -13,6 +13,7 @@ from thirdparty.pparse.lazy.pickle import configure_pparser
 
 class Pickle:
 
+
     def _parse(self, data_source: Any, fname: str = "unnamed.pkl", recursion: Optional[pparse.RecursionControl] = None) -> Pickle:
         self._extraction: Optional[pparse.BytesExtraction]
 

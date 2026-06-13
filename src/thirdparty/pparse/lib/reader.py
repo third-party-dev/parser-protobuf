@@ -13,6 +13,7 @@ class Reader:
     be substituted transparently.
     """
 
+
     def dup(self) -> Reader:
         """Return an independent copy of this reader positioned at the same offset.
 
@@ -21,6 +22,7 @@ class Reader:
         """
         raise NotImplementedError()
 
+
     def tell(self) -> int:
         """Return the current absolute byte offset within the data source.
 
@@ -28,6 +30,7 @@ class Reader:
             The current read position as a byte offset.
         """
         raise NotImplementedError()
+
 
     def seek(self, offset: int) -> Any:
         """Move the read position to an absolute byte offset.
@@ -40,6 +43,7 @@ class Reader:
         """
         raise NotImplementedError()
 
+
     def skip(self, length: int) -> Any:
         """Advance the read position by ``length`` bytes without reading.
 
@@ -51,6 +55,7 @@ class Reader:
         """
         raise NotImplementedError()
 
+
     def peek(self, length: int) -> bytes:
         """Read ``length`` bytes starting at the current position without advancing.
 
@@ -61,6 +66,7 @@ class Reader:
             Up to ``length`` bytes of data.
         """
         raise NotImplementedError()
+
 
     def read(self, length: int) -> bytes:
         """Read ``length`` bytes and advance the read position accordingly.
@@ -88,9 +94,11 @@ class Cursor(Reader):
         offset: Initial byte offset within ``data``.
     """
 
+
     def __init__(self, data: Any, offset: int = 0) -> None:
         self._data = data
         self._offset = offset
+
 
     def cursor(self) -> Cursor:
         """Return this cursor itself. (Maintains ignorance about Cursor vs Range.)
@@ -100,6 +108,7 @@ class Cursor(Reader):
         """
         return self
 
+
     def dup(self) -> Cursor:
         """Return a new ``Cursor`` at the current position by calling ``Data.open``.
 
@@ -107,6 +116,7 @@ class Cursor(Reader):
             A new ``Cursor`` positioned at the current offset.
         """
         return self._data.open(self._offset)
+
 
     # Where in the Data are we
     def tell(self) -> int:
@@ -116,6 +126,7 @@ class Cursor(Reader):
             The current read position.
         """
         return self._offset
+
 
     # Set cursor to specific location.
     def seek(self, offset: int) -> Any:
@@ -130,6 +141,7 @@ class Cursor(Reader):
         self._offset = offset
         return self._data.seek(self)
 
+
     def skip(self, length: int) -> Any:
         """Advance this cursor by ``length`` bytes without reading any data.
 
@@ -142,6 +154,7 @@ class Cursor(Reader):
         self._offset += length
         return self._data.seek(self)
 
+
     # Read data ahead without progressing cursor.
     def peek(self, length: int) -> bytes:
         """Read ``length`` bytes at the current position without advancing the cursor.
@@ -153,6 +166,7 @@ class Cursor(Reader):
             Up to ``length`` bytes starting at the current offset.
         """
         return self._data.peek(self, length)
+
 
     # Copy and progress data.
     def read(self, length: int, mode: Any = None) -> bytes:
@@ -194,10 +208,12 @@ class Range(Reader):
         ValueError: If ``length`` is negative.
     """
 
+
     # Given Cursor object is the start offset
     def __init__(self, cursor: Cursor, length: int, offset: int = -1) -> None:
         self._start_cursor = cursor.dup()
         self._init(cursor.tell(), length, offset)
+
 
     def _init(self, start_offset: int, length: int, current_offset: int = -1) -> None:
         """Initialise internal state from scalar offsets rather than a cursor object.
@@ -223,6 +239,7 @@ class Range(Reader):
         self._length = length
         self._end = self._start + length
 
+
     def cursor(self) -> Cursor:
         """Return an independent copy of the internal read cursor.
 
@@ -231,6 +248,7 @@ class Range(Reader):
         """
         return self._cursor.dup()
 
+
     def dup(self) -> Range:
         """Return an independent copy of this range at the same read position.
 
@@ -238,6 +256,7 @@ class Range(Reader):
             A new ``Range`` with the same bounds and current offset.
         """
         return Range(self._start_cursor, self._length, self._cursor.tell())
+
 
     def truncate(self, new_length: int) -> Range:
         """Shorten the range to ``new_length`` bytes.
@@ -265,6 +284,7 @@ class Range(Reader):
 
         return self
 
+
     def length(self) -> int:
         """Return the total number of bytes in this range.
 
@@ -273,6 +293,7 @@ class Range(Reader):
         """
         return self._length
 
+
     def left(self) -> int:
         """Return the number of bytes remaining between the cursor and the end of the range.
 
@@ -280,6 +301,7 @@ class Range(Reader):
             Bytes available to read from the current position.
         """
         return self._end - self.tell()
+
 
     def valid_offset(self, offset: int) -> bool:
         """Return whether ``offset`` falls within ``[start, end]`` (inclusive).
@@ -292,6 +314,7 @@ class Range(Reader):
         """
         return offset >= self._start and offset <= self._end
 
+
     def tell(self) -> int:
         """Return the current absolute byte offset of the internal cursor.
 
@@ -299,6 +322,7 @@ class Range(Reader):
             The current read position.
         """
         return self._cursor.tell()
+
 
     # Set cursor to absolute location in Data (within bounds).
     def seek(self, offset: int) -> int:
@@ -321,6 +345,7 @@ class Range(Reader):
         self._cursor.seek(offset)
         return offset
 
+
     # Ensure length (relative to cursor) is inbounds.
     def _adjust_length(self, length: int) -> int:
         """Clamp ``length`` so that reading it would not exceed the range end.
@@ -338,6 +363,7 @@ class Range(Reader):
             length = self._end - self.tell()
         return length
 
+
     # Progress data without reading.
     def skip(self, length: int) -> Any:
         """Advance the read position by up to ``length`` bytes, clamped to bounds.
@@ -350,6 +376,7 @@ class Range(Reader):
         """
         length = self._adjust_length(length)
         return self._cursor.skip(length)
+
 
     # Read data ahead without progressing cursor.
     def peek(self, length: int) -> bytes:
@@ -365,6 +392,7 @@ class Range(Reader):
         """
         length = self._adjust_length(length)
         return self._cursor.peek(length)
+
 
     # Read data and progress data.
     def read(self, length: int) -> bytes:
