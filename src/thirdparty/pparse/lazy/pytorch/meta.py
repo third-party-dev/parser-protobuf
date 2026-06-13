@@ -1,7 +1,8 @@
+from __future__ import annotations
 
 
 class PT:
-    PKL_STTYPE_MAP = {
+    PKL_STTYPE_MAP: dict[str, str] = {
         "torch.FloatStorage": "F32",
         "torch.DoubleStorage": "F64",
         "torch.HalfStorage": "F16",
@@ -21,10 +22,10 @@ class PT:
         # 'QInt32Storage': 'I32',
     }
 
-    PERSID_CALL = 0
+    PERSID_CALL: int = 0
 
-    TYPE_TAG = 0
-    TYPE_NAME = 1
-    DATA_KEY = 2
-    DATA_DEST = 3
-    ELEM_CNT = 4
+    TYPE_TAG: int = 0
+    TYPE_NAME: int = 1
+    DATA_KEY: int = 2
+    DATA_DEST: int = 3
+    ELEM_CNT: int = 4

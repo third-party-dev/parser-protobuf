@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import logging
 import os
 import sys
+from typing import Any, Iterator, Optional, Type
 
 log = logging.getLogger(__name__)
 
@@ -9,7 +12,7 @@ from thirdparty.pparse.lazy.pytorch.state import PyTorchParsingZip, PyTorchParsi
 from thirdparty.pparse.lazy.pytorch.meta import PT
 
 
-def iter_new_calls(value):
+def iter_new_calls(value: Any) -> Iterator[Any]:
     """Recursively yield every NewCall in the pickle value tree."""
     from thirdparty.pparse.lazy.pickle.calls import NewCall, ReduceCall, PersistentCall
 
@@ -34,12 +37,12 @@ def iter_new_calls(value):
             yield from iter_new_calls(item)
 
 
-def configure_pparser(**kwargs):
+def configure_pparser(**kwargs: Any) -> Type[pparse.Parser]:
 
     class Parser(pparse.Parser):
 
         @staticmethod
-        def match_extension(fname: str):
+        def match_extension(fname: str) -> bool:
             if not fname:
                 return False
             for ext in [".pt"]:
@@ -48,13 +51,13 @@ def configure_pparser(**kwargs):
             return False
 
         @staticmethod
-        def match_magic(cursor: pparse.Cursor):
+        def match_magic(cursor: pparse.Cursor) -> bool:
             # TODO: Is it a zip file?
             # TODO: Consider looking for data.pkl
             return False
 
 
-        def make_root_node(self, parent: pparse.Node = None, init_state = PyTorchParsingZip):
+        def make_root_node(self, parent: Optional[pparse.Node] = None, init_state: Type[PyTorchParsingState] = PyTorchParsingZip) -> pparse.Node:
             init_state = self._init_state_as_cls(init_state)
 
             # Current path of pending things.
@@ -63,11 +66,11 @@ def configure_pparser(**kwargs):
             return root
 
 
-        def __init__(self, source: pparse.Extraction, id: str = "pt"):
+        def __init__(self, source: pparse.Extraction, id: str = "pt") -> None:
             super().__init__(source, id, PyTorchParsingState)
 
 
-        def _traverse_pt(self, node, state, path_arr=[], metrics={ 'param_cnt': 0 }):
+        def _traverse_pt(self, node: pparse.Node, state: Any, path_arr: list[str] = [], metrics: dict[str, int] = {'param_cnt': 0}) -> None:
             if not isinstance(state, dict) or \
                 not ('_modules' in state or '_parameters' in state):
                 #print(f"  - Dead end.")
@@ -91,7 +94,7 @@ def configure_pparser(**kwargs):
                     self._traverse_pt(node, state['_modules'][mod].state, [*path_arr, mod], metrics)
 
 
-        def get_pytorch_type(self, tensor_node) -> str:
+        def get_pytorch_type(self, tensor_node: pparse.Node) -> str:
             persid = tensor_node._value['reduce_call'].arg[PT.PERSID_CALL]
             parts = [p.decode("utf-8").strip() for p in persid.arg[PT.TYPE_NAME]]
             return ".".join(parts)
@@ -104,18 +107,18 @@ def configure_pparser(**kwargs):
             # elem_cnt = persid.arg[Tensor.ELEM_CNT]
 
 
-        def get_type(self, tensor_node):
+        def get_type(self, tensor_node: pparse.Node) -> str:
             return PT.PKL_STTYPE_MAP[self.get_pytorch_type(tensor_node)]
 
 
-        def get_shape(self, tensor_node):
+        def get_shape(self, tensor_node: pparse.Node) -> list[int]:
             shape = [i for i in tensor_node._value['reduce_call'].arg[2]]
             shape.reverse()
             return shape
 
 
         # Return raw data as extracted from source
-        def get_data_key(self, tensor_node):
+        def get_data_key(self, tensor_node: pparse.Node) -> str:
             persid = tensor_node._value['reduce_call'].arg[PT.PERSID_CALL]
             type_tag = persid.arg[PT.TYPE_TAG]
             if type_tag != "storage":
@@ -123,7 +126,7 @@ def configure_pparser(**kwargs):
             return persid.arg[PT.DATA_KEY]
 
 
-        def get_elem_count(self, tensor_node):
+        def get_elem_count(self, tensor_node: pparse.Node) -> int:
             persid = tensor_node._value['reduce_call'].arg[PT.PERSID_CALL]
             type_tag = persid.arg[PT.TYPE_TAG]
             if type_tag != "storage":
@@ -131,7 +134,7 @@ def configure_pparser(**kwargs):
             return persid.arg[PT.ELEM_CNT]
 
 
-        def get_tensor_node(self, node, name, reduce_call):
+        def get_tensor_node(self, node: pparse.Node, name: str, reduce_call: Any) -> pparse.Node:
             ctx = node.ctx()
             tensor = pparse.Node(ctx.reader(), self, default_value={}, parent=node)
             tensor._value['reduce_call'] = reduce_call
