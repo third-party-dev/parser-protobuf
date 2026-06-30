@@ -75,6 +75,28 @@ ignore = ["E402"]
 [tool.ruff.lint.per-file-ignores]
 "src/thirdparty/pparse/lib/__init__.py" = ["E402"]
 
+[tool.mypy]
+python_version = "3.9"
+mypy_path = "src"
+namespace_packages = true
+explicit_package_bases = true
+exclude = [
+    "^docs/",
+    "^outputs/",
+    "^scripts/",
+    "^tests/",
+    "src/thirdparty/pparse/data/",
+    "src/thirdparty/pparse/external/",
+    "src/thirdparty/pparse/ident/",
+    "src/thirdparty/pparse/cli/",
+    "src/thirdparty/pparse/view/",
+    "src/thirdparty/pparse/lazy/",
+    "src/thirdparty/pparse/_httpdata\\.py$",
+    "src/thirdparty/pparse/_xml\\.py$",
+    "src/thirdparty/pparse/dump\\.py$",
+    "src/thirdparty/pparse/utils\\.py$",
+]
+
 [project.scripts]
 pparse = "thirdparty.pparse.cli:main"
 

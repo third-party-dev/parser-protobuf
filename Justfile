@@ -18,3 +18,4 @@ format:
 
 checks:
     @ruff check .
+    #@mypy .
