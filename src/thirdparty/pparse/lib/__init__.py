@@ -71,7 +71,7 @@ __all__ += [
 from .data import (
     Data,
     HttpCachedData,
-    HttpRangeData,  # Not recommended.
+    #HttpRangeData,  # Not recommended.
     FileData,
     FileMmapData,  # Untested.
     BytesIoData,
