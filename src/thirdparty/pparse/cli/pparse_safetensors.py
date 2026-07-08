@@ -50,7 +50,6 @@ def safetensors_index_view(args: Any) -> None:
     log.info(f"Viewing: {args.path}")
 
     obj = SafeTensorsIndex().open_fpath(args.path)
-    root = obj._extraction._parser['safetensors_index']._root
 
     if args.print:
         obj.root_node().dump()
@@ -70,7 +69,6 @@ def safetensors_view(args: Any) -> None:
     log.info(f"Viewing: {args.path}")
 
     obj = SafeTensors().open_fpath(args.path)
-    root = obj._extraction._parser['safetensors']._root
 
     if args.print:
         obj.root_node().dump()
